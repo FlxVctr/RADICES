@@ -4,10 +4,16 @@ Project to create a sparsified sample network of (German)Twitter Users
 
 ## Setup dev environment
 
-Install miniconda and run:
+Install [pipenv](https://pipenv.readthedocs.io/en/latest/) and run:
 
 ```
-conda env create -f environment.yml
+pipenv install
 ```
 
-It might be necessary to adapt the environment.yml file (delete prefix and OS-specific version information)
+Run
+
+```
+pipenv shell
+```
+
+to start virtual env.
