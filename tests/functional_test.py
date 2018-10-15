@@ -15,4 +15,6 @@ class FirstUseTest(unittest.TestCase):
         # Program returns number of seeds
         # Program tests connection to database (MySQL or BigQuery?)
 
-    # TODO: create Hans Bredow SparseTwitter App and OAuth some users
+        pass
+
+# TODO: create Hans Bredow SparseTwitter App and OAuth some users
