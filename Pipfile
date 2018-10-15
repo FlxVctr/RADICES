@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-certifi = "==2018.8.24"
+certifi = "*"
 pandas = "*"
 
 [dev-packages]
