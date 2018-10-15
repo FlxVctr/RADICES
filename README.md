@@ -7,7 +7,7 @@ Project to create a sparsified sample network of (German)Twitter Users
 Install [pipenv](https://pipenv.readthedocs.io/en/latest/) and run:
 
 ```
-pipenv install
+pipenv install --dev
 ```
 
 Run
@@ -16,4 +16,4 @@ Run
 pipenv shell
 ```
 
-to start virtual env.
+to start shell in virtual env.
