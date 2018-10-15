@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 certifi = "==2018.8.24"
+pandas = "*"
 
 [dev-packages]
 
