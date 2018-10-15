@@ -19,4 +19,5 @@ dependencies:
   - wheel=0.32.1=py37_0
   - xz=5.2.4=h1de35cc_4
   - zlib=1.2.11=hf3cbc9b_2
+prefix: /PATH/sparsetwitter  # change this
 
