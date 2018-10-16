@@ -1,8 +1,9 @@
 # functional test for network collector
-from start import FileImport
+from setup import FileImport
 import unittest
 from json import JSONDecodeError
 from pandas.errors import EmptyDataError
+from configreader import Config
 
 
 class FirstUseTest(unittest.TestCase):
@@ -33,10 +34,16 @@ class FirstUseTest(unittest.TestCase):
             print("Test OK - no planned errors raised")
         # TODO: Check DataType of ID column of seeds.csv
 
-        # There is no database. Do you wish to create a new SQlite database?
-            # True false, Name of # db
-
         # There is a config with result-database details or error
+            # Filename, later IP adress, user name, password, etc., SQLITE oder SQL?
+        try:
+            with self.assertRaises(FileNotFoundError):
+                Config()
+            # There is no database. Do you wish to create a new SQlite database?
+                # True false, Name of # db
+
+
+
         # Program returns number of available keys and tests whether they can
         # connect
         # Program returns number of seeds
