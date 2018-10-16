@@ -11,13 +11,13 @@ class FirstUseTest(unittest.TestCase):
         # user starts program with `start.py`
         #  response = str(check_output('python start.py', stderr=STDOUT, shell=True), encoding="ascii")
 
-        self.assertRaises(FileNotFoundError, start.function_for_testing())
-
         # There is a key file (json) or error
-        self.assertIn('keys.json not found', response)
+        with self.assertRaises(FileNotFoundError):
+            start.function_for_testing()
 
-        # key file may not be empty
-        self.assertIn('key file empty', response)
+        # key file must contain they dictionary keys "consumer_key" and "consumer_secret"
+        #with self.assertRaises(KeyError):
+        #    start.function_for_testing()
 
         # There is a seed file (csv with Twitter IDs) or error
         self.assertIn('seed file not found', response)
