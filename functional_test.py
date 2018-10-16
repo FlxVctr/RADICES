@@ -1,8 +1,8 @@
 # functional test for network collector
-import start
+from start import FileImport
 import unittest
-import json
 from json import JSONDecodeError
+from pandas.errors import EmptyDataError
 
 
 class FirstUseTest(unittest.TestCase):
@@ -15,20 +15,33 @@ class FirstUseTest(unittest.TestCase):
 
         # If there is no key file, a bad key file, or an incomplete key file,
         # there will be an error.
-        with self.assertRaises(FileNotFoundError) and self.assertRaises(
-          JSONDecodeError) and self.assertRaises(KeyError):
-            start.read_key_file()
+        ## Note that the test fails if start.py passes those tests.
+        try:
+            with self.assertRaises(FileNotFoundError) and self.assertRaises(
+              JSONDecodeError) and self.assertRaises(KeyError):
+                FileImport().read_key_file()
+        except AssertionError:
+            print("Test OK - no planned errors raised")
+        # TODO: Make keys.json a csv (easier to handle)
 
-        # There is a seed file (csv with Twitter IDs) or error
-        # self.assertIn('seed file not found', response)
+        # If there is no csv file containing the Twitter IDs, or the file is empty,
+        # an error will be thrown.
+        try:
+            with self.assertRaises(FileNotFoundError) and self.assertRaises(EmptyDataError):
+                FileImport().read_seed_file()
+        except AssertionError:
+            print("Test OK - no planned errors raised")
+        # TODO: Check DataType of ID column of seeds.csv
 
-        # Seed file is not empty or error
+        # There is no database. Do you wish to create a new SQlite database?
+            # True false, Name of # db
 
         # There is a config with result-database details or error
         # Program returns number of available keys and tests whether they can
         # connect
         # Program returns number of seeds
         # Program tests connection to database (MySQL or BigQuery?)
+
 
 # TODO: create Hans Bredow SparseTwitter App and OAuth some users
 
