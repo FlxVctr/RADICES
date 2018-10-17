@@ -26,6 +26,10 @@ class FileImportTest(unittest.TestCase):
             print("Test OK - no planned errors raised")
     # TODO: Check DataType of ID column of seeds.csv
 
+    def test_read_token_file_raises_error_if_no_file(self):
+        with self.assertRaises(FileNotFoundError):
+            FileImport().read_token_file(filename='no_file.csv')
+
 
 class DatabaseHandlerTest(unittest.TestCase):
 
