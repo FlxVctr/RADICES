@@ -1,6 +1,7 @@
 import json
 from json import JSONDecodeError
 import pandas as pd
+import yaml
 
 
 class FileImport():
@@ -35,7 +36,7 @@ class FileImport():
                                      self.key_file["consumer_token"])) + '''. Both
                                      must be of type str. ''')
 
-        return self.key_file["consumer_token"], self.key_file["consumer_secret"]
+        return (self.key_file["consumer_token"], self.key_file["consumer_secret"])
 
     def read_seed_file(self):
         try:
@@ -57,3 +58,24 @@ class FileImport():
             pandas.DataFrame: With columns `token` and `secret`, one line per user
         """
         return pd.read_csv(filename)
+
+
+class Config():
+
+    config_path = "config.yml"
+    config_template = "config_template.py"
+
+    def __init__(self):
+        try:
+            with open(self.config_path, 'r') as f:
+                self.config = yaml.load(f)
+        except FileNotFoundError:
+            raise FileNotFoundError('''Could not find "config.yml".\n
+            Please run "python3 make_config.py" or provide a config.yml''')
+
+        self.mysql_config = self.config["mysql"]
+        self.dbtype = self.mysql_config["dbtype"]
+        self.dbhost = self.mysql_config["host"]
+        self.dbuser = self.mysql_config["user"]
+        self.dbpwd = self.mysql_config["passwd"]
+        self.dbname = self.mysql_config["dbname"]

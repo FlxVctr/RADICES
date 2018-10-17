@@ -1,7 +1,7 @@
 from make_db import DataBaseHandler
 import unittest
 import os
-from configreader import Config
+from setup import Config
 from setup import FileImport
 from json import JSONDecodeError
 import json
@@ -65,6 +65,13 @@ class FileImportTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             FileImport().read_app_key_file()
 
+        # Return is a tuple of strings
+        if os.path.isfile("keys_bak.json"):
+            os.replace("keys_bak.json", "keys.json")
+        self.assertIsInstance(FileImport().read_app_key_file(), tuple)
+        self.assertIsInstance(FileImport().read_app_key_file()[0], str)
+        self.assertIsInstance(FileImport().read_app_key_file()[1], str)
+
     def test_read_seed_file(self):
         # File is missing
         with self.assertRaises(FileNotFoundError):
@@ -92,9 +99,10 @@ class FileImportTest(unittest.TestCase):
 
         self.assertTrue(token_dtype)
         self.assertTrue(secret_dtype)
-        
+
         self.assertIsInstance(tokens['token'][0], str)
         self.assertIsInstance(tokens['secret'][0], str)
+
 
 class DatabaseHandlerTest(unittest.TestCase):
 
