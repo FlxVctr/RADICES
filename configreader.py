@@ -1,5 +1,4 @@
 import yaml
-import os
 
 
 class Config():
@@ -21,5 +20,3 @@ class Config():
         self.dbuser = self.mysql_config["user"]
         self.dbpwd = self.mysql_config["passwd"]
         self.dbname = self.mysql_config["dbname"]
-
-        

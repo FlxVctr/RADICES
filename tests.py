@@ -4,26 +4,73 @@ import os
 from configreader import Config
 from setup import FileImport
 from json import JSONDecodeError
+import json
 from pandas.errors import EmptyDataError
 
 
 class FileImportTest(unittest.TestCase):
 
+    def setUp(self):
+        if os.path.isfile("keys.json"):
+            os.rename("keys.json", "keys_bak.json")
+        if os.path.isfile("seeds.csv"):
+            os.rename("seeds.csv", "seeds_bak.csv")
+
+    def tearDown(self):
+        if os.path.isfile("keys_bak.json"):
+            os.replace("keys_bak.json", "keys.json")
+        if os.path.isfile("seeds_bak.csv"):
+            os.replace("seeds_bak.csv", "seeds.csv")
+
     # Note that the test fails if start.py passes those tests.
-    def test_read_key_file(self):
-        try:
-            with self.assertRaises(FileNotFoundError) and self.assertRaises(
-              JSONDecodeError) and self.assertRaises(KeyError):
-                FileImport().read_key_file()
-        except AssertionError:
-            print("Test OK - no planned errors raised")
+    def test_read_app_key_file(self):
+        # File not found
+        with self.assertRaises(FileNotFoundError):
+            FileImport().read_app_key_file()
+
+        # File empty
+        open("keys.json", 'a').close()
+        with self.assertRaises(JSONDecodeError):
+            FileImport().read_app_key_file()
+
+        # File lacks required keys
+        key_dict = {
+            "consumer_toke": "abc",
+            "consumer_secret": "xxx"
+        }
+        with open("keys.json", "w") as f:
+            json.dump(key_dict, f)
+        with self.assertRaises(KeyError):
+                FileImport().read_app_key_file()
+        key_dict = {
+            "consumer_token": "abc",
+            "consumer_secre": "xxx"
+        }
+        with open("keys.json", "w") as f:
+            json.dump(key_dict, f)
+        with self.assertRaises(KeyError):
+                FileImport().read_app_key_file()
+
+        # Wrong data types
+        key_dict = {
+            "consumer_token": 2,
+            "consumer_secret": [1234]
+        }
+        with open("keys.json", "w") as f:
+            json.dump(key_dict, f)
+        with self.assertRaises(TypeError):
+            FileImport().read_app_key_file()
 
     def test_read_seed_file(self):
-        try:
-            with self.assertRaises(FileNotFoundError) and self.assertRaises(EmptyDataError):
-                    FileImport().read_seed_file()
-        except AssertionError:
-            print("Test OK - no planned errors raised")
+        # File is missing
+        with self.assertRaises(FileNotFoundError):
+            FileImport().read_seed_file()
+
+        # File is empty
+        open("seeds.csv", 'a').close()
+        with self.assertRaises(EmptyDataError):
+            FileImport().read_seed_file()
+
     # TODO: Check DataType of ID column of seeds.csv
 
 
@@ -57,6 +104,12 @@ class ConfigTest(unittest.TestCase):
             }
         }
         self.assertEqual(Config().config, config_dict)
+
+
+class CollectorTest(unittest.TestCase):
+
+    def test_collector_can_connect(self):
+        Connection.verify_credentials()
 
 
 if __name__ == "__main__":

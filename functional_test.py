@@ -10,8 +10,8 @@ class FirstUseTest(unittest.TestCase):
     def test_starts_and_checks_for_necessary_input(self):
         # user starts program with `start.py`
         try:
-            response = str(check_output('python start.py', stderr=STDOUT, shell=True),
-                           encoding="ascii")
+            response = str(check_output('python start.py', stderr=STDOUT,
+                           shell=True), encoding="ascii")
 
         # program looks for an existing twitter key file and imports the keys
         # program looks for an existing seeds file and imports the seeds
