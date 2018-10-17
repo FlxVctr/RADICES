@@ -3,4 +3,4 @@ Pipfile.lock
 .idea/
 .python-version
 __pycache__/
-keys.json
+keys.*
