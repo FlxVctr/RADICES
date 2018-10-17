@@ -16,7 +16,7 @@ class FirstUseTest(unittest.TestCase):
 
         # If there is no key file, a bad key file, or an incomplete key file,
         # there will be an error.
-        ## Note that the test fails if start.py passes those tests.
+        # Note that the test fails if start.py passes those tests.
         try:
             with self.assertRaises(FileNotFoundError) and self.assertRaises(
               JSONDecodeError) and self.assertRaises(KeyError):
@@ -41,8 +41,6 @@ class FirstUseTest(unittest.TestCase):
                 Config()
             # There is no database. Do you wish to create a new SQlite database?
                 # True false, Name of # db
-
-
 
         # Program returns number of available keys and tests whether they can
         # connect
