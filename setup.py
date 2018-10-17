@@ -11,9 +11,9 @@ class FileImport():
         :return: Either two single values or two lists of consumer tokens and secrets for the
         Twitter API
         """
-        
+
         # TODO: change return to dictionary
-        
+
         try:
             with open("keys.json", "r") as f:
                 self.key_file = json.load(f)
@@ -51,4 +51,4 @@ class FileImport():
         Returns:
             pandas.DataFrame: With columns `token` and `secret`, one line per user
         """
-        token_df = pd.read_csv(filename)
+        return pd.read_csv(filename)

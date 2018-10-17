@@ -7,6 +7,8 @@ from json import JSONDecodeError
 from pandas.errors import EmptyDataError
 from collector import Connection
 import tweepy
+import pandas as pd
+from pandas.api.types import is_string_dtype
 
 
 class FileImportTest(unittest.TestCase):
@@ -32,6 +34,20 @@ class FileImportTest(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             FileImport().read_token_file(filename='no_file.csv')
 
+    def test_outputs_df_with_two_string_columns(self):
+
+        tokens = FileImport().read_token_file()
+
+        self.assertIsInstance(tokens, pd.DataFrame)
+
+        token_dtype = is_string_dtype(tokens['token'])
+        secret_dtype = is_string_dtype(tokens['secret'])
+
+        self.assertTrue(token_dtype)
+        self.assertTrue(secret_dtype)
+        
+        self.assertIsInstance(tokens['token'][0], str)
+        self.assertIsInstance(tokens['secret'][0], str)
 
 class DatabaseHandlerTest(unittest.TestCase):
 
