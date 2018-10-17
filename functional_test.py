@@ -10,14 +10,11 @@ class FirstUseTest(unittest.TestCase):
     def test_starts_and_checks_for_necessary_input(self):
         # user starts program with `start.py`
         try:
-            response = str(check_output('python start.py', stderr=STDOUT,
-                           shell=True), encoding="ascii")
+            response = str(check_output('python start.py', stderr=STDOUT, shell=True),
+                           encoding="ascii")
 
-        # If there is no key file, a bad key file, or an incomplete key file,
-        # there will be an error.
-
-        # If there is no csv file containing the Twitter IDs, or the file is empty,
-        # an error will be thrown.
+        # program looks for an existing twitter key file and imports the keys
+        # program looks for an existing seeds file and imports the seeds
 
         # There is a config with result-database details or error
         # (Filename, later IP adress, user name, password, etc., SQLITE oder SQL?)

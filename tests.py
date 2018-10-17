@@ -55,11 +55,11 @@ class ConfigTest(unittest.TestCase):
     def test_config_file_gets_read_incl_all_fields(self):
         config_dict = {
          'mysql': {
-            'dbtype': None,
+            'dbtype': "sqlite",
             'host': None,
             'user': None,
             'passwd': None,
-            'db_name': 'test_db'
+            'dbname': 'test_db'
             }
         }
         self.assertEqual(Config().config, config_dict)
