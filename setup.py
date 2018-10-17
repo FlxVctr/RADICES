@@ -46,3 +46,14 @@ class FileImport():
         except pd.errors.EmptyDataError as e:
             raise e
         return self.seeds
+
+    def read_token_file(self, filename="tokens.csv"):
+        """Reads file with tokens (csv)
+
+        Args:
+            filename (str, optional): Defaults to "tokens.csv"
+
+        Returns:
+            pandas.DataFrame: With columns `token` and `secret`, one line per user
+        """
+        return pd.read_csv(filename)

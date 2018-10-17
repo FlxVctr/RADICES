@@ -6,6 +6,10 @@ from setup import FileImport
 from json import JSONDecodeError
 import json
 from pandas.errors import EmptyDataError
+from collector import Connection
+import tweepy
+import pandas as pd
+from pandas.api.types import is_string_dtype
 
 
 class FileImportTest(unittest.TestCase):
@@ -73,6 +77,24 @@ class FileImportTest(unittest.TestCase):
 
     # TODO: Check DataType of ID column of seeds.csv
 
+    def test_read_token_file_raises_error_if_no_file(self):
+        with self.assertRaises(FileNotFoundError):
+            FileImport().read_token_file(filename='no_file.csv')
+
+    def test_outputs_df_with_two_string_columns(self):
+
+        tokens = FileImport().read_token_file()
+
+        self.assertIsInstance(tokens, pd.DataFrame)
+
+        token_dtype = is_string_dtype(tokens['token'])
+        secret_dtype = is_string_dtype(tokens['secret'])
+
+        self.assertTrue(token_dtype)
+        self.assertTrue(secret_dtype)
+        
+        self.assertIsInstance(tokens['token'][0], str)
+        self.assertIsInstance(tokens['secret'][0], str)
 
 class DatabaseHandlerTest(unittest.TestCase):
 
@@ -108,8 +130,11 @@ class ConfigTest(unittest.TestCase):
 
 class CollectorTest(unittest.TestCase):
 
-    def test_collector_can_connect(self):
-        Connection.verify_credentials()
+    def test_collector_raises_exception_if_credentials_are_wrong(self):
+        with self.assertRaises(tweepy.TweepError) as te:
+            Connection.verify_credentials()
+
+        self.assertIn('401', str(te.exception.response))
 
 
 if __name__ == "__main__":
