@@ -1,0 +1,6 @@
+mysql:
+    dbtype: sqlite
+    host:
+    user:
+    passwd:
+    dbname: test_db
