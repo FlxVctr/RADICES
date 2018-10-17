@@ -5,18 +5,21 @@ import yaml
 
 
 class FileImport():
-    def read_app_key_file(self):
-        """
-        Reads "keys.json" from the main directory and returns the consumer tokens and secrets for
-        the Twitter API
-        :return: Either two single values or two lists of consumer tokens and secrets for the
-        Twitter API
+    def read_app_key_file(self, filename: str = "keys.json") -> tuple:
+        """Reads file with consumer key and consumer secret (JSON)
+
+        Args:
+            filename (str, optional): Defaults to "keys.json"
+
+        Returns:
+            Tuple with two strings: (1) being the twitter consumer token and (2) being the
+            twitter consumer secret
         """
 
         # TODO: change return to dictionary
 
         try:
-            with open("keys.json", "r") as f:
+            with open(filename, "r") as f:
                 self.key_file = json.load(f)
         except FileNotFoundError:
             raise FileNotFoundError('"keys.json" could not be found')
@@ -38,7 +41,15 @@ class FileImport():
 
         return (self.key_file["consumer_token"], self.key_file["consumer_secret"])
 
-    def read_seed_file(self):
+    def read_seed_file(self, filename: str = "seeds.csv") -> pd.DataFrame:
+        """Reads file with consumer key and consumer secret (JSON)
+
+        Args:
+            filename (str, optional): Defaults to "seeds.csv"
+
+        Returns:
+            A single column pandas DataFrame with one Twitter ID (seed) each row.
+        """
         try:
             with open("seeds.csv", "r") as f:
                 self.seeds = pd.read_csv(f)
@@ -46,6 +57,7 @@ class FileImport():
             raise FileNotFoundError('"seeds.csv" could not be found')
         except pd.errors.EmptyDataError as e:
             raise e
+        print(type(self.seeds))
         return self.seeds
 
     def read_token_file(self, filename="tokens.csv"):
