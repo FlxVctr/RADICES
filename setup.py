@@ -40,3 +40,4 @@ class FileImport():
             raise FileNotFoundError('"seeds.csv" could not be found')
         except pd.errors.EmptyDataError as e:
             raise e
+        return self.seeds
