@@ -45,9 +45,10 @@ class FileImportTest(unittest.TestCase):
 
         self.assertTrue(token_dtype)
         self.assertTrue(secret_dtype)
-        
+
         self.assertIsInstance(tokens['token'][0], str)
         self.assertIsInstance(tokens['secret'][0], str)
+
 
 class DatabaseHandlerTest(unittest.TestCase):
 
@@ -85,9 +86,12 @@ class CollectorTest(unittest.TestCase):
 
     def test_collector_raises_exception_if_credentials_are_wrong(self):
         with self.assertRaises(tweepy.TweepError) as te:
-            Connection.verify_credentials()
+            connection = Connection(token_file_name="wrong_tokens.csv")
+            connection.api.verify_credentials()
 
-        self.assertIn('401', str(te.exception.response))
+        exception = te.exception
+
+        self.assertIn('401', str(exception.response))
 
 
 if __name__ == "__main__":
