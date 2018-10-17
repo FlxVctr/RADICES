@@ -2,6 +2,7 @@ from make_db import DataBaseHandler
 import unittest
 import os
 from configreader import Config
+from collector import Connection
 
 
 class DatabaseHandlerTest(unittest.TestCase):
@@ -34,6 +35,12 @@ class ConfigTest(unittest.TestCase):
             }
         }
         self.assertEqual(Config().config, config_dict)
+
+
+class CollectorTest(unittest.TestCase):
+
+    def test_collector_can_connect(self):
+        Connection.verify_credentials()
 
 
 if __name__ == "__main__":
