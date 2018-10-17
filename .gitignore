@@ -1,8 +1,6 @@
 environment.yml
 Pipfile.lock
-<<<<<<< HEAD
 .idea/
-=======
 .python-version
->>>>>>> 6d85087e275c8989851c725dc1f6464b3ad8795a
 __pycache__/
+keys.json
