@@ -11,6 +11,9 @@ class FileImport():
         :return: Either two single values or two lists of consumer tokens and secrets for the
         Twitter API
         """
+        
+        # TODO: change return to dictionary
+        
         try:
             with open("keys.json", "r") as f:
                 self.key_file = json.load(f)
