@@ -5,6 +5,8 @@ from configreader import Config
 from setup import FileImport
 from json import JSONDecodeError
 from pandas.errors import EmptyDataError
+from collector import Connection
+import tweepy
 
 
 class FileImportTest(unittest.TestCase):
@@ -65,8 +67,11 @@ class ConfigTest(unittest.TestCase):
 
 class CollectorTest(unittest.TestCase):
 
-    def test_collector_can_connect(self):
-        Connection.verify_credentials()
+    def test_collector_raises_exception_if_credentials_are_wrong(self):
+        with self.assertRaises(tweepy.TweepError) as te:
+            Connection.verify_credentials()
+
+        self.assertIn('401', str(te.exception.response))
 
 
 if __name__ == "__main__":
