@@ -124,3 +124,28 @@ class Collector(object):
             result = result + page
 
         return result
+
+    def get_details(self, friends):
+        """Collects details from friends of an account.
+
+        Args:
+            friends (list of int): list of Twitter user ids
+
+        Returns:
+            list of Tweepy user objects
+        """
+
+        i = 0
+
+        user_details = []
+
+        while i < len(friends):
+
+            if i + 100 <= len(friends):
+                j = i + 100
+            else:
+                j = len(friends)
+            user_details += self.connection.api.lookup_users(user_ids=friends[i:j])
+            i += 100
+
+        return user_details

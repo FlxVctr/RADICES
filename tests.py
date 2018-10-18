@@ -138,7 +138,7 @@ class ConfigTest(unittest.TestCase):
 
 
 class CollectorTest(unittest.TestCase):
-    
+
     @classmethod
     def setUpClass(self):
         self.connection = Connection()
@@ -176,6 +176,17 @@ class CollectorTest(unittest.TestCase):
         user_friends = collector.get_friend_list()
 
         self.assertGreater(len(user_friends), 5000)
+
+    def test_collector_can_get_details_from_friend_list(self):
+
+        collector = Collector(self.connection, seed=36476777)
+
+        friends = collector.get_friend_list()
+
+        friends_details = collector.get_details(friends)
+
+        self.assertGreaterEqual(len(friends_details), 100)
+
 
 
 if __name__ == "__main__":
