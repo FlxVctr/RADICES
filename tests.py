@@ -146,14 +146,22 @@ class CollectorTest(unittest.TestCase):
         exception = te.exception
 
         self.assertIn('401', str(exception.response))
-        
+
     def test_collector_can_connect_with_correct_credentials(self):
-        
+
         try:
             connection = Connection()
             connection.api.verify_credentials()
         except tweepy.TweepError:
             self.fail("Could not verify API credentials.")
+
+    def test_collector_gets_remaining_API_calls(self):
+        connection = Connection()
+        remaining_calls = connection.remaining_calls()
+        reset_time = connection.reset_time()
+
+        self.assertIsNotNone(remaining_calls)
+        self.assertIsNotNone(reset_time)
 
 
 if __name__ == "__main__":
