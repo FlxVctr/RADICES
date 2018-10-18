@@ -88,3 +88,39 @@ class Connection(object):
         print('reset_time = ', reset_time)
 
         return reset_time
+
+
+class Collector(object):
+    """Does the collecting of friends.
+
+    Attributes:
+        connection (Connection object):
+            Connection object with actually active credentials
+        seed (int): Twitter id of seed user
+
+    """
+
+    def __init__(self, connection, seed):
+        self.seed = seed
+        self.connection = connection
+
+    def get_friend_list(self, twitter_id=None):
+        """Gets the friend list of an account.
+
+        Args:
+            twitter_id (int): Twitter Id of account,
+                if None defaults to seed account of Collector object.
+
+        Returns:
+            list with friends of user.
+        """
+
+        if twitter_id is None:
+            twitter_id = self.seed
+
+        result = []
+
+        for page in tweepy.Cursor(self.connection.api.friends_ids, user_id=twitter_id).pages():
+            result = result + page
+
+        return result
