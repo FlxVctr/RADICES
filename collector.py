@@ -11,7 +11,7 @@ class Connection(object):
     """
 
     def __init__(self, token_file_name="tokens.csv"):
-        self.credentials = FileImport().read_key_file()
+        self.credentials = FileImport().read_app_key_file()
         self.tokens = FileImport().read_token_file(token_file_name)
 
         token = self.tokens['token'][0]
