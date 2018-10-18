@@ -11,13 +11,16 @@ class Connection(object):
     """
 
     def __init__(self, token_file_name="tokens.csv"):
+        
         self.credentials = FileImport().read_app_key_file()
+
         self.tokens = FileImport().read_token_file(token_file_name)
+
+        ctoken = self.credentials[0]
+        csecret = self.credentials[1]
 
         token = self.tokens['token'][0]
         secret = self.tokens['secret'][0]
-        ctoken = self.credentials[0][0]
-        csecret = self.credentials[1][0]
 
         self.auth = tweepy.OAuthHandler(ctoken, csecret)
         self.auth.set_access_token(token, secret)

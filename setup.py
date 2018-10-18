@@ -24,8 +24,8 @@ class FileImport():
         except FileNotFoundError:
             raise FileNotFoundError('"keys.json" could not be found')
         except JSONDecodeError as e:
-            print('''Bad JSON file. Please check that "keys.json" is formatted
-             correctly and that it is not empty''')
+            print("Bad JSON file. Please check that 'keys.json' is formatted\
+                  correctly and that it is not empty")
             raise e
         if "consumer_token" not in self.key_file or "consumer_secret" not in self.key_file:
             raise KeyError('''"keys.json" does not contain the dictionary keys
