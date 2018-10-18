@@ -7,6 +7,7 @@ from json import JSONDecodeError
 import json
 from pandas.errors import EmptyDataError
 from collector import Connection
+from collector import Collector
 import tweepy
 import pandas as pd
 from pandas.api.types import is_string_dtype
@@ -137,6 +138,10 @@ class ConfigTest(unittest.TestCase):
 
 
 class CollectorTest(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(self):
+        self.connection = Connection()
 
     def test_collector_raises_exception_if_credentials_are_wrong(self):
         with self.assertRaises(tweepy.TweepError) as te:
@@ -150,21 +155,27 @@ class CollectorTest(unittest.TestCase):
     def test_collector_can_connect_with_correct_credentials(self):
 
         try:
-            connection = Connection()
-            connection.api.verify_credentials()
+            self.connection.api.verify_credentials()
         except tweepy.TweepError:
             self.fail("Could not verify API credentials.")
 
     def test_collector_gets_remaining_API_calls(self):
-        connection = Connection()
-        remaining_calls = connection.remaining_calls()
-        reset_time = connection.reset_time()
+        remaining_calls = self.connection.remaining_calls()
+        reset_time = self.connection.reset_time()
 
         self.assertGreaterEqual(remaining_calls, 0)
         self.assertLessEqual(remaining_calls, 15)
 
         self.assertGreaterEqual(reset_time, 0)
         self.assertLessEqual(reset_time, 900)
+
+    def test_collector_gets_all_friends_of_power_user(self):
+
+        collector = Collector(self.connection, seed=2343198944)
+
+        user_friends = collector.get_friend_list()
+
+        self.assertGreater(len(user_friends), 5000)
 
 
 if __name__ == "__main__":
