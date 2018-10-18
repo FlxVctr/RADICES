@@ -160,8 +160,11 @@ class CollectorTest(unittest.TestCase):
         remaining_calls = connection.remaining_calls()
         reset_time = connection.reset_time()
 
-        self.assertIsNotNone(remaining_calls)
-        self.assertIsNotNone(reset_time)
+        self.assertGreaterEqual(remaining_calls, 0)
+        self.assertLessEqual(remaining_calls, 15)
+
+        self.assertGreaterEqual(reset_time, 0)
+        self.assertLessEqual(reset_time, 900)
 
 
 if __name__ == "__main__":
