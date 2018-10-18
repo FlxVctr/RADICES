@@ -24,6 +24,8 @@ class FileImport():
         except FileNotFoundError:
             raise FileNotFoundError('"keys.json" could not be found')
         except JSONDecodeError as e:
+            print("Bad JSON file. Please check that 'keys.json' is formatted\
+                  correctly and that it is not empty")
             raise e
         if "consumer_token" not in self.key_file or "consumer_secret" not in self.key_file:
             raise KeyError('''"keys.json" does not contain the dictionary keys
@@ -55,6 +57,7 @@ class FileImport():
             raise FileNotFoundError('"seeds.csv" could not be found')
         except pd.errors.EmptyDataError as e:
             raise e
+        print(type(self.seeds))
         return self.seeds
 
     def read_token_file(self, filename="tokens.csv"):
@@ -71,55 +74,20 @@ class FileImport():
 
 class Config():
 
-    def __init__(self, config_path="config.yml"):
-        """Initiates configuration using the supplied configuration yaml file.
+    config_path = "config.yml"
+    config_template = "config_template.py"
 
-        Args:
-            config_path (str, optional): Path to configuration yaml file. Defaults to "keys.json"
-
-        Returns:
-            Nothing
-        """
+    def __init__(self):
         try:
-            with open(config_path, 'r') as f:
+            with open(self.config_path, 'r') as f:
                 self.config = yaml.load(f)
         except FileNotFoundError:
             raise FileNotFoundError('''Could not find "config.yml".\n
             Please run "python3 make_config.py" or provide a config.yml''')
 
         self.mysql_config = self.config["mysql"]
-
-        if self.mysql_config["dbtype"] is None:
-            print('''Parameter dbtype not set in the "config.yml". Will create
-                             an sqlite database.''')
-            self.dbtype = "sqlite"
-        else:
-            self.dbtype = self.mysql_config["dbtype"]
-
-        if self.dbtype == "SQL":
-            try:
-                self.dbhost = str(self.mysql_config["host"])
-                self.dbuser = str(self.mysql_config["user"])
-                self.dbpwd = str(self.mysql_config["passwd"])
-                if self.dbhost == '':
-                    raise ValueError("dbhost parameter is empty")
-                if self.dbuser == '':
-                    raise ValueError("dbuser parameter is empty")
-                if self.dbpwd == '':
-                    raise ValueError("passwd parameter is empty")
-            except KeyError as e:
-                raise e
-        elif self.dbtype == "sqlite":
-            self.dbhost = None
-            self.dbuser = None
-            self.dbpwd = None
-        else:
-            raise ValueError('''dbtype parameter is neither "sqlite" nor
-                                      "SQL". Please adjust the "config.yml" ''')
-
-        if self.mysql_config["dbname"] is not None:
-            self.dbname = self.mysql_config["dbname"]
-        else:
-            print('''Parameter "dbname" is missing. New database will have the name
-                  "new_relations_database".''')
-            self.dbname = "new_relations_database"
+        self.dbtype = self.mysql_config["dbtype"]
+        self.dbhost = self.mysql_config["host"]
+        self.dbuser = self.mysql_config["user"]
+        self.dbpwd = self.mysql_config["passwd"]
+        self.dbname = self.mysql_config["dbname"]

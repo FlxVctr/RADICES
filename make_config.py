@@ -5,15 +5,6 @@ import os
 
 
 def make_config():
-    """Creates a new config.yml from a template when the script is run from shell
-    directly.
-
-    Args:
-        None
-    Returns:
-        Nothing
-    """
-
     copyfile('config_template.yml', 'config.yml')
 
 

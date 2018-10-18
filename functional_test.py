@@ -19,6 +19,8 @@ class FirstUseTest(unittest.TestCase):
         # There is a config with result-database details or error
         # (Filename, later IP adress, user name, password, etc., SQLITE oder SQL?)
 
+            with self.assertRaises(FileNotFoundError):
+                Config()
             # There is no database. Do you wish to create a new SQlite database?
             # True false, Name of # db
 
