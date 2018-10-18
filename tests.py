@@ -7,7 +7,7 @@ import yaml
 import shutil
 from setup import FileImport, Config
 from json import JSONDecodeError
-from make_db import DataBaseHandler
+from database_handler import DataBaseHandler
 from pandas.errors import EmptyDataError
 from collector import Connection
 from pandas.api.types import is_string_dtype
@@ -118,19 +118,33 @@ class FileImportTest(unittest.TestCase):
 
 class DatabaseHandlerTest(unittest.TestCase):
 
-    db_name = "NiceDB"
+    DBH = DataBaseHandler()
+    cfg = Config()
+
+
+    def test_DBH_creates_new_database_if_none_exists(self):
+        input("wait")
+        self.assertTrue(os.path.exists(self.cfg.dbname + ".db"))
+
+    def test_DBH_connects_to_old_database_if_name_exists(self):
+        pass
+
+    def test_asks_whether_to_overwrite_existing_database_with_new_one(self):
+        pass
 
     def tearDown(self):
-        if os.path.isfile(self.db_name + ".db"):
-            os.remove(self.db_name + ".db")
+        if os.path.isfile(self.cfg.dbname + ".db"):
+            os.remove(self.cfg.dbname + ".db")
 
-    def test_database_handler_creates_database_from_given_name(self, db_name=db_name):
-        dbh = DataBaseHandler()
-        dbh.new_db(db_name=db_name)
-        try:
-            self.assertTrue(os.path.isfile(self.db_name + ".db"))
-        except AssertionError:
-            print("Database was not created!")
+    # TODO: test what happens if lite.connect in databasehandler fails.
+
+#    def test_database_handler_creates_database_from_given_name(self, db_name=db_name):
+#        dbh = DataBaseHandler()
+#        dbh.new_db(db_name=db_name)
+#        try:
+#            self.assertTrue(os.path.isfile(self.db_name + ".db"))
+#        except AssertionError:
+#            print("Database was not created!")
 
 
 class ConfigTest(unittest.TestCase):
@@ -219,6 +233,8 @@ class ConfigTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Config()
 
+    def test_5_config_file_gets_read_correctly(self):
+
         if os.path.isfile("config_bak.yml"):
             shutil.copyfile("config_bak.yml", "config.yml")
 
@@ -245,9 +261,8 @@ class CollectorTest(unittest.TestCase):
         exception = te.exception
 
         self.assertIn('401', str(exception.response))
-        
+
     def test_collector_can_connect_with_correct_credentials(self):
-        
         try:
             connection = Connection()
             connection.api.verify_credentials()

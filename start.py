@@ -1,9 +1,10 @@
-from setup import FileImport as FI
-from configreader import Config
-from make_db import DataBaseHandler
+from setup import Config
+from database_handler import DataBaseHandler
+from collector import Connection
 
-ckeys = FI.read_app_key_file()
-seeds = FI.read_seed_file()
+tw_conn = Connection()
+print("Twitter Connection established successfully")
+
 DBH = DataBaseHandler()
 cfg = Config()
 
