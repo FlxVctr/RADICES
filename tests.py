@@ -188,6 +188,5 @@ class CollectorTest(unittest.TestCase):
         self.assertGreaterEqual(len(friends_details), 100)
 
 
-
 if __name__ == "__main__":
     unittest.main()
