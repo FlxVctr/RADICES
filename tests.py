@@ -11,6 +11,8 @@ from collector import Collector
 import tweepy
 import pandas as pd
 from pandas.api.types import is_string_dtype
+from twauth import OAuthorizer
+
 
 
 class FileImportTest(unittest.TestCase):
@@ -120,6 +122,18 @@ class DatabaseHandlerTest(unittest.TestCase):
             self.assertTrue(os.path.isfile(self.db_name + ".db"))
         except AssertionError:
             print("Database was not created!")
+
+
+class OAuthTest(unittest.TestCase):
+    def test_oauth_throws_error_when_request_token_not_get(self):
+        with self.assertRaises(tweepy.TweepError):
+            OAuthorizer()
+
+    def test_wrong_verifier_entered(self):
+        pass
+
+    def test_new_line_in_csv_after_verifying(self):
+        pass
 
 
 class ConfigTest(unittest.TestCase):
