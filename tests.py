@@ -14,7 +14,6 @@ from pandas.api.types import is_string_dtype
 from twauth import OAuthorizer
 
 
-
 class FileImportTest(unittest.TestCase):
 
     def setUp(self):
@@ -125,6 +124,18 @@ class DatabaseHandlerTest(unittest.TestCase):
 
 
 class OAuthTest(unittest.TestCase):
+    def setUp(self):
+        if os.path.isfile("keys.json"):
+            os.rename("keys.json", "keys_bak.json")
+        if os.path.isfile("empty_keys.json"):
+            os.rename("empty_keys.json", "keys.json")
+
+    def tearDown(self):
+        if os.path.isfile("keys.json"):
+            os.rename("keys.json", "empty_keys.json")
+        if os.path.isfile("keys_bak.json"):
+            os.replace("keys_bak.json", "keys.json")
+
     def test_oauth_throws_error_when_request_token_not_get(self):
         with self.assertRaises(tweepy.TweepError):
             OAuthorizer()

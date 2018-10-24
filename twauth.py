@@ -27,10 +27,10 @@ class OAuthorizer():
             print("Failed to get access token!")
             raise e
 
-        with open('tokens.csv', 'a') as f:
+        with open('tokens.csv', 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([auth.access_token, auth.access_token_secret])
         f.close()
 
 
-testi = OAuthorizer()
+# testi = OAuthorizer()
