@@ -17,15 +17,33 @@ class Connection(object):
 
         self.tokens = FileImport().read_token_file(token_file_name)
 
-        ctoken = self.credentials[0]
-        csecret = self.credentials[1]
+        self.ctoken = self.credentials[0]
+        self.csecret = self.credentials[1]
 
-        token = self.tokens['token'][0]
-        secret = self.tokens['secret'][0]
+        self.token_number = 0
 
-        self.auth = tweepy.OAuthHandler(ctoken, csecret)
-        self.auth.set_access_token(token, secret)
+        self.token = self.tokens['token'][0]
+        self.secret = self.tokens['secret'][0]
+
+        self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
+        self.auth.set_access_token(self.token, self.secret)
         # TODO: implement case if we have more than one token and secret
+
+        self.api = tweepy.API(self.auth)
+
+    def next_token(self):
+
+        if self.token_number < len(self.tokens):
+            self.token_number += 1
+            self.token = self.tokens['token'][self.token_number]
+            self.secret = self.tokens['secret'][self.token_number]
+        else:
+            self.token_number = 0
+            self.token = self.tokens['token'][self.token_number]
+            self.secret = self.tokens['secret'][self.token_number]
+
+        self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
+        self.auth.set_access_token(self.token, self.secret)
 
         self.api = tweepy.API(self.auth)
 

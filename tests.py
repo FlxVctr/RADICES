@@ -212,6 +212,23 @@ class CollectorTest(unittest.TestCase):
 
         self.assertGreaterEqual(len(friends_details), 100)
 
+    def test_next_token_works(self):
+
+        collector = Collector(self.connection, seed=36476777)
+
+        old_token = collector.connection.token
+        old_secret = collector.connection.secret
+
+        collector.connection.next_token()
+
+        self.assertNotEqual(old_token, collector.connection.token)
+        self.assertNotEqual(old_secret, collector.connection.secret)
+
+        try:
+            self.connection.api.verify_credentials()
+        except tweepy.TweepError:
+            self.fail("Could not verify API credentials after token change.")
+
 
 if __name__ == "__main__":
     unittest.main()
