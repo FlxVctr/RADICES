@@ -184,7 +184,7 @@ class CollectorTest(unittest.TestCase):
         except tweepy.TweepError:
             self.fail("Could not verify API credentials.")
 
-    def test_collector_gets_remaining_API_calls(self):
+    def test_collector_gets_remaining_API_calls_for_friendlist(self):
         remaining_calls = self.connection.remaining_calls()
         reset_time = self.connection.reset_time()
 
@@ -193,6 +193,22 @@ class CollectorTest(unittest.TestCase):
 
         self.assertGreaterEqual(reset_time, 0)
         self.assertLessEqual(reset_time, 900)
+
+        if reset_time == 900:
+            self.assertEqual(remaining_calls, 15)
+
+    def test_collector_gets_remaining_API_calls_for_user_lookup(self):
+        remaining_calls = self.connection.remaining_calls(endpoint='/users/lookup')
+        reset_time = self.connection.reset_time(endpoint='/users/lookup')
+
+        self.assertGreaterEqual(remaining_calls, 0)
+        self.assertLessEqual(remaining_calls, 900)
+
+        self.assertGreaterEqual(reset_time, 0)
+        self.assertLessEqual(reset_time, 900)
+
+        if reset_time == 900:
+            self.assertEqual(remaining_calls, 900)
 
     def test_collector_gets_all_friends_of_power_user(self):
 
