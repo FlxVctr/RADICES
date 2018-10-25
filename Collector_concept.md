@@ -83,6 +83,8 @@
 
 			- becomes new seed
 
+	- if no new seed can be found or already in new seeds, draw random seed from seed set
+
 - find out whether relationship is reciprocal
 
 	- store relationships in new edge list (make sure not to create duplicates)
