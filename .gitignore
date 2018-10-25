@@ -3,5 +3,5 @@ Pipfile.lock
 .idea/
 .python-version
 __pycache__/
-keys.*
-tokens.csv
+keys*.*
+tokens*.csv

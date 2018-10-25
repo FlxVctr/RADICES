@@ -33,4 +33,5 @@ class OAuthorizer():
         f.close()
 
 
-# testi = OAuthorizer()
+if __name__ == "__main__":
+    OAuthorizer()
