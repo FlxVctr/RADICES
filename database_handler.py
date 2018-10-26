@@ -1,4 +1,5 @@
 import sqlite3 as lite
+import pandas as pd
 from sqlite3 import Error
 from setup import Config
 
@@ -14,27 +15,38 @@ class DataBaseHandler():
             Nothing
         """
         # TODO: create database connection if dbtype = SQL
-        config = Config()
-        if config.dbtype == "sqlite":
+        self.config = Config()
+        if self.config.dbtype == "sqlite":
             try:
-                self.conn = lite.connect(config.dbname + ".db")
+                self.conn = lite.connect(self.config.dbname + ".db")
+                print("Connected to " + self.config.dbname + "!")
             except Error as e:
                 print(e)
-            finally:
-                self.conn.close()
 
-    def new_db(self, db_name):
-        """Creates a new sqlite database
+            # TODO: timestamp für friends table?
+            create_friends_table = """ CREATE TABLE IF NOT EXISTS friends (
+                                        id integer PRIMARY KEY,
+                                        user text NOT NULL,
+                                        friend text NOT NULL
+                                    ); """
+            try:
+                c = self.conn.cursor()
+                c.execute(create_friends_table)
+            except Error as e:
+                print(e)
+
+    def write_friends(self, seed, friendlist):
+        """Writes the database entries for one user and their friends in format user, friends.
+        Note that the database is appended by the new entries, and that no entries will be deleted
+        by this method.
 
         Args:
-            db_name (str, optional): Name for the database
-
+            seed (str): single Twitter ID
+            friendlist (list of str): Twitter IDs of seed's friends
         Returns:
             Nothing
         """
-        try:
-            conn = lite.connect(db_name + ".db")
-        except Error as e:
-            print(e)
-        finally:
-            conn.close()
+
+        friends_df = pd.DataFrame({'friend': friendlist})
+        friends_df['user'] = seed
+        friends_df.to_sql(name="friends", con=self.conn, if_exists="append", index=False)

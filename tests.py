@@ -14,7 +14,7 @@ from pandas.api.types import is_string_dtype
 from twauth import OAuthorizer
 import yaml
 import shutil
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 
 
 def setUpModule():
@@ -121,18 +121,42 @@ class FileImportTest(unittest.TestCase):
 
 class DatabaseHandlerTest(unittest.TestCase):
 
-    db_name = Config().dbname
-
     def tearDown(self):
         if os.path.isfile(self.db_name + ".db"):
             os.remove(self.db_name + ".db")
 
-    def test_setup_and_database_handler_creates_database_from_given_name(self, db_name=db_name):
+    def test_setup_and_database_handler_creates_database_from_given_name(self):
         DataBaseHandler()
+        db_name = Config().dbname
         try:
-            self.assertTrue(os.path.isfile(self.db_name + ".db"))
+            self.assertTrue(os.path.isfile(db_name + ".db"))
         except AssertionError:
             print("Database was not created!")
+
+    def test_dbh_creates_friends_table_with_correct_columns(self):
+        DataBaseHandler()
+        db_name = Config().dbname
+        cmd = "sqlite3 " + db_name + ".db .tables"
+        response = str(check_output(cmd, shell=True))
+        self.assertIn("friends", response)
+        response = str(check_output("sqlite3 " + db_name + ".db < check_db_cmd.txt", shell=True))
+        self.assertIn("id", response)
+        self.assertIn("friend", response)
+        self.assertIn("user", response)
+
+    def test_dbh_function_takes_input_and_writes_to_table(self):
+        seed = "83662933"
+        dbh = DataBaseHandler()
+        c = Collector(Connection(), seed)
+        friendlist = c.get_friend_list()
+        friendlist = list(map(int, friendlist))
+
+        dbh.write_friends(seed, friendlist)
+
+        s = "SELECT friend FROM friends WHERE user LIKE '" + seed + "'"
+        friendlist_in_database = pd.read_sql(sql=s, con=dbh.conn)["friend"].tolist()
+        friendlist_in_database = list(map(int, friendlist_in_database))
+        self.assertEqual(friendlist_in_database, friendlist)
 
 
 class OAuthTest(unittest.TestCase):

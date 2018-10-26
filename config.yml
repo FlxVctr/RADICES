@@ -5,8 +5,8 @@
 # etc.
 
 mysql:
-    dbtype: sqlite  # only supports 'sqlite' at the moment
+    dbtype: sqlite   # only supports 'sqlite' at the moment
     host:     # TBI, please leave empty
     user:     # TBI, please leave empty
     passwd:   # TBI, please leave empty
-    dbname: test_db  # provide a name for the database
+    dbname: test_db   # provide a name for the database

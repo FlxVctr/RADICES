@@ -5,3 +5,5 @@ Pipfile.lock
 __pycache__/
 keys*.*
 tokens*.csv
+*.db
+dbhtests.py
