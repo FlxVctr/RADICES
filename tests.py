@@ -167,13 +167,13 @@ class ConfigTest(unittest.TestCase):
 
     def test_2_make_config_works_as_expected(self):
         # Does make_config.py not make a new config.yml when entered "n"?
-        p = Popen("python make_config.py", stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        p = Popen("python make_config.py", stdout=PIPE, stderr=PIPE, stdin=PIPE, shell=True)
         p.communicate("n\n".encode())
         self.assertFalse(os.path.isfile("config.yml"))
 
         # Does make_config.py open a dialogue asking to open the new config.yaml?
         # (Just close the dialogue)
-        p = Popen("python make_config.py", stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        p = Popen("python make_config.py", stdout=PIPE, stderr=PIPE, stdin=PIPE, shell=True)
         p.communicate("y\n".encode())
 
     def test_3_config_parameters_default_values_get_set_if_not_given(self):
