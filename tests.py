@@ -1,4 +1,4 @@
-from make_db import DataBaseHandler
+from database_handler import DataBaseHandler
 import unittest
 import os
 from setup import Config
@@ -108,15 +108,14 @@ class FileImportTest(unittest.TestCase):
 
 class DatabaseHandlerTest(unittest.TestCase):
 
-    db_name = "NiceDB"
+    db_name = Config().dbname
 
     def tearDown(self):
         if os.path.isfile(self.db_name + ".db"):
             os.remove(self.db_name + ".db")
 
-    def test_database_handler_creates_database_from_given_name(self, db_name=db_name):
-        dbh = DataBaseHandler()
-        dbh.new_db(db_name=db_name)
+    def test_setup_and_database_handler_creates_database_from_given_name(self, db_name=db_name):
+        DataBaseHandler()
         try:
             self.assertTrue(os.path.isfile(self.db_name + ".db"))
         except AssertionError:

@@ -4,17 +4,24 @@ from setup import Config
 
 
 class DataBaseHandler():
-
     def __init__(self):
+        """Initializes class by either connecting to an existing database
+        or by creating a new database. Database settings depend on config.yml
+
+        Args:
+            None
+        Returns:
+            Nothing
+        """
         # TODO: create database connection if dbtype = SQL
         config = Config()
         if config.dbtype == "sqlite":
             try:
-                conn = lite.connect(config.dbname + ".db")
+                self.conn = lite.connect(config.dbname + ".db")
             except Error as e:
                 print(e)
             finally:
-                conn.close()
+                self.conn.close()
 
     def new_db(self, db_name):
         """Creates a new sqlite database
