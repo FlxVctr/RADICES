@@ -86,8 +86,41 @@ class Config():
             Please run "python3 make_config.py" or provide a config.yml''')
 
         self.mysql_config = self.config["mysql"]
-        self.dbtype = self.mysql_config["dbtype"]
-        self.dbhost = self.mysql_config["host"]
-        self.dbuser = self.mysql_config["user"]
-        self.dbpwd = self.mysql_config["passwd"]
-        self.dbname = self.mysql_config["dbname"]
+
+        # No db type given in Config
+        if self.mysql_config["dbtype"] is None:
+            print('''Parameter dbtype not set in the "config.yml". Will create
+                             an sqlite database.''')
+            self.dbtype = "sqlite"
+        else:
+            self.dbtype = self.mysql_config["dbtype"]
+
+        # DB type is SQL - checking for all parameters
+        if self.dbtype == "SQL":
+            try:
+                self.dbhost = str(self.mysql_config["host"])
+                self.dbuser = str(self.mysql_config["user"])
+                self.dbpwd = str(self.mysql_config["passwd"])
+                if self.dbhost == '':
+                    raise ValueError("dbhost parameter is empty")
+                if self.dbuser == '':
+                    raise ValueError("dbuser parameter is empty")
+                if self.dbpwd == '':
+                    raise ValueError("passwd parameter is empty")
+            except KeyError as e:
+                raise e
+        elif self.dbtype == "sqlite":
+            self.dbhost = None
+            self.dbuser = None
+            self.dbpwd = None
+        else:
+            raise ValueError('''dbtype parameter is neither "sqlite" nor
+                                      "SQL". Please adjust the "config.yml" ''')
+
+        # Set db name
+        if self.mysql_config["dbname"] is not None:
+            self.dbname = self.mysql_config["dbname"]
+        else:
+            print('''Parameter "dbname" is missing. New database will have the name
+                  "new_relations_database".''')
+            self.dbname = "new_relations_database"

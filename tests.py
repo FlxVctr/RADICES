@@ -12,6 +12,19 @@ import tweepy
 import pandas as pd
 from pandas.api.types import is_string_dtype
 from twauth import OAuthorizer
+import yaml
+import shutil
+from subprocess import Popen, PIPE
+
+
+def setUpModule():
+    if os.path.isfile("config.yml"):
+        os.rename("config.yml", "config_bak.yml")
+
+
+def tearDownModule():
+    if os.path.isfile("config_bak.yml"):
+        os.replace("config_bak.yml", "config.yml")
 
 
 class FileImportTest(unittest.TestCase):
@@ -147,7 +160,95 @@ class OAuthTest(unittest.TestCase):
 
 
 class ConfigTest(unittest.TestCase):
+    def test_1_config_file_gets_read_and_is_complete(self):
+        # File not found
+        with self.assertRaises(FileNotFoundError):
+            Config()
 
+    def test_2_make_config_works_as_expected(self):
+        # Does make_config.py not make a new config.yml when entered "n"?
+        p = Popen("python make_config.py", stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        p.communicate("n\n".encode())
+        self.assertFalse(os.path.isfile("config.yml"))
+
+        # Does make_config.py open a dialogue asking to open the new config.yaml?
+        # (Just close the dialogue)
+        p = Popen("python make_config.py", stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        p.communicate("y\n".encode())
+
+    def test_3_config_parameters_default_values_get_set_if_not_given(self):
+        # If the db_name is not given, does the Config() class assign a default?
+        self.assertEqual("new_relations_database", Config().dbname)
+
+        # If the dbtype is not specified, does the Config() class assume sqlite?
+        self.assertEqual("sqlite", Config().dbtype)
+
+    def test_4_correct_values_for_config_parameters_given(self):
+        # dbtype does not match "sqlite" or "SQL"
+        mock_cfg = dict(
+            mysql=dict(
+                dbtype='notadbtype',
+                host='',
+                user=2,
+                passwd='',
+                dbname="test_db"
+            )
+        )
+        with open('config.yml', 'w') as f:
+            yaml.dump(mock_cfg, f, default_flow_style=False)
+        with self.assertRaises(ValueError):
+            Config()
+
+        # Error when dbhost not provided?
+        mock_cfg = dict(
+            mysql=dict(
+                dbtype='SQL',
+                host='',
+                user='123',
+                passwd='456',
+                dbname="test_db"
+            )
+        )
+        with open('config.yml', 'w') as f:
+            yaml.dump(mock_cfg, f, default_flow_style=False)
+        with self.assertRaises(ValueError):
+            Config()
+
+        # Error when dbuser not provided?
+        mock_cfg = dict(
+            mysql=dict(
+                dbtype='SQL',
+                host='host@host',
+                user='',
+                passwd='456',
+                dbname="test_db"
+            )
+        )
+        with open('config.yml', 'w') as f:
+            yaml.dump(mock_cfg, f, default_flow_style=False)
+        with self.assertRaises(ValueError):
+            Config()
+
+        # Error when dpwd not provided?
+        mock_cfg = dict(
+            mysql=dict(
+                dbtype='SQL',
+                host='host@host',
+                user='123',
+                passwd='',
+                dbname="test_db"
+            )
+        )
+        with open('config.yml', 'w') as f:
+            yaml.dump(mock_cfg, f, default_flow_style=False)
+        with self.assertRaises(ValueError):
+            Config()
+
+    def test_5_config_file_gets_read_correctly(self):
+        if os.path.isfile("config_bak.yml"):
+            shutil.copyfile("config_bak.yml", "config.yml")
+
+    # Does the mysql configuration match the current working standard?
     def test_config_file_gets_read_incl_all_fields(self):
         config_dict = {
          'mysql': {
