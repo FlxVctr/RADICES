@@ -120,6 +120,7 @@ class FileImportTest(unittest.TestCase):
 
 
 class DatabaseHandlerTest(unittest.TestCase):
+    db_name = Config().dbname
 
     def tearDown(self):
         if os.path.isfile(self.db_name + ".db"):
@@ -127,7 +128,7 @@ class DatabaseHandlerTest(unittest.TestCase):
 
     def test_setup_and_database_handler_creates_database_from_given_name(self):
         DataBaseHandler()
-        db_name = Config().dbname
+        db_name = self.db_name
         try:
             self.assertTrue(os.path.isfile(db_name + ".db"))
         except AssertionError:
@@ -135,7 +136,7 @@ class DatabaseHandlerTest(unittest.TestCase):
 
     def test_dbh_creates_friends_table_with_correct_columns(self):
         DataBaseHandler()
-        db_name = Config().dbname
+        db_name = self.db_name
         cmd = "sqlite3 " + db_name + ".db .tables"
         response = str(check_output(cmd, shell=True))
         self.assertIn("friends", response)
@@ -145,7 +146,7 @@ class DatabaseHandlerTest(unittest.TestCase):
         self.assertIn("user", response)
 
     def test_dbh_function_takes_input_and_writes_to_table(self):
-        seed = "83662933"
+        seed = int(FileImport().read_seed_file().iloc[0])
         dbh = DataBaseHandler()
         c = Collector(Connection(), seed)
         friendlist = c.get_friend_list()
@@ -153,7 +154,7 @@ class DatabaseHandlerTest(unittest.TestCase):
 
         dbh.write_friends(seed, friendlist)
 
-        s = "SELECT friend FROM friends WHERE user LIKE '" + seed + "'"
+        s = "SELECT friend FROM friends WHERE user LIKE '" + str(seed) + "'"
         friendlist_in_database = pd.read_sql(sql=s, con=dbh.conn)["friend"].tolist()
         friendlist_in_database = list(map(int, friendlist_in_database))
         self.assertEqual(friendlist_in_database, friendlist)
