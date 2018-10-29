@@ -1,5 +1,6 @@
 import tweepy
 import time
+import pandas as pd
 
 from setup import FileImport
 
@@ -167,3 +168,11 @@ class Collector(object):
             i += 100
 
         return user_details
+
+    def make_friend_df(friends_details):
+
+        json_list = [friend._json for friend in friends_details]
+
+        df = pd.io.json.json_normalize(json_list)
+
+        return df
