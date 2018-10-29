@@ -337,6 +337,15 @@ class CollectorTest(unittest.TestCase):
         self.assertIsInstance(friends_df['screen_name'][0], str)
         self.assertIsInstance(friends_df['friends_count'][0], np.int64)
 
+        friends_df_selected = Collector.make_friend_df(friends_details,
+                                                       select=['id', 'followers_count',
+                                                               'created_at'])
+
+        self.assertEqual(len(friends_df_selected.columns), 3)
+        self.assertIsInstance(friends_df['id'][0], np.int64)
+        self.assertIsInstance(friends_df['created_at'][0], str)
+        self.assertIsInstance(friends_df['followers_count'][0], np.int64)
+
     def test_next_token_works(self):
 
         collector = Collector(self.connection, seed=36476777)
