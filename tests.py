@@ -4,6 +4,7 @@ import shutil
 import tweepy
 import unittest
 import yaml
+import numpy as np
 import pandas as pd
 from collector import Connection, Collector
 from database_handler import DataBaseHandler
@@ -409,6 +410,11 @@ class CollectorTest(unittest.TestCase):
 
         self.assertGreater(len(user_friends), 5000)
 
+    def test_collector_gets_friend_details_and_makes_df(self):
+
+        collector = Collector(self.connection, seed=36476777)
+
+        user_friends = collector.get_friend_list()
         friends_details = collector.get_details(user_friends)
 
         self.assertGreaterEqual(len(friends_details), 100)
@@ -417,6 +423,19 @@ class CollectorTest(unittest.TestCase):
 
         self.assertIsInstance(friends_df, pd.DataFrame)
         self.assertEqual(len(friends_df), len(friends_details))
+
+        self.assertIsInstance(friends_df['id'][0], np.int64)
+        self.assertIsInstance(friends_df['screen_name'][0], str)
+        self.assertIsInstance(friends_df['friends_count'][0], np.int64)
+
+        friends_df_selected = Collector.make_friend_df(friends_details,
+                                                       select=['id', 'followers_count',
+                                                               'created_at'])
+
+        self.assertEqual(len(friends_df_selected.columns), 3)
+        self.assertIsInstance(friends_df['id'][0], np.int64)
+        self.assertIsInstance(friends_df['created_at'][0], str)
+        self.assertIsInstance(friends_df['followers_count'][0], np.int64)
 
     def test_next_token_works(self):
 
