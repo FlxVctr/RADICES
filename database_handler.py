@@ -2,6 +2,8 @@ import sqlite3 as lite
 import pandas as pd
 from sqlite3 import Error
 from setup import Config
+from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 
 
 class DataBaseHandler():
@@ -16,24 +18,44 @@ class DataBaseHandler():
         """
         # TODO: create database connection if dbtype = SQL
         self.config = Config()
-        if self.config.dbtype == "sqlite":
+        if self.config.dbtype.lower() == "sqlite":
             try:
                 self.conn = lite.connect(self.config.dbname + ".db")
                 print("Connected to " + self.config.dbname + "!")
             except Error as e:
-                print(e)
+                raise e
 
             # TODO: timestamp für friends table?
-            create_friends_table = """ CREATE TABLE IF NOT EXISTS friends (
-                                        id integer PRIMARY KEY,
-                                        user text NOT NULL,
-                                        friend text NOT NULL,
-                                        burned integer NOT NULL
-                                    ); """
             try:
+                create_friends_table_sql = """ CREATE TABLE IF NOT EXISTS friends (
+                                            id integer PRIMARY KEY,
+                                            user text NOT NULL,
+                                            friend text NOT NULL,
+                                            burned tinyint NOT NULL
+                                            ); """
                 c = self.conn.cursor()
-                c.execute(create_friends_table)
+                c.execute(create_friends_table_sql)
             except Error as e:
+                print(e)
+        elif self.config.dbtype.lower() == "mysql":
+            try:
+                self.engine = create_engine(
+                    'mysql+pymysql://' + self.config.dbuser + ':' + self.config.dbpwd + '@' +
+                    self.config.dbhost + '/' + self.config.dbname)
+                self.conn = self.engine.connect()
+                print('Connected to database "' + self.config.dbname + '" via mySQL!')
+            except OperationalError as e:
+                raise e
+            try:
+                create_friends_table_sql = """CREATE TABLE IF NOT EXISTS friends (
+                                             id MEDIUMINT NOT NULL AUTO_INCREMENT,
+                                             user CHAR(30) NOT NULL,
+                                             friend CHAR(30) NOT NULL,
+                                             burned TINYINT NOT NULL,
+                                             PRIMARY KEY (id)
+                                            );"""
+                self.conn.execute(create_friends_table_sql)
+            except Exception as e:
                 print(e)
 
     def write_friends(self, seed, friendlist):

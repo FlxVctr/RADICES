@@ -1,10 +1,10 @@
 # In the following, please fill the fields as you need them.
 # Do not use quotes, just plain text, e.g.:
-# mysql:
+# sql:
  # dbtype: sqlite
 # etc.
 
-mysql:
+sql:
     dbtype: sqlite   # only supports 'sqlite' at the moment
     host:     # TBI, please leave empty
     user:     # TBI, please leave empty

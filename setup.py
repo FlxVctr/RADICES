@@ -85,22 +85,22 @@ class Config():
             raise FileNotFoundError('''Could not find "config.yml".\n
             Please run "python3 make_config.py" or provide a config.yml''')
 
-        self.mysql_config = self.config["mysql"]
+        self.sql_config = self.config["sql"]
 
         # No db type given in Config
-        if self.mysql_config["dbtype"] is None:
+        if self.sql_config["dbtype"] is None:
             print('''Parameter dbtype not set in the "config.yml". Will create
                              an sqlite database.''')
             self.dbtype = "sqlite"
         else:
-            self.dbtype = self.mysql_config["dbtype"]
+            self.dbtype = self.sql_config["dbtype"]
 
         # DB type is SQL - checking for all parameters
-        if self.dbtype == "SQL":
+        if self.dbtype == "mysql":
             try:
-                self.dbhost = str(self.mysql_config["host"])
-                self.dbuser = str(self.mysql_config["user"])
-                self.dbpwd = str(self.mysql_config["passwd"])
+                self.dbhost = str(self.sql_config["host"])
+                self.dbuser = str(self.sql_config["user"])
+                self.dbpwd = str(self.sql_config["passwd"])
                 if self.dbhost == '':
                     raise ValueError("dbhost parameter is empty")
                 if self.dbuser == '':
@@ -115,11 +115,11 @@ class Config():
             self.dbpwd = None
         else:
             raise ValueError('''dbtype parameter is neither "sqlite" nor
-                                      "SQL". Please adjust the "config.yml" ''')
+                                      "mysql". Please adjust the "config.yml" ''')
 
         # Set db name
-        if self.mysql_config["dbname"] is not None:
-            self.dbname = self.mysql_config["dbname"]
+        if self.sql_config["dbname"] is not None:
+            self.dbname = self.sql_config["dbname"]
         else:
             print('''Parameter "dbname" is missing. New database will have the name
                   "new_relations_database".''')

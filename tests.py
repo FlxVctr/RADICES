@@ -1,20 +1,20 @@
-from database_handler import DataBaseHandler
-import unittest
-import os
-from setup import Config
-from setup import FileImport
-from json import JSONDecodeError
 import json
-from pandas.errors import EmptyDataError
-from collector import Connection
-from collector import Collector
-import tweepy
-import pandas as pd
-from pandas.api.types import is_string_dtype
-from twauth import OAuthorizer
-import yaml
+import os
 import shutil
+import tweepy
+import unittest
+import yaml
+import pandas as pd
+from collector import Connection, Collector
+from database_handler import DataBaseHandler
+from json import JSONDecodeError
+from pandas.api.types import is_string_dtype
+from pandas.errors import EmptyDataError
+from setup import Config, FileImport
+from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from subprocess import Popen, PIPE, check_output
+from twauth import OAuthorizer
 
 
 def setUpModule():
@@ -119,14 +119,35 @@ class FileImportTest(unittest.TestCase):
         self.assertIsInstance(tokens['secret'][0], str)
 
 
-class DatabaseHandlerTest(unittest.TestCase):
+class DataBaseHandlerTest(unittest.TestCase):
     db_name = Config().dbname
+    mock_sql_cfg = dict(
+                sql=dict(
+                    dbtype='mysql',
+                    host='127.0.0.1',
+                    user='root',
+                    passwd='1q2w3e4r5t6z',
+                    dbname="sparsetwitter"
+                )
+            )
+    mock_sqlite_cfg = dict(
+        sql=dict(
+            dbtype='sqlite',
+            host='',
+            user='',
+            passwd='',
+            dbname="test_db"
+        )
+    )
 
     def tearDown(self):
         if os.path.isfile(self.db_name + ".db"):
             os.remove(self.db_name + ".db")
 
     def test_setup_and_database_handler_creates_database_from_given_name(self):
+        with open('config.yml', 'w') as f:
+            yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
+
         DataBaseHandler()
         db_name = self.db_name
         try:
@@ -135,6 +156,8 @@ class DatabaseHandlerTest(unittest.TestCase):
             print("Database was not created!")
 
     def test_dbh_creates_friends_table_with_correct_columns(self):
+        with open('config.yml', 'w') as f:
+            yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
         DataBaseHandler()
         db_name = self.db_name
         cmd = "sqlite3 " + db_name + ".db .tables"
@@ -146,7 +169,9 @@ class DatabaseHandlerTest(unittest.TestCase):
         self.assertIn("user", response)
         self.assertIn("burned", response)
 
-    def test_dbh_function_takes_input_and_writes_to_table(self):
+    def test_dbh_write_friends_function_takes_input_and_writes_to_table(self):
+        with open('config.yml', 'w') as f:
+            yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
         seed = int(FileImport().read_seed_file().iloc[0])
         dbh = DataBaseHandler()
         c = Collector(Connection(), seed)
@@ -160,16 +185,69 @@ class DatabaseHandlerTest(unittest.TestCase):
         friendlist_in_database = list(map(int, friendlist_in_database))
         self.assertEqual(friendlist_in_database, friendlist)
 
+    def test_sql_connection_raises_error_if_credentials_are_wrong(self):
+        new_mock_cfg = self.mock_sql_cfg
+        new_mock_cfg["sql"]["passwd"] = "wrong"
+        with open('config.yml', 'w') as f:
+            yaml.dump(new_mock_cfg, f, default_flow_style=False)
 
-class OAuthTest(unittest.TestCase):
+        with self.assertRaises(OperationalError):
+            DataBaseHandler()
+
+    def test_mysql_db_connects_and_creates_friends_database_with_correct_columns(self):
+        with open('config.yml', 'w') as f:
+            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
+
+        config = Config()
+        DataBaseHandler()
+        engine = create_engine(
+            'mysql+pymysql://' + config.dbuser + ':' + config.dbpwd + '@' +
+            config.dbhost + '/' + config.dbname)
+
+        s = "SELECT * FROM friends"
+        sql_out = pd.read_sql(sql=s, con=engine)
+        cols = list(sql_out)
+
+        self.assertIn("id", cols)
+        self.assertIn("user", cols)
+        self.assertIn("friend", cols)
+        self.assertIn("burned", cols)
+
+        engine.connect().execute("DROP TABLE friends;")
+
+    def test_dbh_write_friends_function_also_works_with_mysql(self):
+        with open('config.yml', 'w') as f:
+            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
+        seed = int(FileImport().read_seed_file().iloc[0])
+        dbh = DataBaseHandler()
+        config = Config()
+        c = Collector(Connection(), seed)
+        friendlist = c.get_friend_list()
+        friendlist = list(map(int, friendlist))
+
+        dbh.write_friends(seed, friendlist)
+
+        engine = create_engine(
+            'mysql+pymysql://' + config.dbuser + ':' + config.dbpwd + '@' +
+            config.dbhost + '/' + config.dbname)
+        s = "SELECT friend FROM friends WHERE user LIKE '" + str(seed) + "'"
+        friendlist_in_database = pd.read_sql(sql=s, con=engine)["friend"].tolist()
+        friendlist_in_database = list(map(int, friendlist_in_database))
+        self.assertEqual(friendlist_in_database, friendlist)
+
+        # This is to clean up.
+        engine.connect().execute("DROP TABLE friends;")
+
+
+# class OAuthTest(unittest.TestCase):
     # TODO: really necessary?
-    def test_oauth_throws_error_when_wrong_or_no_verifier(self):
-        print("PLEASE ENTER RANDOM NUMBER")
-        with self.assertRaises(tweepy.TweepError):
-            OAuthorizer()
+    # def test_oauth_throws_error_when_wrong_or_no_verifier(self):
+    #     print("PLEASE ENTER RANDOM NUMBER")
+    #     with self.assertRaises(tweepy.TweepError):
+    #         OAuthorizer()
 
-    def test_new_line_in_csv_after_verifying(self):
-        pass
+    # def test_new_line_in_csv_after_verifying(self):
+    #     pass
 
 
 class ConfigTest(unittest.TestCase):
@@ -199,7 +277,7 @@ class ConfigTest(unittest.TestCase):
     def test_4_correct_values_for_config_parameters_given(self):
         # dbtype does not match "sqlite" or "SQL"
         mock_cfg = dict(
-            mysql=dict(
+            sql=dict(
                 dbtype='notadbtype',
                 host='',
                 user=2,
@@ -214,8 +292,8 @@ class ConfigTest(unittest.TestCase):
 
         # Error when dbhost not provided?
         mock_cfg = dict(
-            mysql=dict(
-                dbtype='SQL',
+            sql=dict(
+                dbtype='mysql',
                 host='',
                 user='123',
                 passwd='456',
@@ -229,8 +307,8 @@ class ConfigTest(unittest.TestCase):
 
         # Error when dbuser not provided?
         mock_cfg = dict(
-            mysql=dict(
-                dbtype='SQL',
+            sql=dict(
+                dbtype='mysql',
                 host='host@host',
                 user='',
                 passwd='456',
@@ -244,8 +322,8 @@ class ConfigTest(unittest.TestCase):
 
         # Error when dpwd not provided?
         mock_cfg = dict(
-            mysql=dict(
-                dbtype='SQL',
+            sql=dict(
+                dbtype='mysql',
                 host='host@host',
                 user='123',
                 passwd='',
@@ -261,10 +339,10 @@ class ConfigTest(unittest.TestCase):
         if os.path.isfile("config_bak.yml"):
             shutil.copyfile("config_bak.yml", "config.yml")
 
-    # Does the mysql configuration match the current working standard?
+    # Does the sql configuration match the current working standard?
     def test_config_file_gets_read_incl_all_fields(self):
         config_dict = {
-         'mysql': {
+         'sql': {
             'dbtype': "sqlite",
             'host': None,
             'user': None,
