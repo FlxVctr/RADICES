@@ -323,7 +323,7 @@ class CollectorTest(unittest.TestCase):
         if reset_time == 900:
             self.assertEqual(remaining_calls, 900)
 
-    def test_collector_gets_all_friends_of_power_user(self):
+    def test_collector_gets_all_friends_of_power_user_gets_details_and_makes_df(self):
 
         collector = Collector(self.connection, seed=2343198944)
 
@@ -331,15 +331,14 @@ class CollectorTest(unittest.TestCase):
 
         self.assertGreater(len(user_friends), 5000)
 
-    def test_collector_can_get_details_from_friend_list(self):
-
-        collector = Collector(self.connection, seed=36476777)
-
-        friends = collector.get_friend_list()
-
-        friends_details = collector.get_details(friends)
+        friends_details = collector.get_details(user_friends)
 
         self.assertGreaterEqual(len(friends_details), 100)
+
+        friends_df = Collector.make_friend_df(friends_details)
+
+        self.assertIsInstance(friends_df, pd.DataFrame)
+        self.assertEqual(len(friends_df), len(friends_details))
 
     def test_next_token_works(self):
 
