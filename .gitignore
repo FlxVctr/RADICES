@@ -8,3 +8,4 @@ tokens*.csv
 .swp
 *.db
 currenttests.py
+passwords.py

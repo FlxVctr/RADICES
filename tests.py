@@ -6,6 +6,7 @@ import unittest
 import yaml
 import numpy as np
 import pandas as pd
+import passwords
 from collector import Connection, Collector
 from database_handler import DataBaseHandler
 from json import JSONDecodeError
@@ -15,7 +16,6 @@ from setup import Config, FileImport
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from subprocess import Popen, PIPE, check_output
-from twauth import OAuthorizer
 
 
 def setUpModule():
@@ -126,8 +126,8 @@ class DataBaseHandlerTest(unittest.TestCase):
                 sql=dict(
                     dbtype='mysql',
                     host='127.0.0.1',
-                    user='root',
-                    passwd='1q2w3e4r5t6z',
+                    user='sparsetwitter',
+                    passwd=passwords.sparsetwittermysqlpw,
                     dbname="sparsetwitter"
                 )
             )
