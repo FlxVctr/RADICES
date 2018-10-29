@@ -8,6 +8,8 @@ pandas = "*"
 pytest = "*"
 tweepy = "*"
 pyyaml = "*"
+sqlalchemy = "*"
+pymysql = "*"
 
 [dev-packages]
 "flake8" = "*"
