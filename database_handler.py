@@ -27,7 +27,8 @@ class DataBaseHandler():
             create_friends_table = """ CREATE TABLE IF NOT EXISTS friends (
                                         id integer PRIMARY KEY,
                                         user text NOT NULL,
-                                        friend text NOT NULL
+                                        friend text NOT NULL,
+                                        burned integer NOT NULL
                                     ); """
             try:
                 c = self.conn.cursor()
@@ -49,4 +50,5 @@ class DataBaseHandler():
 
         friends_df = pd.DataFrame({'friend': friendlist})
         friends_df['user'] = seed
+        friends_df['burned'] = 0
         friends_df.to_sql(name="friends", con=self.conn, if_exists="append", index=False)

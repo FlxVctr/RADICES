@@ -144,6 +144,7 @@ class DatabaseHandlerTest(unittest.TestCase):
         self.assertIn("id", response)
         self.assertIn("friend", response)
         self.assertIn("user", response)
+        self.assertIn("burned", response)
 
     def test_dbh_function_takes_input_and_writes_to_table(self):
         seed = int(FileImport().read_seed_file().iloc[0])
@@ -161,24 +162,11 @@ class DatabaseHandlerTest(unittest.TestCase):
 
 
 class OAuthTest(unittest.TestCase):
-    def setUp(self):
-        if os.path.isfile("keys.json"):
-            os.rename("keys.json", "keys_bak.json")
-        if os.path.isfile("empty_keys.json"):
-            os.rename("empty_keys.json", "keys.json")
-
-    def tearDown(self):
-        if os.path.isfile("keys.json"):
-            os.rename("keys.json", "empty_keys.json")
-        if os.path.isfile("keys_bak.json"):
-            os.replace("keys_bak.json", "keys.json")
-
-    def test_oauth_throws_error_when_request_token_not_get(self):
+    # TODO: really necessary?
+    def test_oauth_throws_error_when_wrong_or_no_verifier(self):
+        print("PLEASE ENTER RANDOM NUMBER")
         with self.assertRaises(tweepy.TweepError):
             OAuthorizer()
-
-    def test_wrong_verifier_entered(self):
-        pass
 
     def test_new_line_in_csv_after_verifying(self):
         pass

@@ -24,7 +24,7 @@ class OAuthorizer():
         try:
             auth.get_access_token(verifier)
         except tp.TweepError as e:
-            print("Failed to get access token!")
+            print("Failed to get access token! Perhaps the verifier you've entered is wrong.")
             raise e
 
         with open('tokens.csv', 'a', newline='') as f:
