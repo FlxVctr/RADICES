@@ -29,8 +29,8 @@ class DataBaseHandler():
             try:
                 create_friends_table_sql = """ CREATE TABLE IF NOT EXISTS friends (
                                             id integer PRIMARY KEY,
-                                            user text NOT NULL,
-                                            friend text NOT NULL,
+                                            source text NOT NULL,
+                                            target text NOT NULL,
                                             burned tinyint NOT NULL
                                             ); """
                 c = self.conn.cursor()
@@ -49,8 +49,8 @@ class DataBaseHandler():
             try:
                 create_friends_table_sql = """CREATE TABLE IF NOT EXISTS friends (
                                              id MEDIUMINT NOT NULL AUTO_INCREMENT,
-                                             user CHAR(30) NOT NULL,
-                                             friend CHAR(30) NOT NULL,
+                                             source CHAR(30) NOT NULL,
+                                             target CHAR(30) NOT NULL,
                                              burned TINYINT NOT NULL,
                                              PRIMARY KEY (id)
                                             );"""
@@ -70,7 +70,7 @@ class DataBaseHandler():
             Nothing
         """
 
-        friends_df = pd.DataFrame({'friend': friendlist})
-        friends_df['user'] = seed
+        friends_df = pd.DataFrame({'target': friendlist})
+        friends_df['source'] = seed
         friends_df['burned'] = 0
         friends_df.to_sql(name="friends", con=self.conn, if_exists="append", index=False)

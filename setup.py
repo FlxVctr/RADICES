@@ -93,7 +93,7 @@ class Config():
                              an sqlite database.''')
             self.dbtype = "sqlite"
         else:
-            self.dbtype = self.sql_config["dbtype"]
+            self.dbtype = self.sql_config["dbtype"].strip()
 
         # DB type is SQL - checking for all parameters
         if self.dbtype == "mysql":
@@ -122,5 +122,5 @@ class Config():
             self.dbname = self.sql_config["dbname"]
         else:
             print('''Parameter "dbname" is missing. New database will have the name
-                  "new_relations_database".''')
-            self.dbname = "new_relations_database"
+                  "new_database".''')
+            self.dbname = "new_database"
