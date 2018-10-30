@@ -18,13 +18,21 @@ class DataBaseHandler():
         """
         # TODO: create database connection if dbtype = SQL
         self.config = Config()
+        user_details_list = []
+        if "twitter_user_details" in self.config.config:
+            for detail, sqldatatype in self.config.config["twitter_user_details"].items():
+                if sqldatatype is not None:
+                    user_details_list.append(detail + " " + sqldatatype)
+        else:
+            print("""Key "twitter_user_details" could not be found in config.yml. Will not create
+                  a user_details table.""")
+
         if self.config.dbtype.lower() == "sqlite":
             try:
                 self.conn = lite.connect(self.config.dbname + ".db")
                 print("Connected to " + self.config.dbname + "!")
             except Error as e:
                 raise e
-
             # TODO: timestamp für friends table?
             try:
                 create_friends_table_sql = """ CREATE TABLE IF NOT EXISTS friends (
@@ -35,14 +43,22 @@ class DataBaseHandler():
                                             ); """
                 c = self.conn.cursor()
                 c.execute(create_friends_table_sql)
+                if user_details_list != []:
+                    create_user_details_sql = """
+                        CREATE TABLE IF NOT EXISTS user_details
+                        (""" + ", ".join(user_details_list) + ");"
+                    c.execute(create_user_details_sql)
+                else:
+                    print("""No user_details configured in config.yml. Will not create a
+                          user_details table.""")
             except Error as e:
                 print(e)
+
         elif self.config.dbtype.lower() == "mysql":
             try:
                 self.engine = create_engine(
                     'mysql+pymysql://' + self.config.dbuser + ':' + self.config.dbpwd + '@' +
                     self.config.dbhost + '/' + self.config.dbname)
-                self.conn = self.engine.connect()
                 print('Connected to database "' + self.config.dbname + '" via mySQL!')
             except OperationalError as e:
                 raise e
@@ -54,9 +70,17 @@ class DataBaseHandler():
                                              burned TINYINT NOT NULL,
                                              PRIMARY KEY (id)
                                             );"""
-                self.conn.execute(create_friends_table_sql)
-            except Exception as e:
-                print(e)
+                self.engine.execute(create_friends_table_sql)
+                if user_details_list != []:
+                    create_user_details_sql = """
+                        CREATE TABLE IF NOT EXISTS user_details
+                        (""" + ", ".join(user_details_list) + ");"
+                    self.engine.execute(create_user_details_sql)
+                else:
+                    print("""No user_details configured in config.yml. Will not create a
+                          user_details table.""")
+            except OperationalError as e:
+                raise e
 
     def write_friends(self, seed, friendlist):
         """Writes the database entries for one user and their friends in format user, friends.
@@ -73,4 +97,4 @@ class DataBaseHandler():
         friends_df = pd.DataFrame({'target': friendlist})
         friends_df['source'] = seed
         friends_df['burned'] = 0
-        friends_df.to_sql(name="friends", con=self.conn, if_exists="append", index=False)
+        friends_df.to_sql(name="friends", con=self.engine, if_exists="append", index=False)

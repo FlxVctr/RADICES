@@ -9,7 +9,7 @@ sql:
     host:     # if dbtype = mysql, provide host
     user:     # if dbtype = mysql, provide user
     passwd:   # if dbtype = mysql, provide password
-    dbname: test_db   # provide a name for the database.
+    dbname: test_db  # provide a name for the database.
 
 # If you wish to save certain twitter user details, please indicate the SQL data
 # type you wish to save it as in the SQL database. If you do not wish to save
@@ -32,16 +32,16 @@ twitter_user_details:
     entities.url.urls:
     favourites_count:
     follow_request_sent:
-    followers_count: INT
+    followers_count: INT(30)
     following:
     friends_count:
     geo_enabled:
     has_extended_profile:
-    id: INT PRIMARY KEY
+    id: INT(30) PRIMARY KEY
     id_str:
     is_translation_enabled:
     is_translator:
-    lang: CHAR
+    lang: CHAR(30)
     listed_count:
     location:
     name:
@@ -137,7 +137,7 @@ twitter_user_details:
     status.truncated:
     statuses_count:
     suspended:
-    time_zone: CHAR
+    time_zone: CHAR(30)
     translator_type:
     url:
     verified:
