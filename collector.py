@@ -125,6 +125,17 @@ class Collector(object):
         self.connection = connection
 
     def check_API_calls_and_update_if_necessary(self, endpoint):
+        """Checks for an endpoint how many calls are left and updates token if necessary.
+
+        It iterates through available tokens until one has > 0 calls to `endpoint`. If\
+        none is available it waits the minimal reset time it has encountered to check again.
+
+        Args:
+            endpoint (str): API endpoint, e.g. '/friends/ids'
+        Returns:
+            None
+        """
+
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
         reset_time = self.connection.reset_time(endpoint=endpoint)
         attempts = 0
@@ -189,6 +200,9 @@ class Collector(object):
                 j = i + 100
             else:
                 j = len(friends)
+
+            self.check_API_calls_and_update_if_necessary(endpoint='/users/lookup')
+
             user_details += self.connection.api.lookup_users(user_ids=friends[i:j])
             i += 100
 
