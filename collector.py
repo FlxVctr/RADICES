@@ -34,7 +34,9 @@ class Connection(object):
 
     def next_token(self):
 
-        if self.token_number < len(self.tokens):
+        print("len(self.tokens) = ", len(self.tokens))
+        print("token number = ", self.token_number)
+        if self.token_number + 1 < len(self.tokens):
             self.token_number += 1
             self.token = self.tokens['token'][self.token_number]
             self.secret = self.tokens['secret'][self.token_number]

@@ -591,18 +591,22 @@ class CollectorTest(unittest.TestCase):
 
         collector = Collector(self.connection, seed=36476777)
 
-        old_token = collector.connection.token
-        old_secret = collector.connection.secret
+        for i in range(len(collector.connection.tokens) + 1):
+            # test whether it does not exceed the list
 
-        collector.connection.next_token()
+            old_token = collector.connection.token
+            old_secret = collector.connection.secret
 
-        self.assertNotEqual(old_token, collector.connection.token)
-        self.assertNotEqual(old_secret, collector.connection.secret)
+            collector.connection.next_token()
 
-        try:
-            self.connection.api.verify_credentials()
-        except tweepy.TweepError:
-            self.fail("Could not verify API credentials after token change.")
+            self.assertNotEqual(old_token, collector.connection.token)
+            self.assertNotEqual(old_secret, collector.connection.secret)
+
+            try:
+                self.connection.api.verify_credentials()
+            except tweepy.TweepError:
+                self.fail("Could not verify API credentials after token change.")
+
     @unittest.skip("This test drains API calls")
     def test_get_friend_list_changes_token(self):
 
