@@ -4,7 +4,7 @@ Pipfile.lock
 .python-version
 __pycache__/
 keys*.*
-tokens*.csv
+token*.csv
 .swp
 *.db
 currenttests.py

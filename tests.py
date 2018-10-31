@@ -607,7 +607,7 @@ class CollectorTest(unittest.TestCase):
             except tweepy.TweepError:
                 self.fail("Could not verify API credentials after token change.")
 
-    @unittest.skip("This test drains API calls")
+    # @unittest.skip("This test drains API calls")
     def test_get_friend_list_changes_token(self):
 
         for i in range(16):

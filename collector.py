@@ -3,6 +3,7 @@ import time
 import pandas as pd
 
 from setup import FileImport
+from sys import stdout
 
 
 class Connection(object):
@@ -106,8 +107,6 @@ class Connection(object):
 
         reset_time = reset_time['reset'] - int(time.time())
 
-        print('reset_time = ', reset_time)
-
         return reset_time
 
 
@@ -125,6 +124,26 @@ class Collector(object):
         self.seed = seed
         self.connection = connection
 
+    def check_API_calls_and_update_if_necessary(self, endpoint):
+        remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+        reset_time = self.connection.reset_time(endpoint=endpoint)
+        attempts = 0
+
+        while remaining_calls == 0:
+            attempts += 1
+            stdout.write("Attempt with next token: {}\n".format(attempts))
+
+            if attempts >= len(self.connection.tokens):
+                msg = "API calls for {e} depleted. Waiting {s} seconds.\n"
+                stdout.write(msg.format(e=endpoint, s=reset_time))
+                stdout.flush()
+                time.sleep(reset_time)
+                attempts = 0
+
+            self.connection.next_token()
+            remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+            reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
+
     def get_friend_list(self, twitter_id=None):
         """Gets the friend list of an account.
 
@@ -141,20 +160,12 @@ class Collector(object):
 
         result = []
 
-        remaining_calls = self.connection.remaining_calls(endpoint='/friends/ids')
-
-        while remaining_calls == 0:
-            self.connection.next_token()
-            remaining_calls = self.connection.remaining_calls(endpoint='/friends/ids')
+        self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
 
         for page in tweepy.Cursor(self.connection.api.friends_ids, user_id=twitter_id).pages():
             result = result + page
 
-            remaining_calls = self.connection.remaining_calls(endpoint='/friends/ids')
-
-            while remaining_calls == 0:
-                self.connection.next_token()
-                remaining_calls = self.connection.remaining_calls(endpoint='/friends/ids')
+            self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
 
         return result
 
