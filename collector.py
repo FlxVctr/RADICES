@@ -139,8 +139,20 @@ class Collector(object):
 
         result = []
 
+        remaining_calls = self.connection.remaining_calls(endpoint='/friends/ids')
+
+        while remaining_calls == 0:
+            self.connection.next_token()
+            remaining_calls = self.connection.remaining_calls(endpoint='/friends/ids')
+
         for page in tweepy.Cursor(self.connection.api.friends_ids, user_id=twitter_id).pages():
             result = result + page
+
+            remaining_calls = self.connection.remaining_calls(endpoint='/friends/ids')
+
+            while remaining_calls == 0:
+                self.connection.next_token()
+                remaining_calls = self.connection.remaining_calls(endpoint='/friends/ids')
 
         return result
 
