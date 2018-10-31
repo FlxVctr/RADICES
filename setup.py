@@ -73,18 +73,18 @@ class FileImport():
 
 
 class Config():
-
-    config_path = "config.yml"
     config_template = "config_template.py"
 
-    def __init__(self):
+    def __init__(self, config_file="config.yml"):
+        self.config_path = config_file
         try:
             with open(self.config_path, 'r') as f:
                 self.config = yaml.load(f)
         except FileNotFoundError:
-            raise FileNotFoundError('''Could not find "config.yml".\n
+            raise FileNotFoundError('Could not find "' + self.config_path + '''".\n
             Please run "python3 make_config.py" or provide a config.yml''')
 
+        # TODO: What if config has no Key "sql"?
         self.sql_config = self.config["sql"]
 
         # No db type given in Config
@@ -93,7 +93,7 @@ class Config():
                              an sqlite database.''')
             self.dbtype = "sqlite"
         else:
-            self.dbtype = self.sql_config["dbtype"]
+            self.dbtype = self.sql_config["dbtype"].strip()
 
         # DB type is SQL - checking for all parameters
         if self.dbtype == "mysql":
@@ -122,5 +122,5 @@ class Config():
             self.dbname = self.sql_config["dbname"]
         else:
             print('''Parameter "dbname" is missing. New database will have the name
-                  "new_relations_database".''')
-            self.dbname = "new_relations_database"
+                  "new_database".''')
+            self.dbname = "new_database"
