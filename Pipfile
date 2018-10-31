@@ -15,6 +15,7 @@ pymysql = "*"
 "flake8" = "*"
 isort = "*"
 ipython = "*"
+"autopep8" = "*"
 
 [requires]
 python_version = "3.6.6"
