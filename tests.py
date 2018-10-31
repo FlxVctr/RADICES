@@ -1,25 +1,27 @@
 import copy
 import json
 import os
-import test_helpers
-import tweepy
+import shutil
+import sqlite3 as lite
 import unittest
-import yaml
+from json import JSONDecodeError
+from subprocess import PIPE, Popen
+
 import numpy as np
 import pandas as pd
-import passwords
-import sqlite3 as lite
-import shutil
-from collector import Connection, Collector
-from database_handler import DataBaseHandler
-from json import JSONDecodeError
+import tweepy
+import yaml
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
-from setup import Config, FileImport
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from subprocess import Popen, PIPE
+
+import passwords
+import test_helpers
+from collector import Collector, Connection
+from database_handler import DataBaseHandler
+from setup import Config, FileImport
 
 
 def setUpModule():
@@ -65,7 +67,7 @@ class FileImportTest(unittest.TestCase):
         with open("keys.json", "w") as f:
             json.dump(key_dict, f)
         with self.assertRaises(KeyError):
-                FileImport().read_app_key_file()
+            FileImport().read_app_key_file()
         key_dict = {
             "consumer_token": "abc",
             "consumer_secre": "xxx"
@@ -73,7 +75,7 @@ class FileImportTest(unittest.TestCase):
         with open("keys.json", "w") as f:
             json.dump(key_dict, f)
         with self.assertRaises(KeyError):
-                FileImport().read_app_key_file()
+            FileImport().read_app_key_file()
 
         # Wrong data types
         key_dict = {
@@ -131,34 +133,34 @@ class DataBaseHandlerTest(unittest.TestCase):
         user='sparsetwitter',
         passwd=passwords.sparsetwittermysqlpw,
         dbname="sparsetwitter"
-            )
-        )
+    )
+    )
     db_name = Config().dbname
     with open("sqlconfig.yml", "w") as f:
         yaml.dump(sql_config, f, default_flow_style=False)
     moduleconfig = Config("sqlconfig.yml")
     os.remove("sqlconfig.yml")
     engine = create_engine(
-                'mysql+pymysql://' + moduleconfig.dbuser + ':' + moduleconfig.dbpwd + '@' +
-                moduleconfig.dbhost + '/' + moduleconfig.dbname)
+        'mysql+pymysql://' + moduleconfig.dbuser + ':' + moduleconfig.dbpwd + '@' +
+        moduleconfig.dbhost + '/' + moduleconfig.dbname)
     config_dict = test_helpers.config_dict
     mock_sql_cfg = copy.deepcopy(config_dict)
     mock_sql_cfg["sql"] = dict(
-                    dbtype='mysql',
-                    host='127.0.0.1',
-                    user='sparsetwitter',
-                    passwd=passwords.sparsetwittermysqlpw,
-                    dbname="sparsetwitter"
-                )
+        dbtype='mysql',
+        host='127.0.0.1',
+        user='sparsetwitter',
+        passwd=passwords.sparsetwittermysqlpw,
+        dbname="sparsetwitter"
+    )
 
     mock_sqlite_cfg = copy.deepcopy(config_dict)
     mock_sqlite_cfg["sql"] = dict(
-            dbtype='sqlite',
-            host='',
-            user='',
-            passwd='',
-            dbname="test_db"
-        )
+        dbtype='sqlite',
+        host='',
+        user='',
+        passwd='',
+        dbname="test_db"
+    )
 
     def tearDown(self):
         if os.path.isfile(self.db_name + ".db"):
@@ -361,7 +363,7 @@ class DataBaseHandlerTest(unittest.TestCase):
             followers_count="INT(30)",
             lang="CHAR(30)",
             time_zone="CHAR(30)"
-            )
+        )
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
         config = Config()
@@ -384,7 +386,7 @@ class DataBaseHandlerTest(unittest.TestCase):
             followers_count="INT(30)",
             lang="CHAR(30)",
             time_zone="CHAR(30)"
-            )
+        )
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
         config = Config()
@@ -440,12 +442,12 @@ class ConfigTest(unittest.TestCase):
         # dbtype does not match "sqlite" or "SQL"
         mock_cfg = copy.deepcopy(self.config_dict)
         mock_cfg["sql"] = dict(
-                dbtype='notadbtype',
-                host='',
-                user=2,
-                passwd='',
-                dbname="test_db"
-            )
+            dbtype='notadbtype',
+            host='',
+            user=2,
+            passwd='',
+            dbname="test_db"
+        )
 
         with open('config.yml', 'w') as f:
             yaml.dump(mock_cfg, f, default_flow_style=False)
@@ -455,12 +457,12 @@ class ConfigTest(unittest.TestCase):
         # Error when dbhost not provided?
         mock_cfg = copy.deepcopy(self.config_dict)
         mock_cfg["sql"] = dict(
-                dbtype='mysql',
-                host='',
-                user='123',
-                passwd='456',
-                dbname="test_db"
-            )
+            dbtype='mysql',
+            host='',
+            user='123',
+            passwd='456',
+            dbname="test_db"
+        )
 
         with open('config.yml', 'w') as f:
             yaml.dump(mock_cfg, f, default_flow_style=False)
@@ -470,12 +472,12 @@ class ConfigTest(unittest.TestCase):
         # Error when dbuser not provided?
         mock_cfg = copy.deepcopy(self.config_dict)
         mock_cfg["sql"] = dict(
-                dbtype='mysql',
-                host='host@host',
-                user='',
-                passwd='456',
-                dbname="test_db"
-            )
+            dbtype='mysql',
+            host='host@host',
+            user='',
+            passwd='456',
+            dbname="test_db"
+        )
 
         with open('config.yml', 'w') as f:
             yaml.dump(mock_cfg, f, default_flow_style=False)
@@ -485,12 +487,12 @@ class ConfigTest(unittest.TestCase):
         # Error when dpwd not provided?
         mock_cfg = copy.deepcopy(self.config_dict)
         mock_cfg["sql"] = dict(
-                dbtype='mysql',
-                host='host@host',
-                user='123',
-                passwd='',
-                dbname="test_db"
-            )
+            dbtype='mysql',
+            host='host@host',
+            user='123',
+            passwd='',
+            dbname="test_db"
+        )
 
         with open('config.yml', 'w') as f:
             yaml.dump(mock_cfg, f, default_flow_style=False)
@@ -616,6 +618,16 @@ class CollectorTest(unittest.TestCase):
                 collector.get_friend_list()
             except tweepy.TweepError:
                 self.fail("Apparently the token change did not work.")
+
+    def test_check_follow_back(self):
+
+        collector = Collector(self.connection, seed=36476777)
+
+        # FlxVctr follows BenAThies
+        self.assertTrue(collector.check_follows(36476777, 83662933))
+
+        # BarackObama does not follow FlxVctr
+        self.assertFalse(collector.check_follows(813286, 3647677))
 
 
 if __name__ == "__main__":
