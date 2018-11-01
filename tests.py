@@ -24,29 +24,19 @@ from database_handler import DataBaseHandler
 from setup import Config, FileImport
 
 
-def setUpModule():
-    if os.path.isfile("config.yml"):
-        os.rename("config.yml", "config.yml.bak")
-
-
-def tearDownModule():
-    if os.path.isfile("config.yml.bak"):
-        os.replace("config.yml.bak", "config.yml")
-
-
 class FileImportTest(unittest.TestCase):
 
     def setUp(self):
         if os.path.isfile("keys.json"):
-            os.rename("keys.json", "keys_bak.json")
+            os.rename("keys.json", "keys.json.bak")
         if os.path.isfile("seeds.csv"):
-            os.rename("seeds.csv", "seeds_bak.csv")
+            os.rename("seeds.csv", "seeds.csv.bak")
 
     def tearDown(self):
-        if os.path.isfile("keys_bak.json"):
-            os.replace("keys_bak.json", "keys.json")
-        if os.path.isfile("seeds_bak.csv"):
-            os.replace("seeds_bak.csv", "seeds.csv")
+        if os.path.isfile("keys.json.bak"):
+            os.replace("keys.json.bak", "keys.json")
+        if os.path.isfile("seeds.csv.bak"):
+            os.replace("seeds.csv.bak", "seeds.csv")
 
     # Note that the test fails if start.py passes those tests.
     def test_read_app_key_file(self):
@@ -88,8 +78,8 @@ class FileImportTest(unittest.TestCase):
             FileImport().read_app_key_file()
 
         # Return is a tuple of strings
-        if os.path.isfile("keys_bak.json"):
-            os.replace("keys_bak.json", "keys.json")
+        if os.path.isfile("keys.json.bak"):
+            os.replace("keys.json.bak", "keys.json")
         self.assertIsInstance(FileImport().read_app_key_file(), tuple)
         self.assertIsInstance(FileImport().read_app_key_file()[0], str)
         self.assertIsInstance(FileImport().read_app_key_file()[1], str)
@@ -127,22 +117,17 @@ class FileImportTest(unittest.TestCase):
 
 
 class DataBaseHandlerTest(unittest.TestCase):
-    sql_config = dict(sql=dict(
-        dbtype='mysql',
-        host='127.0.0.1',
-        user='sparsetwitter',
-        passwd=passwords.sparsetwittermysqlpw,
-        dbname="sparsetwitter"
-    )
-    )
-    db_name = Config().dbname
-    with open("sqlconfig.yml", "w") as f:
-        yaml.dump(sql_config, f, default_flow_style=False)
-    moduleconfig = Config("sqlconfig.yml")
-    os.remove("sqlconfig.yml")
-    engine = create_engine(
-        'mysql+pymysql://' + moduleconfig.dbuser + ':' + moduleconfig.dbpwd + '@' +
-        moduleconfig.dbhost + '/' + moduleconfig.dbname)
+
+    @classmethod
+    def setUpClass(cls):
+        if os.path.isfile("config.yml"):
+            os.rename("config.yml", "config.yml.bak")
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.isfile("config.yml.bak"):
+            os.replace("config.yml.bak", "config.yml")
+
     config_dict = test_helpers.config_dict
     mock_sql_cfg = copy.deepcopy(config_dict)
     mock_sql_cfg["sql"] = dict(
@@ -161,6 +146,8 @@ class DataBaseHandlerTest(unittest.TestCase):
         passwd='',
         dbname="test_db"
     )
+
+    db_name = Config().dbname
 
     def tearDown(self):
         if os.path.isfile(self.db_name + ".db"):
@@ -220,8 +207,8 @@ class DataBaseHandlerTest(unittest.TestCase):
         with open('config.yml', 'w') as f:
             yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
 
-        DataBaseHandler()
-        engine = self.engine
+        dbh = DataBaseHandler()
+        engine = dbh.engine
         s = "SELECT * FROM friends"
         sql_out = pd.read_sql(sql=s, con=engine)
         cols = list(sql_out)
@@ -245,7 +232,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         friendlist = list(map(int, friendlist))
 
         dbh.write_friends(seed, friendlist)
-        engine = self.engine
+        engine = dbh.engine
         s = "SELECT target FROM friends WHERE source LIKE '" + str(seed) + "'"
         friendlist_in_database = pd.read_sql(sql=s, con=engine)["target"].tolist()
         friendlist_in_database = list(map(int, friendlist_in_database))
@@ -265,8 +252,8 @@ class DataBaseHandlerTest(unittest.TestCase):
         )
         with open("config.yml", "w") as f:
             yaml.dump(no_user_details_cfg, f, default_flow_style=False)
-        DataBaseHandler()
-        engine = self.engine
+        dbh = DataBaseHandler()
+        engine = dbh.engine
         with self.assertRaises(ProgrammingError):
             s = "SELECT * FROM user_details"
             pd.read_sql(sql=s, con=engine)
@@ -295,8 +282,8 @@ class DataBaseHandlerTest(unittest.TestCase):
         no_key_cfg.pop('twitter_user_details', None)
         with open("config.yml", "w") as f:
             yaml.dump(no_key_cfg, f, default_flow_style=False)
-        DataBaseHandler()
-        engine = self.engine
+        dbh = DataBaseHandler()
+        engine = dbh.engine
         with self.assertRaises(ProgrammingError):
             s = "SELECT * FROM user_details"
             pd.read_sql(sql=s, con=engine)
@@ -335,7 +322,7 @@ class DataBaseHandlerTest(unittest.TestCase):
 
             with self.assertRaises(ProgrammingError):
                 s = "SELECT * FROM user_details"
-                sql_out = pd.read_sql(sql=s, con=engine)
+                pd.read_sql(sql=s, con=engine)
             engine.connect().execute("DROP TABLE friends;")
 
             # Second for sqlite
@@ -366,9 +353,8 @@ class DataBaseHandlerTest(unittest.TestCase):
         )
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
-        config = Config()
-        engine = self.engine
-        DataBaseHandler()
+        dbh = DataBaseHandler()
+        engine = dbh.engine
         s = "SELECT * FROM user_details"
         sql_out = pd.read_sql(sql=s, con=engine)
         cols = list(sql_out)
@@ -401,19 +387,19 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("time_zone", cols)
         conn.close()
 
-# class OAuthTest(unittest.TestCase):
-    # TODO: really necessary?
-    # def test_oauth_throws_error_when_wrong_or_no_verifier(self):
-    #     print("PLEASE ENTER RANDOM NUMBER")
-    #     with self.assertRaises(tweepy.TweepError):
-    #         OAuthorizer()
-
-    # def test_new_line_in_csv_after_verifying(self):
-    #     pass
-
 
 class ConfigTest(unittest.TestCase):
     config_dict = test_helpers.config_dict
+
+    @classmethod
+    def setUpClass(cls):
+        if os.path.isfile("config.yml"):
+            os.rename("config.yml", "config.yml.bak")
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.isfile("config.yml.bak"):
+            os.replace("config.yml.bak", "config.yml")
 
     def test_1_config_file_gets_read_and_is_complete(self):
         # File not found
