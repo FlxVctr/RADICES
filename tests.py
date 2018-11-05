@@ -19,7 +19,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import passwords
 import test_helpers
-from collector import Collector, Connection
+from collector import Collector, Connection, Coordinator
 from database_handler import DataBaseHandler
 from setup import Config, FileImport
 
@@ -614,6 +614,26 @@ class CollectorTest(unittest.TestCase):
 
         # BarackObama does not follow FlxVctr
         self.assertEqual(collector.check_follows(813286, 36476777), False)
+
+
+class CoordinatorTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        os.rename("seeds.csv", "seeds.csv.bak")
+        os.rename("seeds_test.csv", "seeds.csv")
+
+    @classmethod
+    def tearDownClass(self):
+        os.rename("seeds.csv", "seeds_test.csv")
+        os.rename("seeds.csv.bak", "seeds.csv")
+
+    def test_coordinator_selects_n_random_seeds(self):
+        coordinator = Coordinator(seeds=10)
+        self.assertEqual(len(coordinator.seeds), 10)
+
+        coordinator = Coordinator(seeds=2)
+        self.assertEqual(len(coordinator.seeds), 2)
 
 
 if __name__ == "__main__":

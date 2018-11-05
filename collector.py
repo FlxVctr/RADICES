@@ -365,3 +365,17 @@ class Collector(object):
         following = friendship[0].following
 
         return following
+
+
+class Coordinator(object):
+    """Selects a list/queue of seeds and coordinates the collection with collectors
+    and a list/queue of tokens.
+    """
+
+    def __init__(self, seeds=2):
+
+        self.number_of_seeds = seeds
+
+        self.seed_pool = pd.read_csv("seeds.csv")
+
+        self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
