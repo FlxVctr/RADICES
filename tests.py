@@ -610,10 +610,10 @@ class CollectorTest(unittest.TestCase):
         collector = Collector(self.connection, seed=36476777)
 
         # FlxVctr follows BenAThies
-        self.assertTrue(collector.check_follows(36476777, 83662933))
+        self.assertEqual(collector.check_follows(36476777, 83662933), True)
 
         # BarackObama does not follow FlxVctr
-        self.assertFalse(collector.check_follows(813286, 3647677))
+        self.assertEqual(collector.check_follows(813286, 36476777), False)
 
 
 if __name__ == "__main__":
