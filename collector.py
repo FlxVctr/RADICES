@@ -387,3 +387,27 @@ class Coordinator(object):
 
         for seed in self.seeds:
             self.seed_queue.put(seed)
+
+    def lookup_accounts_friend_details(self, account_id, db_connection):
+        """Looks up and retrieves details from friends of `account_id`
+
+        Args:
+            account_id (int)
+        Returns:
+            False (bool), if nothing found.
+            Otherwise DataFrame with all details.
+        """
+
+        query = "SELECT target from friends WHERE source = {}".format(account_id)
+        friends = pd.read_sql(query, db_connection)
+
+        if len(friends) == 0:
+            return False
+        else:
+            friends = friends['target'].values
+            friends = tuple(friends)
+
+            query = "SELECT * from user_details WHERE id IN {}".format(friends)
+            friend_detail = pd.read_sql(query, db_connection)
+
+            return friend_detail

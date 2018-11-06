@@ -14,6 +14,7 @@ import yaml
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
+from pandas.util.testing import assert_frame_equal
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
@@ -675,10 +676,15 @@ class CoordinatorTest(unittest.TestCase):
         self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
         self.assertTrue(coordinator.seed_queue.empty())
 
+        coordinator.seed_queue.close()
+        coordinator.seed_queue.join_thread()
+
     def test_db_can_lookup_friends(self):
 
         # write some friends in db
-        seed = int(FileImport().read_seed_file().iloc[0])
+        coordinator = Coordinator()
+
+        seed = coordinator.seed_queue.get()
 
         connection = Connection()
         c = Collector(connection, seed)
@@ -693,9 +699,16 @@ class CoordinatorTest(unittest.TestCase):
 
         friends_details.to_sql('user_details', if_exists='fail', index=False, con=self.dbh.engine)
 
-        friends_details_lookup = Coordinator.lookup_accounts_friend_details(seed)
+        friends_details_lookup = coordinator.lookup_accounts_friend_details(seed, self.dbh.engine)
 
-        self.assertEqual(friends_details, friends_details_lookup)
+        coordinator.seed_queue.close()
+        coordinator.seed_queue.join_thread()
+
+        assert_frame_equal(friends_details, friends_details_lookup)
+
+        friends_details_lookup_fail = coordinator.lookup_accounts_friend_details(0, self.dbh.engine)
+
+        self.assertFalse(friends_details_lookup_fail)
 
         self.dbh.engine.connect().execute("DROP TABLE friends;")
         self.dbh.engine.connect().execute("DROP TABLE user_details;")
