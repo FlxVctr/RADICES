@@ -1,3 +1,4 @@
+import multiprocessing as mp
 import time
 from sys import stdout
 
@@ -376,6 +377,13 @@ class Coordinator(object):
 
         self.number_of_seeds = seeds
 
-        self.seed_pool = pd.read_csv("seeds.csv")
+        self.seed_pool = pd.read_csv("seeds.csv", header=None)
 
         self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+
+        self.seeds = self.seeds[0].values
+
+        self.seed_queue = mp.Queue()
+
+        for seed in self.seeds:
+            self.seed_queue.put(seed)

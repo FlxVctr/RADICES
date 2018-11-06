@@ -635,6 +635,13 @@ class CoordinatorTest(unittest.TestCase):
         coordinator = Coordinator(seeds=2)
         self.assertEqual(len(coordinator.seeds), 2)
 
+    def test_can_get_seed_from_queue(self):
+        coordinator = Coordinator(seeds=2)
+
+        self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
+        self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
+        self.assertTrue(coordinator.seed_queue.empty())
+
 
 if __name__ == "__main__":
     unittest.main()
