@@ -121,7 +121,7 @@ class DataBaseHandlerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         if os.path.isfile("config.yml"):
-            os.rename("config.yml", "config.yml.bak")
+            os.replace("config.yml", "config.yml.bak")
 
     @classmethod
     def tearDownClass(cls):
@@ -177,7 +177,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("burned", sql_out)
         conn.close()
 
-    @unittest.skip("This test drains API calls")
+    #@unittest.skip("This test drains API calls")
     def test_dbh_write_friends_function_takes_input_and_writes_to_table(self):
         with open('config.yml', 'w') as f:
             yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
@@ -185,14 +185,15 @@ class DataBaseHandlerTest(unittest.TestCase):
         dbh = DataBaseHandler()
         c = Collector(Connection(), seed)
         friendlist = c.get_friend_list()
-        friendlist = list(map(int, friendlist))
-
         dbh.write_friends(seed, friendlist)
 
         s = "SELECT target FROM friends WHERE source LIKE '" + str(seed) + "'"
-        friendlist_in_database = pd.read_sql(sql=s, con=dbh.conn)["target"].tolist()
+        friendlist_in_database = pd.read_sql(sql=s, con=dbh.engine)["target"].tolist()
         friendlist_in_database = list(map(int, friendlist_in_database))
         self.assertEqual(friendlist_in_database, friendlist)
+
+        if dbh.config.dbtype == "sqlite":
+            dbh.engine.close()
 
     def test_sql_connection_raises_error_if_credentials_are_wrong(self):
         wrong_cfg = copy.deepcopy(self.mock_sql_cfg)
