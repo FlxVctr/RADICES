@@ -19,7 +19,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 import passwords
 import test_helpers
-from collector import Collector, Connection
+from collector import Collector, Connection, Coordinator
 from database_handler import DataBaseHandler
 from setup import Config, FileImport
 
@@ -611,10 +611,78 @@ class CollectorTest(unittest.TestCase):
         collector = Collector(self.connection, seed=36476777)
 
         # FlxVctr follows BenAThies
-        self.assertTrue(collector.check_follows(36476777, 83662933))
+        self.assertEqual(collector.check_follows(36476777, 83662933), True)
 
         # BarackObama does not follow FlxVctr
-        self.assertFalse(collector.check_follows(813286, 3647677))
+        self.assertEqual(collector.check_follows(813286, 36476777), False)
+
+
+class CoordinatorTest(unittest.TestCase):
+
+    config_dict = test_helpers.config_dict
+    mock_sql_cfg = copy.deepcopy(config_dict)
+    mock_sql_cfg["sql"] = dict(
+        dbtype='mysql',
+        host='127.0.0.1',
+        user='sparsetwitter',
+        passwd=passwords.sparsetwittermysqlpw,
+        dbname="sparsetwitter"
+    )
+
+    mock_sqlite_cfg = copy.deepcopy(config_dict)
+    mock_sqlite_cfg["sql"] = dict(
+        dbtype='sqlite',
+        host='',
+        user='',
+        passwd='',
+        dbname="test_db"
+    )
+
+    db_name = Config().dbname
+
+    @classmethod
+    def setUpClass(self):
+        os.rename("seeds.csv", "seeds.csv.bak")
+        os.rename("seeds_test.csv", "seeds.csv")
+
+        if os.path.isfile("config.yml"):
+            os.rename("config.yml", "config.yml.bak")
+
+    @classmethod
+    def tearDownClass(self):
+        os.rename("seeds.csv", "seeds_test.csv")
+        os.rename("seeds.csv.bak", "seeds.csv")
+
+        if os.path.isfile("config.yml.bak"):
+            os.replace("config.yml.bak", "config.yml")
+
+    def test_coordinator_selects_n_random_seeds(self):
+        coordinator = Coordinator(seeds=10)
+        self.assertEqual(len(coordinator.seeds), 10)
+
+        coordinator = Coordinator(seeds=2)
+        self.assertEqual(len(coordinator.seeds), 2)
+
+    def test_can_get_seed_from_queue(self):
+        coordinator = Coordinator(seeds=2)
+
+        self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
+        self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
+        self.assertTrue(coordinator.seed_queue.empty())
+
+    def test_db_gets_checked_first_for_friends(self):
+
+        # write some friends in db
+
+        with open('config.yml', 'w') as f:
+            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
+        seed = int(FileImport().read_seed_file().iloc[0])
+        dbh = DataBaseHandler()
+        c = Collector(Connection(), seed)
+        friendlist = c.get_friend_list()
+
+
+        self.assertIsInstance(friendlist[0], int)
 
 
 if __name__ == "__main__":

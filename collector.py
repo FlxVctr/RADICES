@@ -1,9 +1,11 @@
-import tweepy
+import multiprocessing as mp
 import time
+from sys import stdout
+
 import pandas as pd
+import tweepy
 
 from setup import FileImport
-from sys import stdout
 
 
 class Connection(object):
@@ -346,3 +348,42 @@ class Collector(object):
             df = df[select]
 
         return df
+
+    def check_follows(self, source, target):
+        """Checks whether `source` account follows `target` account.
+
+        Args:
+            source (int): user id
+            target (int): user id
+        Returns:
+            - `True` if `source` follows `target`
+            - `False` if `source` does not follow `target`
+        """
+
+        friendship = self.connection.api.show_friendship(
+            source_id=source, target_id=target)
+
+        following = friendship[0].following
+
+        return following
+
+
+class Coordinator(object):
+    """Selects a list/queue of seeds and coordinates the collection with collectors
+    and a list/queue of tokens.
+    """
+
+    def __init__(self, seeds=2):
+
+        self.number_of_seeds = seeds
+
+        self.seed_pool = pd.read_csv("seeds.csv", header=None)
+
+        self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+
+        self.seeds = self.seeds[0].values
+
+        self.seed_queue = mp.Queue()
+
+        for seed in self.seeds:
+            self.seed_queue.put(seed)
