@@ -653,6 +653,7 @@ class CoordinatorTest(unittest.TestCase):
             yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
 
         self.dbh = DataBaseHandler()
+        self.coordinator = Coordinator()
 
     @classmethod
     def tearDownClass(self):
@@ -682,9 +683,7 @@ class CoordinatorTest(unittest.TestCase):
     def test_db_can_lookup_friends(self):
 
         # write some friends in db
-        coordinator = Coordinator()
-
-        seed = coordinator.seed_queue.get()
+        seed = self.coordinator.seed_queue.get()
 
         connection = Connection()
         c = Collector(connection, seed)
@@ -697,26 +696,50 @@ class CoordinatorTest(unittest.TestCase):
         friends_details = Collector.make_friend_df(friends_details, select=[
             'id', 'time_zone', 'lang', 'followers_count', 'statuses_count', 'created_at'])
 
-        friends_details.to_sql('user_details', if_exists='fail', index=False, con=self.dbh.engine)
+        friends_details.to_sql('user_details', if_exists='fail',
+                               index=False, con=self.coordinator.dbh.engine)
 
-        friends_details_lookup = coordinator.lookup_accounts_friend_details(seed, self.dbh.engine)
+        friends_details_lookup = self.coordinator.lookup_accounts_friend_details(
+            seed, self.coordinator.dbh.engine)
 
-        coordinator.seed_queue.close()
-        coordinator.seed_queue.join_thread()
+        self.coordinator.seed_queue.close()
+        self.coordinator.seed_queue.join_thread()
 
         assert_frame_equal(friends_details, friends_details_lookup)
 
-        friends_details_lookup_fail = coordinator.lookup_accounts_friend_details(0, self.dbh.engine)
+        friends_details_lookup_fail = self.coordinator.lookup_accounts_friend_details(
+            0, self.dbh.engine)
 
         self.assertFalse(friends_details_lookup_fail)
 
         self.dbh.engine.connect().execute("DROP TABLE friends;")
         self.dbh.engine.connect().execute("DROP TABLE user_details;")
 
+    def test_work_through_seed(self):
+        new_seed = self.coordinator.work_through_seed_get_next_seed(36476777)
+        # Felix's most followed 'friend' is BarackObama
+        self.assertEqual(new_seed, 813286)
+
+        self.coordinator.dbh.engine.connect().execute("DROP TABLE friends;")
+        self.coordinator.dbh.engine.connect().execute("DROP TABLE user_details;")
+
     def tearDown(self):
         try:
             self.dbh.engine.connect().execute("DROP TABLE friends;")
+        except Exception:
+            pass
+
+        try:
             self.dbh.engine.connect().execute("DROP TABLE user_details;")
+        except Exception:
+            pass
+
+        try:
+            self.coordinator.dbh.engine.connect().execute("DROP TABLE friends;")
+        except Exception:
+            pass
+        try:
+            self.coordinator.dbh.engine.connect().execute("DROP TABLE user_details;")
         except Exception:
             pass
 

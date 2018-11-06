@@ -5,6 +5,7 @@ from sys import stdout
 import pandas as pd
 import tweepy
 
+from database_handler import DataBaseHandler
 from setup import FileImport
 
 
@@ -400,15 +401,23 @@ class Coordinator(object):
         for seed in self.seeds:
             self.seed_queue.put(seed)
 
-    def lookup_accounts_friend_details(self, account_id, db_connection):
-        """Looks up and retrieves details from friends of `account_id`
+        self.dbh = DataBaseHandler()
+
+    def lookup_accounts_friend_details(self,
+                                       account_id, db_connection=None, select="*"):
+        """Looks up and retrieves details from friends of `account_id` via database.
 
         Args:
             account_id (int)
+            db_connection (database connection/engine object)
+            select (str): comma separated list of required fields, defaults to all available ("*")
         Returns:
             False (bool), if nothing found.
             Otherwise DataFrame with all details.
         """
+
+        if db_connection is None:
+            db_connection = self.dbh.engine
 
         query = "SELECT target from friends WHERE source = {}".format(account_id)
         friends = pd.read_sql(query, db_connection)
@@ -419,7 +428,17 @@ class Coordinator(object):
             friends = friends['target'].values
             friends = tuple(friends)
 
-            query = "SELECT * from user_details WHERE id IN {}".format(friends)
+            query = "SELECT {} from user_details WHERE id IN {}".format(select, friends)
             friend_detail = pd.read_sql(query, db_connection)
 
             return friend_detail
+
+    def work_through_seed_get_next_seed(self, seed):
+        """Takes a seed and determines the next seed and saves all details collected to db.
+
+        Args:
+            seed (int)
+        Returns:
+            seed (int)
+        """
+        pass
