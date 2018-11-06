@@ -171,13 +171,12 @@ class DataBaseHandlerTest(unittest.TestCase):
         db_name = self.db_name
         conn = lite.connect(db_name + ".db")
         sql_out = list(pd.read_sql(con=conn, sql="SELECT * FROM friends"))
-        self.assertIn("id", sql_out)
         self.assertIn("target", sql_out)
         self.assertIn("source", sql_out)
         self.assertIn("burned", sql_out)
         conn.close()
 
-    @unittest.skip("This test drains API calls")
+    # @unittest.skip("This test drains API calls")
     def test_dbh_write_friends_function_takes_input_and_writes_to_table(self):
         with open('config.yml', 'w') as f:
             yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
@@ -214,7 +213,6 @@ class DataBaseHandlerTest(unittest.TestCase):
         sql_out = pd.read_sql(sql=s, con=engine)
         cols = list(sql_out)
 
-        self.assertIn("id", cols)
         self.assertIn("source", cols)
         self.assertIn("target", cols)
         self.assertIn("burned", cols)
@@ -681,8 +679,10 @@ class CoordinatorTest(unittest.TestCase):
         c = Collector(Connection(), seed)
         friendlist = c.get_friend_list()
 
-
         self.assertIsInstance(friendlist[0], int)
+
+        dbh.engine.connect().execute("DROP TABLE friends;")
+        dbh.engine.connect().execute("DROP TABLE user_details;")
 
 
 if __name__ == "__main__":
