@@ -177,7 +177,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("burned", sql_out)
         conn.close()
 
-    #@unittest.skip("This test drains API calls")
+    @unittest.skip("This test drains API calls")
     def test_dbh_write_friends_function_takes_input_and_writes_to_table(self):
         with open('config.yml', 'w') as f:
             yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
