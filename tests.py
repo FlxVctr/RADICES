@@ -648,6 +648,11 @@ class CoordinatorTest(unittest.TestCase):
         if os.path.isfile("config.yml"):
             os.rename("config.yml", "config.yml.bak")
 
+        with open('config.yml', 'w') as f:
+            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
+
+        self.dbh = DataBaseHandler()
+
     @classmethod
     def tearDownClass(self):
         os.rename("seeds.csv", "seeds_test.csv")
@@ -670,21 +675,37 @@ class CoordinatorTest(unittest.TestCase):
         self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
         self.assertTrue(coordinator.seed_queue.empty())
 
-    def test_db_gets_checked_first_for_friends(self):
+    def test_db_can_lookup_friends(self):
 
         # write some friends in db
-
-        with open('config.yml', 'w') as f:
-            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
         seed = int(FileImport().read_seed_file().iloc[0])
-        dbh = DataBaseHandler()
-        c = Collector(Connection(), seed)
+
+        connection = Connection()
+        c = Collector(connection, seed)
         friendlist = c.get_friend_list()
 
-        self.assertIsInstance(friendlist[0], int)
+        self.dbh.write_friends(seed, friendlist)
 
-        dbh.engine.connect().execute("DROP TABLE friends;")
-        dbh.engine.connect().execute("DROP TABLE user_details;")
+        friends_details = c.get_details(friendlist)
+
+        friends_details = Collector.make_friend_df(friends_details, select=[
+            'id', 'time_zone', 'lang', 'followers_count', 'statuses_count', 'created_at'])
+
+        friends_details.to_sql('user_details', if_exists='fail', index=False, con=self.dbh.engine)
+
+        friends_details_lookup = Coordinator.lookup_accounts_friend_details(seed)
+
+        self.assertEqual(friends_details, friends_details_lookup)
+
+        self.dbh.engine.connect().execute("DROP TABLE friends;")
+        self.dbh.engine.connect().execute("DROP TABLE user_details;")
+
+    def tearDown(self):
+        try:
+            self.dbh.engine.connect().execute("DROP TABLE friends;")
+            self.dbh.engine.connect().execute("DROP TABLE user_details;")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
