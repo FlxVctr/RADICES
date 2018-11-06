@@ -29,7 +29,7 @@ class DataBaseHandler():
 
         if self.config.dbtype.lower() == "sqlite":
             try:
-                self.conn = lite.connect(self.config.dbname + ".db")
+                self.engine = lite.connect(self.config.dbname + ".db")
                 print("Connected to " + self.config.dbname + "!")
             except Error as e:
                 raise e
@@ -41,7 +41,7 @@ class DataBaseHandler():
                                             target text NOT NULL,
                                             burned tinyint NOT NULL
                                             ); """
-                c = self.conn.cursor()
+                c = self.engine.cursor()
                 c.execute(create_friends_table_sql)
                 if user_details_list != []:
                     create_user_details_sql = """
