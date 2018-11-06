@@ -33,7 +33,7 @@ class Connection(object):
         self.auth.set_access_token(self.token, self.secret)
         # TODO: implement case if we have more than one token and secret
 
-        self.api = tweepy.API(self.auth)
+        self.api = tweepy.API(self.auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
     def next_token(self):
 
@@ -135,7 +135,7 @@ class Collector(object):
         Args:
             endpoint (str): API endpoint, e.g. '/friends/ids'
         Returns:
-            None
+            remaining_calls (int)
         """
 
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
@@ -157,6 +157,8 @@ class Collector(object):
             remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
             reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
 
+        return remaining_calls
+
     def get_friend_list(self, twitter_id=None):
         """Gets the friend list of an account.
 
@@ -173,12 +175,16 @@ class Collector(object):
 
         result = []
 
-        self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
+        remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
 
         for page in tweepy.Cursor(self.connection.api.friends_ids, user_id=twitter_id).pages():
             result = result + page
 
-            self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
+            remaining_calls -= 1
+
+            if remaining_calls == 0:
+                remaining_calls = self.check_API_calls_and_update_if_necessary(
+                    endpoint='/friends/ids')
 
         return result
 
@@ -196,6 +202,8 @@ class Collector(object):
 
         user_details = []
 
+        remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
+
         while i < len(friends):
 
             if i + 100 <= len(friends):
@@ -203,10 +211,14 @@ class Collector(object):
             else:
                 j = len(friends)
 
-            self.check_API_calls_and_update_if_necessary(endpoint='/users/lookup')
+            if remaining_calls == 0:
+                remaining_calls = self.check_API_calls_and_update_if_necessary(
+                    endpoint='/users/lookup')
 
             user_details += self.connection.api.lookup_users(user_ids=friends[i:j])
             i += 100
+
+            remaining_calls -= 1
 
         return user_details
 
