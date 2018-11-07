@@ -36,10 +36,9 @@ class DataBaseHandler():
             # TODO: timestamp für friends table?
             try:
                 create_friends_table_sql = """ CREATE TABLE IF NOT EXISTS friends (
-                                            id integer PRIMARY KEY,
-                                            source text NOT NULL,
-                                            target text NOT NULL,
-                                            burned tinyint NOT NULL
+                                            source BIGINT NOT NULL,
+                                            target BIGINT NOT NULL,
+                                            burned TINYINT NOT NULL
                                             ); """
                 c = self.engine.cursor()
                 c.execute(create_friends_table_sql)
@@ -64,11 +63,9 @@ class DataBaseHandler():
                 raise e
             try:
                 create_friends_table_sql = """CREATE TABLE IF NOT EXISTS friends (
-                                             id MEDIUMINT NOT NULL AUTO_INCREMENT,
-                                             source CHAR(30) NOT NULL,
-                                             target CHAR(30) NOT NULL,
-                                             burned TINYINT NOT NULL,
-                                             PRIMARY KEY (id)
+                                             source BIGINT NOT NULL,
+                                             target BIGINT NOT NULL,
+                                             burned TINYINT NOT NULL
                                             );"""
                 self.engine.execute(create_friends_table_sql)
                 if user_details_list != []:

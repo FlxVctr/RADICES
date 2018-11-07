@@ -172,7 +172,6 @@ class DataBaseHandlerTest(unittest.TestCase):
         db_name = self.db_name
         conn = lite.connect(db_name + ".db")
         sql_out = list(pd.read_sql(con=conn, sql="SELECT * FROM friends"))
-        self.assertIn("id", sql_out)
         self.assertIn("target", sql_out)
         self.assertIn("source", sql_out)
         self.assertIn("burned", sql_out)
@@ -215,7 +214,6 @@ class DataBaseHandlerTest(unittest.TestCase):
         sql_out = pd.read_sql(sql=s, con=engine)
         cols = list(sql_out)
 
-        self.assertIn("id", cols)
         self.assertIn("source", cols)
         self.assertIn("target", cols)
         self.assertIn("burned", cols)
