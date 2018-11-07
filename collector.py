@@ -433,12 +433,41 @@ class Coordinator(object):
 
             return friend_detail
 
-    def work_through_seed_get_next_seed(self, seed):
+    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:
             seed (int)
+            select (list of str): fields to save to database, defaults to all
+            lang (str): Twitter language code for interface language to filter for,
+                defaults to None
+            connection (collector.Connection object)
         Returns:
             seed (int)
         """
-        pass
+        if connection is None:
+            connection = Connection()
+        else:
+            connection = connection
+
+        collector = Collector(connection, seed)
+
+        friend_list = collector.get_friend_list()
+
+        friends_details = collector.get_details(friend_list)
+        select = select + ["id", "followers_count", "lang", "created_at", "statuses_count"]
+        friends_details = Collector.make_friend_df(friends_details, select)
+
+        if lang is not None:
+            friends_details = friends_details[friends_details['lang'] == lang]
+
+        max_follower_count = friends_details['followers_count'].max()
+
+        seed_id = friends_details[friends_details['followers_count']
+                                  == max_follower_count]['id'].values[0]
+
+        print(seed_id)
+
+        return seed_id
+
+# TODO: lookup in database before accessing Twitter API
