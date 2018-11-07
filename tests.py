@@ -661,12 +661,21 @@ class CoordinatorTest(unittest.TestCase):
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
 
+        self.coordinator.seed_queue.close()
+        self.coordinator.seed_queue.join_thread()
+
     def test_coordinator_selects_n_random_seeds(self):
         coordinator = Coordinator(seeds=10)
         self.assertEqual(len(coordinator.seeds), 10)
 
+        coordinator.seed_queue.close()
+        coordinator.seed_queue.join_thread()
+
         coordinator = Coordinator(seeds=2)
         self.assertEqual(len(coordinator.seeds), 2)
+
+        coordinator.seed_queue.close()
+        coordinator.seed_queue.join_thread()
 
     def test_can_get_seed_from_queue(self):
         coordinator = Coordinator(seeds=2)
