@@ -452,6 +452,8 @@ class Coordinator(object):
         else:
             connection = connection
 
+        friends_details = None
+
         try:
 
             friends_details = self.lookup_accounts_friend_details(
