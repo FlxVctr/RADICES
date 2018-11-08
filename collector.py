@@ -488,4 +488,12 @@ Accessing Twitter API.""")
 
         result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
 
+        update_query = """
+                        UPDATE friends
+                        SET burned = 1
+                        WHERE source = {source} AND target = {target}
+                       """.format(source=seed, target=seed_id)
+
+        self.dbh.engine.execute(update_query)
+
         return seed_id
