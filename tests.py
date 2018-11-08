@@ -746,6 +746,17 @@ class CoordinatorTest(unittest.TestCase):
         edge = pd.read_sql(query, con=self.dbh.engine)
         self.assertIn(new_seed, edge['target'].values)
 
+        # TODO: test follow-back
+
+        # test whether connection is burned in friendlist
+
+        query = """
+                SELECT burned FROM friends WHERE source = {} AND target = {}
+                """.format(seed, new_seed)
+        burned_edge = pd.read_sql(query, con=self.dbh.engine)
+        self.assertEqual(len(burned_edge), 1)
+        self.assertEqual(burned_edge['burned'].values[0], 1)
+
     def tearDown(self):
         try:
             self.dbh.engine.connect().execute("DROP TABLE friends;")
