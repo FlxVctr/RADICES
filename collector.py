@@ -4,6 +4,7 @@ from sys import stdout
 
 import pandas as pd
 import tweepy
+from sqlalchemy.exc import ProgrammingError
 
 from database_handler import DataBaseHandler
 from setup import FileImport
@@ -423,7 +424,7 @@ class Coordinator(object):
         friends = pd.read_sql(query, db_connection)
 
         if len(friends) == 0:
-            return False
+            return None
         else:
             friends = friends['target'].values
             friends = tuple(friends)
@@ -445,21 +446,40 @@ class Coordinator(object):
         Returns:
             seed (int)
         """
-        if connection is None:
-            connection = Connection()
-        else:
-            connection = connection
 
-        collector = Collector(connection, seed)
+        try:
 
-        friend_list = collector.get_friend_list()
+            friends_details = self.lookup_accounts_friend_details(
+                seed, self.dbh.engine)
 
-        friends_details = collector.get_details(friend_list)
-        select = select + ["id", "followers_count", "lang", "created_at", "statuses_count"]
-        friends_details = Collector.make_friend_df(friends_details, select)
+            print("db_friends_details: ", friends_details)
 
-        if lang is not None:
-            friends_details = friends_details[friends_details['lang'] == lang]
+        except ProgrammingError:
+
+            print("""Accessing db for friends_details failed. Maybe database does not exist yet.
+Accessing Twitter API.""")
+
+        if friends_details is None:
+            if connection is None:
+                connection = Connection()
+            else:
+                connection = connection
+
+            collector = Collector(connection, seed)
+
+            friend_list = collector.get_friend_list()
+
+            self.dbh.write_friends(seed, friend_list)
+
+            friends_details = collector.get_details(friend_list)
+            select = select + ["id", "followers_count", "lang", "created_at", "statuses_count"]
+            friends_details = Collector.make_friend_df(friends_details, select)
+
+            if lang is not None:
+                friends_details = friends_details[friends_details['lang'] == lang]
+
+            friends_details.to_sql('user_details', if_exists='append',
+                                   index=False, con=self.dbh.engine)
 
         max_follower_count = friends_details['followers_count'].max()
 

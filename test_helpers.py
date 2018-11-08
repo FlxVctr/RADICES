@@ -1,14 +1,14 @@
 config_dict = {
     "sql": {
-         "dbtype": "sqlite",
-         "host": None,
-         "user": None,
-         "passwd": None,
-         "dbname": "test_db"
+        "dbtype": "sqlite",
+        "host": None,
+        "user": None,
+        "passwd": None,
+        "dbname": "test_db"
     },
     "twitter_user_details": {
         "contributors_enabled": None,
-        "created_at": None,
+        "created_at": "CHAR(30)",
         "default_profile": None,
         "default_profile_image": None,
         "description": None,
@@ -21,7 +21,7 @@ config_dict = {
         "friends_count": None,
         "geo_enabled": None,
         "has_extended_profile": None,
-        "id": "INT(30) PRIMARY KEY",
+        "id": "BIGINT PRIMARY KEY",
         "id_str": None,
         "is_translation_enabled": None,
         "is_translator": None,
@@ -119,7 +119,7 @@ config_dict = {
         "status.source": None,
         "status.text": None,
         "status.truncated": None,
-        "statuses_count": None,
+        "statuses_count": "INT(30)",
         "suspended": None,
         "time_zone": "CHAR(30)",
         "translator_type": None,
