@@ -420,7 +420,7 @@ class Coordinator(object):
         if db_connection is None:
             db_connection = self.dbh.engine
 
-        query = "SELECT target from friends WHERE source = {}".format(account_id)
+        query = "SELECT target from friends WHERE source = {} AND burned = 0".format(account_id)
         friends = pd.read_sql(query, db_connection)
 
         if len(friends) == 0:
