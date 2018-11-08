@@ -724,21 +724,27 @@ class CoordinatorTest(unittest.TestCase):
 
     def test_work_through_seed(self):
 
+        seed = 36476777
+        expected_new_seed = 813286
         # there's no database, test getting seed via Twitter API
-        new_seed = self.coordinator.work_through_seed_get_next_seed(36476777)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
         # Felix's most followed 'friend' is BarackObama
-        self.assertEqual(new_seed, 813286)
+        self.assertEqual(new_seed, expected_new_seed)
 
         # destroy Twitter connection and rely on database
         try:
-            new_seed = self.coordinator.work_through_seed_get_next_seed(36476777,
+            new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
                                                                         connection="fail")
-            self.assertEqual(new_seed, 813286)
+            self.assertEqual(new_seed, expected_new_seed)
         except AttributeError:
             self.fail("could not retrieve friend details from database")
 
-        self.coordinator.dbh.engine.connect().execute("DROP TABLE friends;")
-        self.coordinator.dbh.engine.connect().execute("DROP TABLE user_details;")
+        # test whether seed->new_seed connection is in database
+        query = """
+                SELECT source, target FROM result WHERE source = {}
+                """.format(seed)
+        edge = pd.read_sql(query, con=self.dbh.engine)
+        self.assertIn(new_seed, edge['target'].values)
 
     def tearDown(self):
         try:
@@ -752,11 +758,7 @@ class CoordinatorTest(unittest.TestCase):
             pass
 
         try:
-            self.coordinator.dbh.engine.connect().execute("DROP TABLE friends;")
-        except Exception:
-            pass
-        try:
-            self.coordinator.dbh.engine.connect().execute("DROP TABLE user_details;")
+            self.dbh.engine.connect().execute("DROP TABLE result;")
         except Exception:
             pass
 

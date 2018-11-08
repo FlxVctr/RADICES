@@ -452,8 +452,6 @@ class Coordinator(object):
             friends_details = self.lookup_accounts_friend_details(
                 seed, self.dbh.engine)
 
-            print("db_friends_details: ", friends_details)
-
         except ProgrammingError:
 
             print("""Accessing db for friends_details failed. Maybe database does not exist yet.
@@ -486,8 +484,8 @@ Accessing Twitter API.""")
         seed_id = friends_details[friends_details['followers_count']
                                   == max_follower_count]['id'].values[0]
 
-        print(seed_id)
+        result = pd.DataFrame({'source': [seed], 'target': [seed_id]})
+
+        result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
 
         return seed_id
-
-# TODO: lookup in database before accessing Twitter API
