@@ -364,7 +364,7 @@ class Collector(object):
         return df
 
     def check_follows(self, source, target):
-        """Checks whether `source` account follows `target` account.
+        """Checks Twitter API whether `source` account follows `target` account.
 
         Args:
             source (int): user id
@@ -447,6 +447,11 @@ class Coordinator(object):
             seed (int)
         """
 
+        if connection is None:
+            connection = Connection()
+        else:
+            connection = connection
+
         try:
 
             friends_details = self.lookup_accounts_friend_details(
@@ -458,10 +463,6 @@ class Coordinator(object):
 Accessing Twitter API.""")
 
         if friends_details is None:
-            if connection is None:
-                connection = Connection()
-            else:
-                connection = connection
 
             collector = Collector(connection, seed)
 
@@ -481,19 +482,49 @@ Accessing Twitter API.""")
 
         max_follower_count = friends_details['followers_count'].max()
 
-        seed_id = friends_details[friends_details['followers_count']
-                                  == max_follower_count]['id'].values[0]
+        new_seed = friends_details[friends_details['followers_count']
+                                   == max_follower_count]['id'].values[0]
 
-        result = pd.DataFrame({'source': [seed], 'target': [seed_id]})
+        check_exists_query = """
+                                SELECT EXISTS(
+                                    SELECT * FROM friends
+                                    WHERE source={source}
+                                    )
+                             """.format(source=new_seed)
+        node_exists_as_source = self.dbh.engine.execute(check_exists_query).scalar()
 
-        result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+        if node_exists_as_source == 1:
+            check_follow_query = """
+                                    SELECT EXISTS(
+                                        SELECT * FROM friends
+                                        WHERE source={source} and target={target}
+                                        )
+                                 """.format(source=new_seed, target=seed)
+
+            follows = self.dbh.engine.execute(check_follow_query).scalar()
+
+        elif node_exists_as_source == 0:
+            # check on Twitter
+            try:
+                collector
+            except NameError:
+                collector = Collector(connection, seed)
+
+            follows = int(collector.check_follows(source=new_seed, target=seed))
+
+        if follows == 0:
+            result = pd.DataFrame({'source': [seed], 'target': [new_seed]})
+            result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+        if follows == 1:
+            result = pd.DataFrame({'source': [seed, new_seed], 'target': [new_seed, seed]})
+            result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
 
         update_query = """
                         UPDATE friends
                         SET burned = 1
                         WHERE source = {source} AND target = {target}
-                       """.format(source=seed, target=seed_id)
+                       """.format(source=seed, target=new_seed)
 
         self.dbh.engine.execute(update_query)
 
-        return seed_id
+        return new_seed
