@@ -413,7 +413,7 @@ class Coordinator(object):
             db_connection (database connection/engine object)
             select (str): comma separated list of required fields, defaults to all available ("*")
         Returns:
-            False (bool), if nothing found.
+            None, if nothing found.
             Otherwise DataFrame with all details.
         """
 
@@ -469,6 +469,14 @@ Accessing Twitter API.""")
             collector = Collector(connection, seed)
 
             friend_list = collector.get_friend_list()
+
+            if friend_list == []:  # if account follows nobody
+                new_seed = self.seed_pool.sample(n=1)
+                new_seed = new_seed[0].values[0]
+
+                stdout.write("No friends or unburned connections left, selecting random seed.\n")
+
+                return new_seed
 
             self.dbh.write_friends(seed, friend_list)
 

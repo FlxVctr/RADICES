@@ -763,6 +763,14 @@ class CoordinatorTest(unittest.TestCase):
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
         self.assertNotEqual(new_seed, burned_seed)
 
+    def test_work_through_seed_if_account_has_no_friends(self):
+
+        seed = 770602317242523648
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+
+        self.assertIsInstance(new_seed, np.int64)
+
     def tearDown(self):
         try:
             self.dbh.engine.connect().execute("DROP TABLE friends;")
