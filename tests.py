@@ -14,6 +14,7 @@ import yaml
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
+from pandas.util.testing import assert_frame_equal
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
@@ -657,6 +658,12 @@ class CoordinatorTest(unittest.TestCase):
         if os.path.isfile("config.yml"):
             os.rename("config.yml", "config.yml.bak")
 
+        with open('config.yml', 'w') as f:
+            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
+
+        self.dbh = DataBaseHandler()
+        self.coordinator = Coordinator()
+
     @classmethod
     def tearDownClass(self):
         os.rename("seeds.csv", "seeds_test.csv")
@@ -665,12 +672,21 @@ class CoordinatorTest(unittest.TestCase):
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
 
+        self.coordinator.seed_queue.close()
+        self.coordinator.seed_queue.join_thread()
+
     def test_coordinator_selects_n_random_seeds(self):
         coordinator = Coordinator(seeds=10)
         self.assertEqual(len(coordinator.seeds), 10)
 
+        coordinator.seed_queue.close()
+        coordinator.seed_queue.join_thread()
+
         coordinator = Coordinator(seeds=2)
         self.assertEqual(len(coordinator.seeds), 2)
+
+        coordinator.seed_queue.close()
+        coordinator.seed_queue.join_thread()
 
     def test_can_get_seed_from_queue(self):
         coordinator = Coordinator(seeds=2)
@@ -679,21 +695,108 @@ class CoordinatorTest(unittest.TestCase):
         self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
         self.assertTrue(coordinator.seed_queue.empty())
 
-    def test_db_gets_checked_first_for_friends(self):
+        coordinator.seed_queue.close()
+        coordinator.seed_queue.join_thread()
+
+    def test_db_can_lookup_friends(self):
 
         # write some friends in db
+        seed = self.coordinator.seed_queue.get()
 
-        with open('config.yml', 'w') as f:
-            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
-        seed = int(FileImport().read_seed_file().iloc[0])
-        dbh = DataBaseHandler()
-        c = Collector(Connection(), seed)
+        connection = Connection()
+        c = Collector(connection, seed)
         friendlist = c.get_friend_list()
 
-        self.assertIsInstance(friendlist[0], int)
+        self.dbh.write_friends(seed, friendlist)
 
-        dbh.engine.connect().execute("DROP TABLE friends;")
-        dbh.engine.connect().execute("DROP TABLE user_details;")
+        friends_details = c.get_details(friendlist)
+
+        friends_details = Collector.make_friend_df(friends_details, select=[
+            'id', 'time_zone', 'lang', 'followers_count', 'statuses_count', 'created_at'])
+
+        friends_details.to_sql('user_details', if_exists='fail',
+                               index=False, con=self.coordinator.dbh.engine)
+
+        friends_details_lookup = self.coordinator.lookup_accounts_friend_details(
+            seed, self.coordinator.dbh.engine)
+
+        self.coordinator.seed_queue.close()
+        self.coordinator.seed_queue.join_thread()
+
+        assert_frame_equal(friends_details, friends_details_lookup)
+
+        friends_details_lookup_fail = self.coordinator.lookup_accounts_friend_details(
+            0, self.dbh.engine)
+
+        self.assertFalse(friends_details_lookup_fail)
+
+        self.dbh.engine.connect().execute("DROP TABLE friends;")
+        self.dbh.engine.connect().execute("DROP TABLE user_details;")
+
+    def test_work_through_seed(self):
+
+        seed = 36476777
+        expected_new_seed = 813286
+        expected_new_seed_2 = 783214  # after first got burned
+        # there's no database, test getting seed via Twitter API
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        # Felix's most followed 'friend' is BarackObama
+        self.assertEqual(new_seed, expected_new_seed)
+
+        # destroy Twitter connection and rely on database
+        try:
+            new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                        connection="fail")
+            self.assertEqual(new_seed, expected_new_seed_2)
+        except AttributeError:
+            self.fail("could not retrieve friend details from database")
+
+        # test whether seed->new_seed connection is in database
+        query = """
+                SELECT source, target FROM result WHERE source = {}
+                """.format(seed)
+        edge = pd.read_sql(query, con=self.dbh.engine)
+        self.assertIn(new_seed, edge['target'].values)
+
+        # TODO: test follow-back
+
+        # test whether connection is burned in friendlist
+
+        query = """
+                SELECT burned FROM friends WHERE source = {} AND target = {}
+                """.format(seed, new_seed)
+        burned_edge = pd.read_sql(query, con=self.dbh.engine)
+        self.assertEqual(len(burned_edge), 1)
+        self.assertEqual(burned_edge['burned'].values[0], 1)
+
+        # test whether burned connection will not be returned again
+        burned_seed = new_seed
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        self.assertNotEqual(new_seed, burned_seed)
+
+    def test_work_through_seed_if_account_has_no_friends(self):
+
+        seed = 770602317242523648
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+
+        self.assertIsInstance(new_seed, np.int64)
+
+    def tearDown(self):
+        try:
+            self.dbh.engine.connect().execute("DROP TABLE friends;")
+        except Exception:
+            pass
+
+        try:
+            self.dbh.engine.connect().execute("DROP TABLE user_details;")
+        except Exception:
+            pass
+
+        try:
+            self.dbh.engine.connect().execute("DROP TABLE result;")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

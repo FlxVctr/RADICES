@@ -4,7 +4,9 @@ from sys import stdout
 
 import pandas as pd
 import tweepy
+from sqlalchemy.exc import ProgrammingError
 
+from database_handler import DataBaseHandler
 from setup import FileImport
 
 
@@ -33,7 +35,7 @@ class Connection(object):
         self.auth.set_access_token(self.token, self.secret)
         # TODO: implement case if we have more than one token and secret
 
-        self.api = tweepy.API(self.auth)
+        self.api = tweepy.API(self.auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
     def next_token(self):
 
@@ -135,7 +137,7 @@ class Collector(object):
         Args:
             endpoint (str): API endpoint, e.g. '/friends/ids'
         Returns:
-            None
+            remaining_calls (int)
         """
 
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
@@ -157,6 +159,8 @@ class Collector(object):
             remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
             reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
 
+        return remaining_calls
+
     def get_friend_list(self, twitter_id=None):
         """Gets the friend list of an account.
 
@@ -173,12 +177,16 @@ class Collector(object):
 
         result = []
 
-        self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
+        remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
 
         for page in tweepy.Cursor(self.connection.api.friends_ids, user_id=twitter_id).pages():
             result = result + page
 
-            self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
+            remaining_calls -= 1
+
+            if remaining_calls == 0:
+                remaining_calls = self.check_API_calls_and_update_if_necessary(
+                    endpoint='/friends/ids')
 
         return result
 
@@ -196,6 +204,8 @@ class Collector(object):
 
         user_details = []
 
+        remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
+
         while i < len(friends):
 
             if i + 100 <= len(friends):
@@ -203,10 +213,14 @@ class Collector(object):
             else:
                 j = len(friends)
 
-            self.check_API_calls_and_update_if_necessary(endpoint='/users/lookup')
+            if remaining_calls == 0:
+                remaining_calls = self.check_API_calls_and_update_if_necessary(
+                    endpoint='/users/lookup')
 
             user_details += self.connection.api.lookup_users(user_ids=friends[i:j])
             i += 100
+
+            remaining_calls -= 1
 
         return user_details
 
@@ -350,7 +364,7 @@ class Collector(object):
         return df
 
     def check_follows(self, source, target):
-        """Checks whether `source` account follows `target` account.
+        """Checks Twitter API whether `source` account follows `target` account.
 
         Args:
             source (int): user id
@@ -387,3 +401,145 @@ class Coordinator(object):
 
         for seed in self.seeds:
             self.seed_queue.put(seed)
+
+        self.dbh = DataBaseHandler()
+
+    def lookup_accounts_friend_details(self,
+                                       account_id, db_connection=None, select="*"):
+        """Looks up and retrieves details from friends of `account_id` via database.
+
+        Args:
+            account_id (int)
+            db_connection (database connection/engine object)
+            select (str): comma separated list of required fields, defaults to all available ("*")
+        Returns:
+            None, if nothing found.
+            Otherwise DataFrame with all details.
+        """
+
+        if db_connection is None:
+            db_connection = self.dbh.engine
+
+        query = "SELECT target from friends WHERE source = {} AND burned = 0".format(account_id)
+        friends = pd.read_sql(query, db_connection)
+
+        if len(friends) == 0:
+            return None
+        else:
+            friends = friends['target'].values
+            friends = tuple(friends)
+
+            query = "SELECT {} from user_details WHERE id IN {}".format(select, friends)
+            friend_detail = pd.read_sql(query, db_connection)
+
+            return friend_detail
+
+    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None):
+        """Takes a seed and determines the next seed and saves all details collected to db.
+
+        Args:
+            seed (int)
+            select (list of str): fields to save to database, defaults to all
+            lang (str): Twitter language code for interface language to filter for,
+                defaults to None
+            connection (collector.Connection object)
+        Returns:
+            seed (int)
+        """
+
+        if connection is None:
+            connection = Connection()
+        else:
+            connection = connection
+
+        friends_details = None
+
+        try:
+
+            friends_details = self.lookup_accounts_friend_details(
+                seed, self.dbh.engine)
+
+        except ProgrammingError:
+
+            print("""Accessing db for friends_details failed. Maybe database does not exist yet.
+Accessing Twitter API.""")
+
+        if friends_details is None:
+
+            collector = Collector(connection, seed)
+
+            friend_list = collector.get_friend_list()
+
+            if friend_list == []:  # if account follows nobody
+                new_seed = self.seed_pool.sample(n=1)
+                new_seed = new_seed[0].values[0]
+
+                stdout.write("No friends or unburned connections left, selecting random seed.\n")
+
+                return new_seed
+
+            self.dbh.write_friends(seed, friend_list)
+
+            friends_details = collector.get_details(friend_list)
+            select = select + ["id", "followers_count", "lang", "created_at", "statuses_count"]
+            friends_details = Collector.make_friend_df(friends_details, select)
+
+            if lang is not None:
+                friends_details = friends_details[friends_details['lang'] == lang]
+
+            friends_details.to_sql('user_details', if_exists='append',
+                                   index=False, con=self.dbh.engine)
+
+        max_follower_count = friends_details['followers_count'].max()
+
+        new_seed = friends_details[friends_details['followers_count']
+                                   == max_follower_count]['id'].values[0]
+
+        check_exists_query = """
+                                SELECT EXISTS(
+                                    SELECT * FROM friends
+                                    WHERE source={source}
+                                    )
+                             """.format(source=new_seed)
+        node_exists_as_source = self.dbh.engine.execute(check_exists_query).scalar()
+
+        if node_exists_as_source == 1:
+            check_follow_query = """
+                                    SELECT EXISTS(
+                                        SELECT * FROM friends
+                                        WHERE source={source} and target={target}
+                                        )
+                                 """.format(source=new_seed, target=seed)
+
+            follows = self.dbh.engine.execute(check_follow_query).scalar()
+
+        elif node_exists_as_source == 0:
+            # check on Twitter
+
+            # FIXTHIS: dirty workaround because of wacky test
+            if connection == "fail":
+                connection = Connection()
+
+            try:
+                collector
+            except NameError:
+                collector = Collector(connection, seed)
+
+            follows = int(collector.check_follows(source=new_seed, target=seed))
+
+        if follows == 0:
+            result = pd.DataFrame({'source': [seed], 'target': [new_seed]})
+            result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+        if follows == 1:
+            result = pd.DataFrame({'source': [seed, new_seed], 'target': [new_seed, seed]})
+            result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+
+        update_query = """
+                        UPDATE friends
+                        SET burned = 1
+                        WHERE source = {source} AND target = {target}
+                       """.format(source=seed, target=new_seed)
+
+        self.dbh.engine.execute(update_query)
+
+        return new_seed

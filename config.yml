@@ -24,7 +24,7 @@ sql:
 
 twitter_user_details:
     contributors_enabled:
-    created_at:
+    created_at: CHAR(30)
     default_profile:
     default_profile_image:
     description:
@@ -37,7 +37,7 @@ twitter_user_details:
     friends_count:
     geo_enabled:
     has_extended_profile:
-    id: INT(30) PRIMARY KEY
+    id: BIGINT PRIMARY KEY
     id_str:
     is_translation_enabled:
     is_translator:
@@ -135,7 +135,7 @@ twitter_user_details:
     status.source:
     status.text:
     status.truncated:
-    statuses_count:
+    statuses_count: INT(30)
     suspended:
     time_zone: CHAR(30)
     translator_type:
