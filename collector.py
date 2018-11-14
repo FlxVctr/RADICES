@@ -17,19 +17,24 @@ class Connection(object):
         token_file_name (str): Path to file with user tokens
     """
 
-    def __init__(self, token_file_name="tokens.csv"):
+    def __init__(self, token_file_name="tokens.csv", token_queue=None):
 
         self.credentials = FileImport().read_app_key_file()
-
-        self.tokens = FileImport().read_token_file(token_file_name)
 
         self.ctoken = self.credentials[0]
         self.csecret = self.credentials[1]
 
-        self.token_number = 0
+        if token_queue is None:
+            self.tokens = FileImport().read_token_file(token_file_name)
 
-        self.token = self.tokens['token'][0]
-        self.secret = self.tokens['secret'][0]
+            self.token_queue = mp.Queue()
+
+            for token in self.tokens.values:
+                self.token_queue.put(token)
+        else:
+            self.token_queue = token_queue
+
+        self.token, self.secret = self.token_queue.get()
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -39,16 +44,8 @@ class Connection(object):
 
     def next_token(self):
 
-        print("len(self.tokens) = ", len(self.tokens))
-        print("token number = ", self.token_number)
-        if self.token_number + 1 < len(self.tokens):
-            self.token_number += 1
-            self.token = self.tokens['token'][self.token_number]
-            self.secret = self.tokens['secret'][self.token_number]
-        else:
-            self.token_number = 0
-            self.token = self.tokens['token'][self.token_number]
-            self.secret = self.tokens['secret'][self.token_number]
+        self.token_queue.put((self.token, self.secret))
+        self.token, self.secret = self.token_queue.get()
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -143,19 +140,21 @@ class Collector(object):
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
         reset_time = self.connection.reset_time(endpoint=endpoint)
         attempts = 0
+        first_token = self.connection.token
 
         while remaining_calls == 0:
             attempts += 1
             stdout.write("Attempt with next token: {}\n".format(attempts))
 
-            if attempts >= len(self.connection.tokens):
+            self.connection.next_token()
+
+            if self.connection.token == first_token:  # tried all tokens
                 msg = "API calls for {e} depleted. Waiting {s} seconds.\n"
                 stdout.write(msg.format(e=endpoint, s=reset_time))
                 stdout.flush()
                 time.sleep(reset_time)
                 attempts = 0
 
-            self.connection.next_token()
             remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
             reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
 
