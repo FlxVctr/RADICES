@@ -687,6 +687,12 @@ class CoordinatorTest(unittest.TestCase):
         coordinator.seed_queue.close()
         coordinator.seed_queue.join_thread()
 
+    def test_can_get_token_from_queue(self):
+        coordinator = Coordinator()
+
+        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
+        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
+
     def test_db_can_lookup_friends(self):
 
         # write some friends in db
