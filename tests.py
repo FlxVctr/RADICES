@@ -490,6 +490,17 @@ class ConfigTest(unittest.TestCase):
         config_dict = copy.deepcopy(self.config_dict)
         self.assertEqual(Config().config, config_dict)
 
+    def test_6_sql_key_not_in_config(self):
+        mock_cfg = copy.deepcopy(self.config_dict)
+        mock_cfg.pop("sql", None)
+        with open('config.yml', 'w') as f:
+            yaml.dump(mock_cfg, f, default_flow_style=False)
+        config = Config()
+        self.assertEqual("sqlite", config.config["sql"]["dbtype"])
+        self.assertEqual("new_database", config.config["sql"]["dbname"])
+
+    def test_7_config_assigns_correct_datatypes(self):
+        mock_cfg = test_helpers.config_dict_twitter_details
 
 class CollectorTest(unittest.TestCase):
 
