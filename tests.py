@@ -40,7 +40,6 @@ global skiptest
 skiptest = args.skip_draining_tests
 if skiptest > 1:
     raise ValueError("--skip_draining_tests argument can only be 0 or 1")
-print(skiptest)
 skiptest = bool(skiptest)
 del(sys.argv[1:])
 
@@ -49,13 +48,6 @@ def skipIfDraining():
     if skiptest:
         return unittest.skip("This test drains API calls")
     return lambda x: x
-
-
-def setUpModule():
-    global skippi
-    skippi = skiptest
-    print(skippi)
-    input("hold it")
 
 
 class FileImportTest(unittest.TestCase):
