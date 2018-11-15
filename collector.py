@@ -382,8 +382,8 @@ class Collector(object):
 
 
 class Coordinator(object):
-    """Selects a list/queue of seeds and coordinates the collection with collectors
-    and a list/queue of tokens.
+    """Selects a queue of seeds and coordinates the collection with collectors
+    and a queue of tokens.
     """
 
     def __init__(self, seeds=2, token_file_name="tokens.csv"):
@@ -549,3 +549,6 @@ Accessing Twitter API.""")
         self.dbh.engine.execute(update_query)
 
         return new_seed
+
+    def start_collectors(self, initial_number_of_collectors=2):
+        pass
