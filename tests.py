@@ -26,7 +26,6 @@ from collector import Collector, Connection, Coordinator
 from database_handler import DataBaseHandler
 from setup import Config, FileImport
 
-
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
                     help='''Indicates whether or not to skip tests that drain Twitter API
@@ -724,6 +723,12 @@ class CoordinatorTest(unittest.TestCase):
         coordinator.seed_queue.close()
         coordinator.seed_queue.join_thread()
 
+    def test_can_get_token_from_queue(self):
+        coordinator = Coordinator()
+
+        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
+        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
+
     def test_db_can_lookup_friends(self):
 
         # write some friends in db
@@ -807,6 +812,13 @@ class CoordinatorTest(unittest.TestCase):
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
 
         self.assertIsInstance(new_seed, np.int64)
+
+    def test_start_collectors(self):
+
+        processes = self.coordinator.start_collectors()
+
+        for process in processes:
+            self.assertIsInstance(process, mp.Process, msg="type is {}".format(type(process)))
 
     def tearDown(self):
         try:

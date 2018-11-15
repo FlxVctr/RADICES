@@ -386,7 +386,7 @@ class Coordinator(object):
     and a list/queue of tokens.
     """
 
-    def __init__(self, seeds=2):
+    def __init__(self, seeds=2, token_file_name="tokens.csv"):
 
         self.number_of_seeds = seeds
 
@@ -400,6 +400,13 @@ class Coordinator(object):
 
         for seed in self.seeds:
             self.seed_queue.put(seed)
+
+        self.tokens = FileImport().read_token_file(token_file_name)
+
+        self.token_queue = mp.Queue()
+
+        for token in self.tokens.values:
+            self.token_queue.put(token)
 
         self.dbh = DataBaseHandler()
 
