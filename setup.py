@@ -2,6 +2,7 @@ import json
 from json import JSONDecodeError
 import pandas as pd
 import yaml
+import sqlalchemy
 
 
 class FileImport():
@@ -84,7 +85,11 @@ class Config():
             raise FileNotFoundError('Could not find "' + self.config_path + '''".\n
             Please run "python3 make_config.py" or provide a config.yml''')
 
-        # TODO: What if config has no Key "sql"?
+        if "sql" not in self.config:
+            print("Config file " + config_file + """ does not contain key 'sql'!
+                  Will use default sqlite configuration.""")
+            self.config["sql"] = dict(dbtype="sqlite",
+                                      dbname="new_database")
         self.sql_config = self.config["sql"]
 
         # No db type given in Config
@@ -124,3 +129,6 @@ class Config():
             print('''Parameter "dbname" is missing. New database will have the name
                   "new_database".''')
             self.dbname = "new_database"
+
+        # TODO: Add DataTypes from config.yml
+        # if "twitter_user_details" in self.config:
