@@ -1,8 +1,10 @@
+import argparse
 import copy
 import json
 import os
 import shutil
 import sqlite3 as lite
+import sys
 import unittest
 from json import JSONDecodeError
 from subprocess import PIPE, Popen
@@ -23,6 +25,37 @@ import test_helpers
 from collector import Collector, Connection, Coordinator
 from database_handler import DataBaseHandler
 from setup import Config, FileImport
+
+
+parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
+parser.add_argument('-s', '--skip_draining_tests',
+                    help='''Indicates whether or not to skip tests that drain Twitter API
+                         calls. 1=yes, 0=no''',
+                    default=0,
+                    type=int,
+                    required=False)
+
+args = parser.parse_args()
+global skiptest
+skiptest = args.skip_draining_tests
+if skiptest > 1:
+    raise ValueError("--skip_draining_tests argument can only be 0 or 1")
+print(skiptest)
+skiptest = bool(skiptest)
+del(sys.argv[1:])
+
+
+def skipIfDraining():
+    if skiptest:
+        return unittest.skip("This test drains API calls")
+    return lambda x: x
+
+
+def setUpModule():
+    global skippi
+    skippi = skiptest
+    print(skippi)
+    input("hold it")
 
 
 class FileImportTest(unittest.TestCase):
@@ -177,7 +210,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("burned", sql_out)
         conn.close()
 
-    # @unittest.skip("This test drains API calls")
+    @skipIfDraining()
     def test_dbh_write_friends_function_takes_input_and_writes_to_table(self):
         with open('config.yml', 'w') as f:
             yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
@@ -221,7 +254,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         engine.execute("DROP TABLE friends;")
         engine.execute("DROP TABLE user_details;")
 
-    @unittest.skip("This test drains API calls")
+    @skipIfDraining()
     def test_dbh_write_friends_function_also_works_with_mysql(self):
         with open('config.yml', 'w') as f:
             yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
@@ -500,8 +533,9 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual("sqlite", config.config["sql"]["dbtype"])
         self.assertEqual("new_database", config.config["sql"]["dbname"])
 
-    def test_7_config_assigns_correct_datatypes(self):
-        mock_cfg = test_helpers.config_dict_twitter_details
+#    def test_7_config_assigns_correct_datatypes(self):
+#        mock_cfg = test_helpers.config_dict_twitter_details
+
 
 class CollectorTest(unittest.TestCase):
 
@@ -606,7 +640,7 @@ class CollectorTest(unittest.TestCase):
             except tweepy.TweepError:
                 self.fail("Could not verify API credentials after token change.")
 
-    @unittest.skip("This test drains API calls")
+    @skipIfDraining()
     def test_get_friend_list_changes_token(self):
 
         for i in range(16):

@@ -10,6 +10,7 @@ tweepy = "*"
 pyyaml = "*"
 sqlalchemy = "*"
 pymysql = "*"
+argparse = "*"
 
 [dev-packages]
 "flake8" = "*"
