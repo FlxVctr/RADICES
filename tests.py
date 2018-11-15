@@ -31,17 +31,13 @@ parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
                     help='''Indicates whether or not to skip tests that drain Twitter API
                          calls. 1=yes, 0=no''',
-                    default=0,
-                    type=int,
-                    required=False)
+                    required=False,
+                    action='store_true')
+parser.add_argument('unittest_args', nargs='*')
 
 args = parser.parse_args()
-global skiptest
 skiptest = args.skip_draining_tests
-if skiptest > 1:
-    raise ValueError("--skip_draining_tests argument can only be 0 or 1")
-skiptest = bool(skiptest)
-del(sys.argv[1:])
+sys.argv[1:] = args.unittest_args
 
 
 def skipIfDraining():
