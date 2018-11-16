@@ -362,6 +362,8 @@ class Collector(object):
         if select != []:
             df = df[select]
 
+        df.sort_index(axis=1, inplace=True)
+
         return df
 
     def check_follows(self, source, target):
@@ -502,11 +504,12 @@ Accessing Twitter API.""")
             except IntegrityError:  # duplicate id (primary key)
                 friends_details.to_sql('user_details_temp', if_exists='replace',
                                        index=False, con=self.dbh.engine)
-                self.dbh.engine.execute("""
-                                    REPLACE INTO user_details
-                                    SELECT * FROM user_details_temp
-                                    """)
-                connection.execute('DROP TABLE user_details_temp')
+
+                query = """
+                        REPLACE INTO user_details
+                        SELECT * FROM user_details_temp
+                        """
+                self.dbh.engine.execute(query)
 
         max_follower_count = friends_details['followers_count'].max()
 
@@ -572,7 +575,6 @@ Accessing Twitter API.""")
 
         for i in range(initial_number_of_collectors):
             seed = self.seed_queue.get()
-            print("SEED!!!!", seed)
             processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
                                         kwargs={'seed': seed,
                                                 'select': select,

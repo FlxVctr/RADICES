@@ -814,7 +814,7 @@ class CoordinatorTest(unittest.TestCase):
     def test_start_collectors(self):
 
         seeds = set(self.seed_list)
-        expected_new_seeds = {1, 2}
+        expected_new_seeds = {9334352, 813286}
 
         processes = self.coordinator.start_collectors()
 
