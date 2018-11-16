@@ -702,14 +702,20 @@ class CoordinatorTest(unittest.TestCase):
         coordinator = Coordinator(seeds=10)
         self.assertEqual(len(coordinator.seeds), 10)
 
-        coordinator.seed_queue.close()
-        coordinator.seed_queue.join_thread()
+        try:
+            coordinator.seed_queue.close()
+            coordinator.seed_queue.join_thread()
+        except AttributeError:
+            pass
 
         coordinator = Coordinator(seeds=2)
         self.assertEqual(len(coordinator.seeds), 2)
 
-        coordinator.seed_queue.close()
-        coordinator.seed_queue.join_thread()
+        try:
+            coordinator.seed_queue.close()
+            coordinator.seed_queue.join_thread()
+        except AttributeError:
+            pass
 
     def test_can_get_seed_from_queue(self):
         coordinator = Coordinator(seeds=2)
@@ -718,8 +724,11 @@ class CoordinatorTest(unittest.TestCase):
         self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
         self.assertTrue(coordinator.seed_queue.empty())
 
-        coordinator.seed_queue.close()
-        coordinator.seed_queue.join_thread()
+        try:
+            coordinator.seed_queue.close()
+            coordinator.seed_queue.join_thread()
+        except AttributeError:
+            pass
 
     def test_can_get_token_from_queue(self):
         coordinator = Coordinator()

@@ -392,10 +392,11 @@ class Coordinator(object):
 
     def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None):
 
-        self.number_of_seeds = seeds
+        self.seed_pool = pd.read_csv("seeds.csv", header=None)
 
         if seed_list is None:
-            self.seed_pool = pd.read_csv("seeds.csv", header=None)
+
+            self.number_of_seeds = seeds
 
             self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
 
@@ -574,7 +575,7 @@ Accessing Twitter API.""")
         processes = []
 
         for i in range(initial_number_of_collectors):
-            seed = self.seed_queue.get()
+            seed = self.seed_queue.get(timeout=1)
             processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
                                         kwargs={'seed': seed,
                                                 'select': select,
