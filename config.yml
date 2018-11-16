@@ -137,7 +137,7 @@ twitter_user_details:
     status.truncated:
     statuses_count: INT(30)
     suspended:
-    time_zone: CHAR(30)
+    time_zone:
     translator_type:
     url:
     verified:

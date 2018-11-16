@@ -9,6 +9,7 @@ import sys
 import unittest
 from json import JSONDecodeError
 from subprocess import PIPE, Popen
+from sys import stdout
 
 import numpy as np
 import pandas as pd
@@ -370,7 +371,6 @@ class DataBaseHandlerTest(unittest.TestCase):
             id="INT(30) PRIMARY KEY",
             followers_count="INT(30)",
             lang="CHAR(30)",
-            time_zone="CHAR(30)"
         )
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
@@ -382,7 +382,6 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
-        self.assertIn("time_zone", cols)
         engine.connect().execute("DROP TABLE friends;")
         engine.connect().execute("DROP TABLE user_details;")
 
@@ -391,8 +390,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         cfg["twitter_user_details"] = dict(
             id="INT(30) PRIMARY KEY",
             followers_count="INT(30)",
-            lang="CHAR(30)",
-            time_zone="CHAR(30)"
+            lang="CHAR(30)"
         )
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
@@ -405,7 +403,6 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
-        self.assertIn("time_zone", cols)
         conn.close()
 
 
@@ -684,7 +681,8 @@ class CoordinatorTest(unittest.TestCase):
             yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
 
         self.dbh = DataBaseHandler()
-        self.coordinator = Coordinator()
+        self.seed_list = [2367431, 36476777]
+        self.coordinator = Coordinator(seed_list=self.seed_list)
 
     @classmethod
     def tearDownClass(self):
@@ -743,7 +741,7 @@ class CoordinatorTest(unittest.TestCase):
         friends_details = c.get_details(friendlist)
 
         friends_details = Collector.make_friend_df(friends_details, select=[
-            'id', 'time_zone', 'lang', 'followers_count', 'statuses_count', 'created_at'])
+            'id', 'lang', 'followers_count', 'statuses_count', 'created_at'])
 
         friends_details.to_sql('user_details', if_exists='fail',
                                index=False, con=self.coordinator.dbh.engine)
@@ -815,7 +813,7 @@ class CoordinatorTest(unittest.TestCase):
 
     def test_start_collectors(self):
 
-        seeds = {83662933, 36476777}
+        seeds = set(self.seed_list)
         expected_new_seeds = {1, 2}
 
         processes = self.coordinator.start_collectors()
@@ -824,12 +822,14 @@ class CoordinatorTest(unittest.TestCase):
 
         for process in processes:
             self.assertIsInstance(process, mp.Process, msg="type is {}".format(type(process)))
-            process.join(timeout=10)
+            stdout.write("Waiting for processes to finish.")
+            stdout.flush()
+            process.join(timeout=30)
 
         new_seeds = set()
 
         for i in range(2):
-            new_seeds.add(self.coordinator.seed_queue.get(timeout=10))
+            new_seeds.add(self.coordinator.seed_queue.get(timeout=30))
 
         self.assertEqual(len(new_seeds), 2)
 

@@ -4,7 +4,7 @@ from sys import stdout
 
 import pandas as pd
 import tweepy
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from database_handler import DataBaseHandler
 from setup import FileImport
@@ -388,15 +388,18 @@ class Coordinator(object):
     and a queue of tokens.
     """
 
-    def __init__(self, seeds=2, token_file_name="tokens.csv"):
+    def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None):
 
         self.number_of_seeds = seeds
 
-        self.seed_pool = pd.read_csv("seeds.csv", header=None)
+        if seed_list is None:
+            self.seed_pool = pd.read_csv("seeds.csv", header=None)
 
-        self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+            self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
 
-        self.seeds = self.seeds[0].values
+            self.seeds = self.seeds[0].values
+        else:
+            self.seeds = seed_list
 
         self.seed_queue = mp.Queue()
 
@@ -493,8 +496,17 @@ Accessing Twitter API.""")
             if lang is not None:
                 friends_details = friends_details[friends_details['lang'] == lang]
 
-            friends_details.to_sql('user_details', if_exists='append',
-                                   index=False, con=self.dbh.engine)
+            try:
+                friends_details.to_sql('user_details', if_exists='append',
+                                       index=False, con=self.dbh.engine)
+            except IntegrityError:  # duplicate id (primary key)
+                friends_details.to_sql('user_details_temp', if_exists='replace',
+                                       index=False, con=self.dbh.engine)
+                self.dbh.engine.execute("""
+                                    REPLACE INTO user_details
+                                    SELECT * FROM user_details_temp
+                                    """)
+                connection.execute('DROP TABLE user_details_temp')
 
         max_follower_count = friends_details['followers_count'].max()
 
@@ -542,8 +554,8 @@ Accessing Twitter API.""")
 
         update_query = """
                         UPDATE friends
-                        SET burned = 1
-                        WHERE source = {source} AND target = {target}
+                        SET burned=1
+                        WHERE source={source} AND target={target}
                        """.format(source=seed, target=new_seed)
 
         self.dbh.engine.execute(update_query)
@@ -560,6 +572,7 @@ Accessing Twitter API.""")
 
         for i in range(initial_number_of_collectors):
             seed = self.seed_queue.get()
+            print("SEED!!!!", seed)
             processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
                                         kwargs={'seed': seed,
                                                 'select': select,
