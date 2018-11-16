@@ -694,8 +694,11 @@ class CoordinatorTest(unittest.TestCase):
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
 
-        self.coordinator.seed_queue.close()
-        self.coordinator.seed_queue.join_thread()
+        try:
+            self.coordinator.seed_queue.close()
+            self.coordinator.seed_queue.join_thread()
+        except AttributeError:
+            pass
 
     def test_coordinator_selects_n_random_seeds(self):
         coordinator = Coordinator(seeds=10)
