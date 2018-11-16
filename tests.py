@@ -829,7 +829,7 @@ class CoordinatorTest(unittest.TestCase):
         new_seeds = set()
 
         for i in range(2):
-            new_seeds.add(self.coordinator.seed_queue.get(timeout=1))
+            new_seeds.add(self.coordinator.seed_queue.get(timeout=10))
 
         self.assertEqual(len(new_seeds), 2)
 

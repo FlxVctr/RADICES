@@ -548,6 +548,8 @@ Accessing Twitter API.""")
 
         self.dbh.engine.execute(update_query)
 
+        self.token_queue.put((connection.token, connection.secret))
+
         self.seed_queue.put(new_seed)
 
         return new_seed
