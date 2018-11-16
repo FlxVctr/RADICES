@@ -1,6 +1,7 @@
 import argparse
 import copy
 import json
+import multiprocessing.dummy as mp
 import os
 import shutil
 import sqlite3 as lite
@@ -747,8 +748,8 @@ class CoordinatorTest(unittest.TestCase):
         friends_details_lookup = self.coordinator.lookup_accounts_friend_details(
             seed, self.coordinator.dbh.engine)
 
-        self.coordinator.seed_queue.close()
-        self.coordinator.seed_queue.join_thread()
+        # self.coordinator.seed_queue.close()
+        # self.coordinator.seed_queue.join_thread()
 
         assert_frame_equal(friends_details, friends_details_lookup)
 
@@ -811,10 +812,28 @@ class CoordinatorTest(unittest.TestCase):
 
     def test_start_collectors(self):
 
+        seeds = {83662933, 36476777}
+        expected_new_seeds = {1, 2}
+
         processes = self.coordinator.start_collectors()
+
+        self.assertEqual(len(processes), 2)
 
         for process in processes:
             self.assertIsInstance(process, mp.Process, msg="type is {}".format(type(process)))
+            process.join(timeout=10)
+
+        new_seeds = set()
+
+        for i in range(2):
+            new_seeds.add(self.coordinator.seed_queue.get(timeout=1))
+
+        self.assertEqual(len(new_seeds), 2)
+
+        print(new_seeds)
+
+        self.assertNotEqual(new_seeds, seeds)
+        self.assertEqual(new_seeds, expected_new_seeds)
 
     def tearDown(self):
         try:

@@ -1,4 +1,4 @@
-import multiprocessing as mp
+import multiprocessing.dummy as mp
 import time
 from sys import stdout
 
@@ -8,6 +8,8 @@ from sqlalchemy.exc import ProgrammingError
 
 from database_handler import DataBaseHandler
 from setup import FileImport
+
+# mp.set_start_method('spawn')
 
 
 class Connection(object):
@@ -454,9 +456,7 @@ class Coordinator(object):
         """
 
         if connection is None:
-            connection = Connection()
-        else:
-            connection = connection
+            connection = Connection(token_queue=self.token_queue)
 
         friends_details = None
 
@@ -548,7 +548,22 @@ Accessing Twitter API.""")
 
         self.dbh.engine.execute(update_query)
 
+        self.seed_queue.put(new_seed)
+
         return new_seed
 
-    def start_collectors(self, initial_number_of_collectors=2):
-        pass
+    def start_collectors(self, initial_number_of_collectors=2, select=[], lang=None):
+
+        processes = []
+
+        for i in range(initial_number_of_collectors):
+            seed = self.seed_queue.get()
+            processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
+                                        kwargs={'seed': seed,
+                                                'select': select,
+                                                'lang': lang}))
+
+        for p in processes:
+            p.start()
+
+        return processes
