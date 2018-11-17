@@ -682,7 +682,6 @@ class CoordinatorTest(unittest.TestCase):
 
         self.dbh = DataBaseHandler()
         self.seed_list = [2367431, 36476777]
-        self.coordinator = Coordinator(seed_list=self.seed_list)
 
     @classmethod
     def tearDownClass(self):
@@ -696,6 +695,25 @@ class CoordinatorTest(unittest.TestCase):
             self.coordinator.seed_queue.close()
             self.coordinator.seed_queue.join_thread()
         except AttributeError:
+            pass
+
+    def setUp(self):
+        self.coordinator = Coordinator(seed_list=self.seed_list)
+
+    def tearDown(self):
+        try:
+            self.dbh.engine.execute("DROP TABLE friends;")
+        except Exception:
+            pass
+
+        try:
+            self.dbh.engine.execute("DROP TABLE user_details;")
+        except Exception:
+            pass
+
+        try:
+            self.dbh.engine.execute("DROP TABLE result;")
+        except Exception:
             pass
 
     def test_coordinator_selects_n_random_seeds(self):
@@ -752,7 +770,7 @@ class CoordinatorTest(unittest.TestCase):
         friends_details = Collector.make_friend_df(friends_details, select=[
             'id', 'lang', 'followers_count', 'statuses_count', 'created_at'])
 
-        friends_details.to_sql('user_details', if_exists='fail',
+        friends_details.to_sql('user_details', if_exists='append',
                                index=False, con=self.coordinator.dbh.engine)
 
         friends_details_lookup = self.coordinator.lookup_accounts_friend_details(
@@ -761,6 +779,11 @@ class CoordinatorTest(unittest.TestCase):
         # self.coordinator.seed_queue.close()
         # self.coordinator.seed_queue.join_thread()
 
+        friends_details.sort_values('id', inplace=True)
+        friends_details.reset_index(drop=True, inplace=True)
+        friends_details_lookup.sort_values('id', inplace=True)
+        friends_details_lookup.reset_index(drop=True, inplace=True)
+
         assert_frame_equal(friends_details, friends_details_lookup)
 
         friends_details_lookup_fail = self.coordinator.lookup_accounts_friend_details(
@@ -768,8 +791,8 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertFalse(friends_details_lookup_fail)
 
-        self.dbh.engine.connect().execute("DROP TABLE friends;")
-        self.dbh.engine.connect().execute("DROP TABLE user_details;")
+        self.dbh.engine.execute("DROP TABLE friends;")
+        self.dbh.engine.execute("DROP TABLE user_details;")
 
     def test_work_through_seed(self):
 
@@ -833,12 +856,12 @@ class CoordinatorTest(unittest.TestCase):
             self.assertIsInstance(process, mp.Process, msg="type is {}".format(type(process)))
             stdout.write("Waiting for processes to finish.")
             stdout.flush()
-            process.join(timeout=30)
+            process.join(timeout=1000)
 
         new_seeds = set()
 
         for i in range(2):
-            new_seeds.add(self.coordinator.seed_queue.get(timeout=30))
+            new_seeds.add(self.coordinator.seed_queue.get(timeout=1000))
 
         self.assertEqual(len(new_seeds), 2)
 
@@ -846,22 +869,6 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertNotEqual(new_seeds, seeds)
         self.assertEqual(new_seeds, expected_new_seeds)
-
-    def tearDown(self):
-        try:
-            self.dbh.engine.connect().execute("DROP TABLE friends;")
-        except Exception:
-            pass
-
-        try:
-            self.dbh.engine.connect().execute("DROP TABLE user_details;")
-        except Exception:
-            pass
-
-        try:
-            self.dbh.engine.connect().execute("DROP TABLE result;")
-        except Exception:
-            pass
 
 
 if __name__ == "__main__":
