@@ -377,6 +377,8 @@ class Collector(object):
             - `False` if `source` does not follow `target`
         """
 
+        # TODO: check remaining API calls
+
         friendship = self.connection.api.show_friendship(
             source_id=source, target_id=target)
 
