@@ -1,13 +1,15 @@
-import multiprocessing as mp
+import multiprocessing.dummy as mp
 import time
 from sys import stdout
 
 import pandas as pd
 import tweepy
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from database_handler import DataBaseHandler
 from setup import FileImport
+
+# mp.set_start_method('spawn')
 
 
 class Connection(object):
@@ -17,19 +19,24 @@ class Connection(object):
         token_file_name (str): Path to file with user tokens
     """
 
-    def __init__(self, token_file_name="tokens.csv"):
+    def __init__(self, token_file_name="tokens.csv", token_queue=None):
 
         self.credentials = FileImport().read_app_key_file()
-
-        self.tokens = FileImport().read_token_file(token_file_name)
 
         self.ctoken = self.credentials[0]
         self.csecret = self.credentials[1]
 
-        self.token_number = 0
+        if token_queue is None:
+            self.tokens = FileImport().read_token_file(token_file_name)
 
-        self.token = self.tokens['token'][0]
-        self.secret = self.tokens['secret'][0]
+            self.token_queue = mp.Queue()
+
+            for token in self.tokens.values:
+                self.token_queue.put(token)
+        else:
+            self.token_queue = token_queue
+
+        self.token, self.secret = self.token_queue.get()
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -39,16 +46,8 @@ class Connection(object):
 
     def next_token(self):
 
-        print("len(self.tokens) = ", len(self.tokens))
-        print("token number = ", self.token_number)
-        if self.token_number + 1 < len(self.tokens):
-            self.token_number += 1
-            self.token = self.tokens['token'][self.token_number]
-            self.secret = self.tokens['secret'][self.token_number]
-        else:
-            self.token_number = 0
-            self.token = self.tokens['token'][self.token_number]
-            self.secret = self.tokens['secret'][self.token_number]
+        self.token_queue.put((self.token, self.secret))
+        self.token, self.secret = self.token_queue.get()
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -143,19 +142,21 @@ class Collector(object):
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
         reset_time = self.connection.reset_time(endpoint=endpoint)
         attempts = 0
+        first_token = self.connection.token
 
         while remaining_calls == 0:
             attempts += 1
             stdout.write("Attempt with next token: {}\n".format(attempts))
 
-            if attempts >= len(self.connection.tokens):
+            self.connection.next_token()
+
+            if self.connection.token == first_token:  # tried all tokens
                 msg = "API calls for {e} depleted. Waiting {s} seconds.\n"
                 stdout.write(msg.format(e=endpoint, s=reset_time))
                 stdout.flush()
                 time.sleep(reset_time)
                 attempts = 0
 
-            self.connection.next_token()
             remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
             reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
 
@@ -361,6 +362,8 @@ class Collector(object):
         if select != []:
             df = df[select]
 
+        df.sort_index(axis=1, inplace=True)
+
         return df
 
     def check_follows(self, source, target):
@@ -374,6 +377,8 @@ class Collector(object):
             - `False` if `source` does not follow `target`
         """
 
+        # TODO: check remaining API calls
+
         friendship = self.connection.api.show_friendship(
             source_id=source, target_id=target)
 
@@ -383,24 +388,35 @@ class Collector(object):
 
 
 class Coordinator(object):
-    """Selects a list/queue of seeds and coordinates the collection with collectors
-    and a list/queue of tokens.
+    """Selects a queue of seeds and coordinates the collection with collectors
+    and a queue of tokens.
     """
 
-    def __init__(self, seeds=2):
-
-        self.number_of_seeds = seeds
+    def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None):
 
         self.seed_pool = pd.read_csv("seeds.csv", header=None)
 
-        self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+        if seed_list is None:
 
-        self.seeds = self.seeds[0].values
+            self.number_of_seeds = seeds
+
+            self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+
+            self.seeds = self.seeds[0].values
+        else:
+            self.seeds = seed_list
 
         self.seed_queue = mp.Queue()
 
         for seed in self.seeds:
             self.seed_queue.put(seed)
+
+        self.tokens = FileImport().read_token_file(token_file_name)
+
+        self.token_queue = mp.Queue()
+
+        for token in self.tokens.values:
+            self.token_queue.put(token)
 
         self.dbh = DataBaseHandler()
 
@@ -448,9 +464,7 @@ class Coordinator(object):
         """
 
         if connection is None:
-            connection = Connection()
-        else:
-            connection = connection
+            connection = Connection(token_queue=self.token_queue)
 
         friends_details = None
 
@@ -487,8 +501,18 @@ Accessing Twitter API.""")
             if lang is not None:
                 friends_details = friends_details[friends_details['lang'] == lang]
 
-            friends_details.to_sql('user_details', if_exists='append',
-                                   index=False, con=self.dbh.engine)
+            try:
+                friends_details.to_sql('user_details', if_exists='append',
+                                       index=False, con=self.dbh.engine)
+            except IntegrityError:  # duplicate id (primary key)
+                friends_details.to_sql('user_details_temp', if_exists='replace',
+                                       index=False, con=self.dbh.engine)
+
+                query = """
+                        REPLACE INTO user_details
+                        SELECT * FROM user_details_temp
+                        """
+                self.dbh.engine.execute(query)
 
         max_follower_count = friends_details['followers_count'].max()
 
@@ -536,10 +560,30 @@ Accessing Twitter API.""")
 
         update_query = """
                         UPDATE friends
-                        SET burned = 1
-                        WHERE source = {source} AND target = {target}
+                        SET burned=1
+                        WHERE source={source} AND target={target}
                        """.format(source=seed, target=new_seed)
 
         self.dbh.engine.execute(update_query)
 
+        self.token_queue.put((connection.token, connection.secret))
+
+        self.seed_queue.put(new_seed)
+
         return new_seed
+
+    def start_collectors(self, initial_number_of_collectors=2, select=[], lang=None):
+
+        processes = []
+
+        for i in range(initial_number_of_collectors):
+            seed = self.seed_queue.get(timeout=1)
+            processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
+                                        kwargs={'seed': seed,
+                                                'select': select,
+                                                'lang': lang}))
+
+        for p in processes:
+            p.start()
+
+        return processes

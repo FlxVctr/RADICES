@@ -1,12 +1,14 @@
 import argparse
 import copy
 import json
+import multiprocessing.dummy as mp
 import os
 import shutil
 import sqlite3 as lite
 import sys
 import unittest
 from json import JSONDecodeError
+from sys import stdout
 
 import numpy as np
 import pandas as pd
@@ -24,7 +26,6 @@ import test_helpers
 from collector import Collector, Connection, Coordinator
 from database_handler import DataBaseHandler
 from setup import Config, FileImport
-
 
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
@@ -369,7 +370,6 @@ class DataBaseHandlerTest(unittest.TestCase):
             id="INT(30) PRIMARY KEY",
             followers_count="INT(30)",
             lang="CHAR(30)",
-            time_zone="CHAR(30)"
         )
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
@@ -381,7 +381,6 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
-        self.assertIn("time_zone", cols)
         engine.connect().execute("DROP TABLE friends;")
         engine.connect().execute("DROP TABLE user_details;")
 
@@ -390,8 +389,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         cfg["twitter_user_details"] = dict(
             id="INT(30) PRIMARY KEY",
             followers_count="INT(30)",
-            lang="CHAR(30)",
-            time_zone="CHAR(30)"
+            lang="CHAR(30)"
         )
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
@@ -404,7 +402,6 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
-        self.assertIn("time_zone", cols)
         conn.close()
 
 
@@ -673,7 +670,7 @@ class CoordinatorTest(unittest.TestCase):
             yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
 
         self.dbh = DataBaseHandler()
-        self.coordinator = Coordinator()
+        self.seed_list = [2367431, 36476777]
 
     @classmethod
     def tearDownClass(self):
@@ -683,21 +680,49 @@ class CoordinatorTest(unittest.TestCase):
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
 
-        self.coordinator.seed_queue.close()
-        self.coordinator.seed_queue.join_thread()
+        try:
+            self.coordinator.seed_queue.close()
+            self.coordinator.seed_queue.join_thread()
+        except AttributeError:
+            pass
+
+    def setUp(self):
+        self.coordinator = Coordinator(seed_list=self.seed_list)
+
+    def tearDown(self):
+        try:
+            self.dbh.engine.execute("DROP TABLE friends;")
+        except Exception:
+            pass
+
+        try:
+            self.dbh.engine.execute("DROP TABLE user_details;")
+        except Exception:
+            pass
+
+        try:
+            self.dbh.engine.execute("DROP TABLE result;")
+        except Exception:
+            pass
 
     def test_coordinator_selects_n_random_seeds(self):
         coordinator = Coordinator(seeds=10)
         self.assertEqual(len(coordinator.seeds), 10)
 
-        coordinator.seed_queue.close()
-        coordinator.seed_queue.join_thread()
+        try:
+            coordinator.seed_queue.close()
+            coordinator.seed_queue.join_thread()
+        except AttributeError:
+            pass
 
         coordinator = Coordinator(seeds=2)
         self.assertEqual(len(coordinator.seeds), 2)
 
-        coordinator.seed_queue.close()
-        coordinator.seed_queue.join_thread()
+        try:
+            coordinator.seed_queue.close()
+            coordinator.seed_queue.join_thread()
+        except AttributeError:
+            pass
 
     def test_can_get_seed_from_queue(self):
         coordinator = Coordinator(seeds=2)
@@ -706,8 +731,17 @@ class CoordinatorTest(unittest.TestCase):
         self.assertIsInstance(coordinator.seed_queue.get(), np.int64)
         self.assertTrue(coordinator.seed_queue.empty())
 
-        coordinator.seed_queue.close()
-        coordinator.seed_queue.join_thread()
+        try:
+            coordinator.seed_queue.close()
+            coordinator.seed_queue.join_thread()
+        except AttributeError:
+            pass
+
+    def test_can_get_token_from_queue(self):
+        coordinator = Coordinator()
+
+        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
+        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
 
     def test_db_can_lookup_friends(self):
 
@@ -723,16 +757,21 @@ class CoordinatorTest(unittest.TestCase):
         friends_details = c.get_details(friendlist)
 
         friends_details = Collector.make_friend_df(friends_details, select=[
-            'id', 'time_zone', 'lang', 'followers_count', 'statuses_count', 'created_at'])
+            'id', 'lang', 'followers_count', 'statuses_count', 'created_at'])
 
-        friends_details.to_sql('user_details', if_exists='fail',
+        friends_details.to_sql('user_details', if_exists='append',
                                index=False, con=self.coordinator.dbh.engine)
 
         friends_details_lookup = self.coordinator.lookup_accounts_friend_details(
             seed, self.coordinator.dbh.engine)
 
-        self.coordinator.seed_queue.close()
-        self.coordinator.seed_queue.join_thread()
+        # self.coordinator.seed_queue.close()
+        # self.coordinator.seed_queue.join_thread()
+
+        friends_details.sort_values('id', inplace=True)
+        friends_details.reset_index(drop=True, inplace=True)
+        friends_details_lookup.sort_values('id', inplace=True)
+        friends_details_lookup.reset_index(drop=True, inplace=True)
 
         assert_frame_equal(friends_details, friends_details_lookup)
 
@@ -741,8 +780,8 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertFalse(friends_details_lookup_fail)
 
-        self.dbh.engine.connect().execute("DROP TABLE friends;")
-        self.dbh.engine.connect().execute("DROP TABLE user_details;")
+        self.dbh.engine.execute("DROP TABLE friends;")
+        self.dbh.engine.execute("DROP TABLE user_details;")
 
     def test_work_through_seed(self):
 
@@ -793,21 +832,32 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertIsInstance(new_seed, np.int64)
 
-    def tearDown(self):
-        try:
-            self.dbh.engine.connect().execute("DROP TABLE friends;")
-        except Exception:
-            pass
+    def test_start_collectors(self):
 
-        try:
-            self.dbh.engine.connect().execute("DROP TABLE user_details;")
-        except Exception:
-            pass
+        seeds = set(self.seed_list)
+        expected_new_seeds = {9334352, 813286}
 
-        try:
-            self.dbh.engine.connect().execute("DROP TABLE result;")
-        except Exception:
-            pass
+        processes = self.coordinator.start_collectors()
+
+        self.assertEqual(len(processes), 2)
+
+        for process in processes:
+            self.assertIsInstance(process, mp.Process, msg="type is {}".format(type(process)))
+            stdout.write("Waiting for processes to finish.")
+            stdout.flush()
+            process.join(timeout=1000)
+
+        new_seeds = set()
+
+        for i in range(2):
+            new_seeds.add(self.coordinator.seed_queue.get(timeout=1000))
+
+        self.assertEqual(len(new_seeds), 2)
+
+        print(new_seeds)
+
+        self.assertNotEqual(new_seeds, seeds)
+        self.assertEqual(new_seeds, expected_new_seeds)
 
 
 if __name__ == "__main__":
