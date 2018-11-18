@@ -52,10 +52,11 @@ class FileImport():
         """
         try:
             with open("seeds.csv", "r") as f:
-                self.seeds = pd.read_csv(f)
+                self.seeds = pd.read_csv(f, header=None)
         except FileNotFoundError:
             raise FileNotFoundError('"seeds.csv" could not be found')
         except pd.errors.EmptyDataError as e:
+            print('"seeds.csv" is empty!')
             raise e
         print(type(self.seeds))
         return self.seeds
@@ -73,6 +74,11 @@ class FileImport():
 
 
 class Config():
+    """Class that handles the SQL and twitter user details configuration.
+
+    Attributes:
+        config_file (str): Path to configuration file
+    """
     config_template = "config_template.py"
 
     def __init__(self, config_file="config.yml"):

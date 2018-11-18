@@ -1,3 +1,3 @@
-from database_handler import DataBaseHandler
+from collector import Coordinator
 
-dbh = DataBaseHandler()
+coordinator = Coordinator()

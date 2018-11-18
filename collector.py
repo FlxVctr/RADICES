@@ -394,7 +394,7 @@ class Coordinator(object):
 
     def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None):
 
-        self.seed_pool = pd.read_csv("seeds.csv", header=None)
+        self.seed_pool = FileImport().read_seed_file()
 
         if seed_list is None:
 
