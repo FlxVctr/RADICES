@@ -7,7 +7,6 @@ import sqlite3 as lite
 import sys
 import unittest
 from json import JSONDecodeError
-from subprocess import PIPE, Popen
 
 import numpy as np
 import pandas as pd
@@ -422,30 +421,20 @@ class ConfigTest(unittest.TestCase):
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
 
-    def test_1_config_file_gets_read_and_is_complete(self):
+    def test_1_config_file_not_existing(self):
         # File not found
         with self.assertRaises(FileNotFoundError):
             Config()
 
-    def test_2_make_config_works_as_expected(self):
-        # Does make_config.py not make a new config.yml when entered "n"?
-        p = Popen("python make_config.py", stdout=PIPE, stderr=PIPE, stdin=PIPE, shell=True)
-        p.communicate("n\n".encode())
-        self.assertFalse(os.path.isfile("config.yml"))
-
-        # Does make_config.py open a dialogue asking to open the new config.yaml?
-        # (Just close the dialogue)
-        p = Popen("python make_config.py", stdout=PIPE, stderr=PIPE, stdin=PIPE, shell=True)
-        p.communicate("y\n".encode())
-
-    def test_3_config_parameters_default_values_get_set_if_not_given(self):
+    def test_2_config_parameters_default_values_get_set_if_not_given(self):
+        shutil.copyfile("config_template.yml", "config.yml")
         # If the db_name is not given, does the Config() class assign a default?
         self.assertEqual("new_database", Config().dbname)
 
         # If the dbtype is not specified, does the Config() class assume sqlite?
         self.assertEqual("sqlite", Config().dbtype)
 
-    def test_4_correct_values_for_config_parameters_given(self):
+    def test_3_correct_values_for_config_parameters_given(self):
         # dbtype does not match "sqlite" or "SQL"
         mock_cfg = copy.deepcopy(self.config_dict)
         mock_cfg["sql"] = dict(
@@ -506,13 +495,13 @@ class ConfigTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Config()
 
-    def test_5_config_file_gets_read_incl_all_fields(self):
+    def test_4_config_file_gets_read_incl_all_fields(self):
         if os.path.isfile("config.yml.bak"):
             shutil.copyfile("config.yml.bak", "config.yml")
         config_dict = copy.deepcopy(self.config_dict)
         self.assertEqual(Config().config, config_dict)
 
-    def test_6_sql_key_not_in_config(self):
+    def test_5_sql_key_not_in_config(self):
         mock_cfg = copy.deepcopy(self.config_dict)
         mock_cfg.pop("sql", None)
         with open('config.yml', 'w') as f:

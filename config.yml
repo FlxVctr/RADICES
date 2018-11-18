@@ -21,6 +21,7 @@ sql:
 # database but it will not save "created_at" at all.
 
 # TODO: add descriptions for user_details
+# TODO: add support for db types
 
 twitter_user_details:
     contributors_enabled:

@@ -2,7 +2,6 @@ import json
 from json import JSONDecodeError
 import pandas as pd
 import yaml
-import sqlalchemy
 
 
 class FileImport():
