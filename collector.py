@@ -574,6 +574,15 @@ Accessing Twitter API.""")
         return new_seed
 
     def start_collectors(self, number_of_seeds=None, select=[], lang=None):
+        """Starts `number_of_seeds` collector threads
+        collecting the next seed for on seed taken from `self.queue`
+        and puting it back into `self.seed_queue`.
+
+        Args:
+            number_of_seeds (int): Defaults to `self.number_of_seeds`
+            select (list of strings): fields to save to user_details table in database
+            lang (str): language code for langage to select
+        """
 
         if number_of_seeds is None:
             number_of_seeds = self.number_of_seeds
