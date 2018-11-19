@@ -404,6 +404,7 @@ class Coordinator(object):
 
             self.seeds = self.seeds[0].values
         else:
+            self.number_of_seeds = len(seed_list)
             self.seeds = seed_list
 
         self.seed_queue = mp.Queue()
@@ -572,11 +573,14 @@ Accessing Twitter API.""")
 
         return new_seed
 
-    def start_collectors(self, initial_number_of_collectors=2, select=[], lang=None):
+    def start_collectors(self, number_of_seeds=None, select=[], lang=None):
+
+        if number_of_seeds is None:
+            number_of_seeds = self.number_of_seeds
 
         processes = []
 
-        for i in range(initial_number_of_collectors):
+        for i in range(number_of_seeds):
             seed = self.seed_queue.get(timeout=1)
             processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
                                         kwargs={'seed': seed,
