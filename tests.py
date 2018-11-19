@@ -845,7 +845,7 @@ class CoordinatorTest(unittest.TestCase):
             self.assertIsInstance(process, mp.Process, msg="type is {}".format(type(process)))
             stdout.write("Waiting for processes to finish.")
             stdout.flush()
-            process.join(timeout=1000)
+            process.join(timeout=1200)
 
         new_seeds = set()
 
