@@ -1,3 +1,4 @@
 from collector import Coordinator
 
-coordinator = Coordinator()
+if __name__ == "__main__":
+    coordinator = Coordinator()
