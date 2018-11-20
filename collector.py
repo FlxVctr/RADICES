@@ -507,6 +507,21 @@ Accessing Twitter API.""")
             if lang is not None:
                 friends_details = friends_details[friends_details['lang'] == lang]
 
+                if len(friends_details) == 0:
+                    new_seed = self.seed_pool.sample(n=1)
+                    new_seed = new_seed[0].values[0]
+
+                    stdout.write(
+                        "No friends found with language '{}', selecting random seed.\n".format(
+                            lang))
+                    stdout.flush()
+
+                    self.token_queue.put((connection.token, connection.secret))
+
+                    self.seed_queue.put(new_seed)
+
+                    return new_seed
+
             try:
                 friends_details.to_sql('user_details', if_exists='append',
                                        index=False, con=self.dbh.engine)
