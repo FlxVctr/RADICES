@@ -448,6 +448,7 @@ class Coordinator(object):
 
             self.seeds = self.seeds[0].values
         else:
+            self.number_of_seeds = len(seed_list)
             self.seeds = seed_list
 
         self.seed_queue = mp.Queue()
@@ -539,7 +540,8 @@ Accessing Twitter API.""")
             self.dbh.write_friends(seed, friend_list)
 
             friends_details = collector.get_details(friend_list)
-            select = select + ["id", "followers_count", "lang", "created_at", "statuses_count"]
+            select = list(set(select + ["id", "followers_count",
+                                        "lang", "created_at", "statuses_count"]))
             friends_details = Collector.make_friend_df(friends_details, select)
 
             if lang is not None:
@@ -554,7 +556,7 @@ Accessing Twitter API.""")
 
                 query = """
                         REPLACE INTO user_details
-                        SELECT * FROM user_details_temp
+                        SELECT *, CURRENT_TIMESTAMP FROM user_details_temp
                         """
                 self.dbh.engine.execute(query)
 
@@ -616,11 +618,23 @@ Accessing Twitter API.""")
 
         return new_seed
 
-    def start_collectors(self, initial_number_of_collectors=2, select=[], lang=None):
+    def start_collectors(self, number_of_seeds=None, select=[], lang=None):
+        """Starts `number_of_seeds` collector threads
+        collecting the next seed for on seed taken from `self.queue`
+        and puting it back into `self.seed_queue`.
+
+        Args:
+            number_of_seeds (int): Defaults to `self.number_of_seeds`
+            select (list of strings): fields to save to user_details table in database
+            lang (str): language code for langage to select
+        """
+
+        if number_of_seeds is None:
+            number_of_seeds = self.number_of_seeds
 
         processes = []
 
-        for i in range(initial_number_of_collectors):
+        for i in range(number_of_seeds):
             seed = self.seed_queue.get(timeout=1)
             processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
                                         kwargs={'seed': seed,

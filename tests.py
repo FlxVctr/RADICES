@@ -789,6 +789,7 @@ class CoordinatorTest(unittest.TestCase):
         friends_details.reset_index(drop=True, inplace=True)
         friends_details_lookup.sort_values('id', inplace=True)
         friends_details_lookup.reset_index(drop=True, inplace=True)
+        friends_details_lookup.drop('timestamp', axis='columns', inplace=True)
 
         assert_frame_equal(friends_details, friends_details_lookup)
 
@@ -862,7 +863,7 @@ class CoordinatorTest(unittest.TestCase):
             self.assertIsInstance(process, mp.Process, msg="type is {}".format(type(process)))
             stdout.write("Waiting for processes to finish.")
             stdout.flush()
-            process.join(timeout=1000)
+            process.join(timeout=1200)
 
         new_seeds = set()
 
