@@ -33,19 +33,20 @@ class DataBaseHandler():
                 print("Connected to " + self.config.dbname + "!")
             except Error as e:
                 raise e
-            # TODO: timestamp für friends table?
             try:
                 create_friends_table_sql = """ CREATE TABLE IF NOT EXISTS friends (
                                             source BIGINT NOT NULL,
                                             target BIGINT NOT NULL,
-                                            burned TINYINT NOT NULL
+                                            burned TINYINT NOT NULL,
+                                            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
                                             ); """
                 c = self.engine.cursor()
                 c.execute(create_friends_table_sql)
                 if user_details_list != []:
                     create_user_details_sql = """
                         CREATE TABLE IF NOT EXISTS user_details
-                        (""" + ", ".join(user_details_list) + ");"
+                        (""" + ", ".join(user_details_list) + """,
+                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"""
                     c.execute(create_user_details_sql)
                 else:
                     print("""No user_details configured in config.yml. Will not create a
@@ -65,13 +66,15 @@ class DataBaseHandler():
                 create_friends_table_sql = """CREATE TABLE IF NOT EXISTS friends (
                                              source BIGINT NOT NULL,
                                              target BIGINT NOT NULL,
-                                             burned TINYINT NOT NULL
+                                             burned TINYINT NOT NULL,
+                                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                                             );"""
                 self.engine.execute(create_friends_table_sql)
                 if user_details_list != []:
                     create_user_details_sql = """
                         CREATE TABLE IF NOT EXISTS user_details
-                        (""" + ", ".join(user_details_list) + ");"
+                        (""" + ", ".join(user_details_list) + """,
+                         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"""
                     self.engine.execute(create_user_details_sql)
                 else:
                     print("""No user_details configured in config.yml. Will not create a
