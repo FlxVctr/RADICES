@@ -491,6 +491,10 @@ Accessing Twitter API.""")
 
                 stdout.write("No friends or unburned connections left, selecting random seed.\n")
 
+                self.token_queue.put((connection.token, connection.secret))
+
+                self.seed_queue.put(new_seed)
+
                 return new_seed
 
             self.dbh.write_friends(seed, friend_list)
