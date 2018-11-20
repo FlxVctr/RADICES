@@ -496,7 +496,8 @@ Accessing Twitter API.""")
             self.dbh.write_friends(seed, friend_list)
 
             friends_details = collector.get_details(friend_list)
-            select = select + ["id", "followers_count", "lang", "created_at", "statuses_count"]
+            select = list(set(select + ["id", "followers_count",
+                                        "lang", "created_at", "statuses_count"]))
             friends_details = Collector.make_friend_df(friends_details, select)
 
             if lang is not None:
