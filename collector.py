@@ -560,9 +560,15 @@ Accessing Twitter API.""")
         if follows == 0:
             result = pd.DataFrame({'source': [seed], 'target': [new_seed]})
             result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+            print('\nno follow back: added ({seed})-->({new_seed})'.format(
+                seed=seed, new_seed=new_seed
+            ))
         if follows == 1:
             result = pd.DataFrame({'source': [seed, new_seed], 'target': [new_seed, seed]})
             result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+            print('\nfollow back: added ({seed})<-->({new_seed})'.format(
+                seed=seed, new_seed=new_seed
+            ))
 
         update_query = """
                         UPDATE friends
@@ -571,6 +577,8 @@ Accessing Twitter API.""")
                        """.format(source=seed, target=new_seed)
 
         self.dbh.engine.execute(update_query)
+
+        print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
 
         self.token_queue.put((connection.token, connection.secret))
 
@@ -594,8 +602,11 @@ Accessing Twitter API.""")
 
         processes = []
 
+        print("number of seeds: ", number_of_seeds)
+
         for i in range(number_of_seeds):
             seed = self.seed_queue.get(timeout=1)
+            print("seed ", i, ": ", seed)
             processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
                                         kwargs={'seed': seed,
                                                 'select': select,
