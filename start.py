@@ -22,13 +22,16 @@ if __name__ == "__main__":
 
     coordinator = Coordinator(seeds=args.seeds)
 
+    k = 0
+
     while True:
 
         if args.test:
-            k = 0
             k += 1
             if k == 3:
                 break
+            stdout.write("\nTEST RUN {}\n".format(k))
+            stdout.flush()
 
         collectors = coordinator.start_collectors(select=user_details_list,
                                                   lang=args.language)
@@ -41,4 +44,4 @@ if __name__ == "__main__":
         for instance in collectors:
             instance.join()
             i += 1
-            stdout.write("\r{} collectors finished".format(i))
+            stdout.write("\r{} collector(s) finished".format(i))
