@@ -638,6 +638,19 @@ class CollectorTest(unittest.TestCase):
         # BarackObama does not follow FlxVctr
         self.assertEqual(collector.check_follows(813286, 36476777), False)
 
+    def test_evade_key_errors_in_make_friend_df(self):
+        json_list = []
+        for filename in [os.listdir(os.path.join("Data", "tweet_jsons"))[0]]:
+            with open(os.path.join("Data", "tweet_jsons", filename), "r") as f:
+                json_list.append(json.load(f))
+
+        collector = Collector(self.connection, seed=36476777)
+
+        df = collector.make_friend_df(friends_details=json_list,
+                                      provide_jsons=True)
+        self.assertEqual(["id", "followers_count", "lang", "created_at", "statuses_count"].sort(),
+                         list(df).sort())
+
 
 class CoordinatorTest(unittest.TestCase):
 
