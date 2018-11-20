@@ -644,9 +644,7 @@ class CollectorTest(unittest.TestCase):
             with open(os.path.join("Data", "tweet_jsons", filename), "r") as f:
                 json_list.append(json.load(f))
 
-        collector = Collector(self.connection, seed=36476777)
-
-        df = collector.make_friend_df(friends_details=json_list,
+        df = Collector.make_friend_df(friends_details=json_list,
                                       provide_jsons=True)
         self.assertEqual(["id", "followers_count", "lang", "created_at", "statuses_count"].sort(),
                          list(df).sort())

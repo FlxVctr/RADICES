@@ -260,7 +260,8 @@ class Collector(object):
 
         return user_details
 
-    def make_friend_df(self, friends_details, select=["id", "followers_count", "lang",
+    @staticmethod
+    def make_friend_df(friends_details, select=["id", "followers_count", "lang",
                                                       "created_at", "statuses_count"],
                        provide_jsons: bool=False):
         """Transforms list of user details to pandas.DataFrame
