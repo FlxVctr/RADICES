@@ -12,9 +12,14 @@ from setup import FileImport
 # mp.set_start_method('spawn')
 
 
-def flatten_json(y, columns, sep: str="_"):
+def flatten_json(y: dict, columns: list, sep: str="_"):
     '''
+    Flattens nested dictionaries.
     adapted from: https://medium.com/@amirziai/flattening-json-objects-in-python-f5343c794b10
+    Attributes:
+        y (dict): Nested dictionary to be flattened.
+        columns (list of str): Dictionary keys that should not be flattened.
+        sep (str): Separator for new dictionary keys of nested structures.
     '''
 
     out = {}
