@@ -7,9 +7,16 @@ name = "pypi"
 pandas = "*"
 pytest = "*"
 tweepy = "*"
+pyyaml = "*"
+sqlalchemy = "*"
+pymysql = "*"
+argparse = "*"
 
 [dev-packages]
 "flake8" = "*"
+isort = "*"
+ipython = "*"
+"autopep8" = "*"
 
 [requires]
 python_version = "3.6.6"
