@@ -776,6 +776,7 @@ class CoordinatorTest(unittest.TestCase):
         friends_details.reset_index(drop=True, inplace=True)
         friends_details_lookup.sort_values('id', inplace=True)
         friends_details_lookup.reset_index(drop=True, inplace=True)
+        friends_details_lookup.drop('timestamp', axis='columns', inplace=True)
 
         assert_frame_equal(friends_details, friends_details_lookup)
 

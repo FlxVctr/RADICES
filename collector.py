@@ -511,7 +511,7 @@ Accessing Twitter API.""")
 
                 query = """
                         REPLACE INTO user_details
-                        SELECT * FROM user_details_temp
+                        SELECT *, CURRENT_TIMESTAMP FROM user_details_temp
                         """
                 self.dbh.engine.execute(query)
 
