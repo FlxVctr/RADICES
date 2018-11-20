@@ -3,6 +3,7 @@ import time
 from sys import stdout
 
 import pandas as pd
+import numpy as np
 import tweepy
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
@@ -38,9 +39,6 @@ def flatten_json(y: dict, columns: list, sep: str="_"):
         elif type(x) is dict and str(name[:-1]) in columns:
             out[str(name[:-1])] = dict(x)
         else:
-            if type(x) is not bool:
-                out[str(name[:-1])] = str(x)
-            else:
                 out[str(name[:-1])] = x
 
     flatten(y)
@@ -408,6 +406,12 @@ class Collector(object):
             flat = flatten_json(j, sep=".", columns=select)
             new = {k: v for k, v in flat.items() if k in select}
             json_list.append(new)
+
+        import json
+        with open("Data/flat.json", "w") as f:
+            json.dump(flat, f)
+        with open("Data/new.json", "w") as f:
+            json.dump(new, f)
 
         df = pd.io.json.json_normalize(json_list)
 

@@ -586,8 +586,8 @@ class CollectorTest(unittest.TestCase):
         self.assertEqual(len(friends_df), len(friends_details))
 
         self.assertIsInstance(friends_df['id'][0], np.int64)
-        self.assertIsInstance(friends_df['screen_name'][0], str)
-        self.assertIsInstance(friends_df['friends_count'][0], np.int64)
+        self.assertIsInstance(friends_df['lang'][0], str)
+        self.assertIsInstance(friends_df['followers_count'][0], np.int64)
 
         friends_df_selected = Collector.make_friend_df(friends_details,
                                                        select=['id', 'followers_count',
@@ -783,7 +783,7 @@ class CoordinatorTest(unittest.TestCase):
         # self.coordinator.seed_queue.close()
         # self.coordinator.seed_queue.join_thread()
 
-        friends_details.sort_values('id', inplace=True)
+        friends_details.sort_values(by=['id'], inplace=True)
         friends_details.reset_index(drop=True, inplace=True)
         friends_details_lookup.sort_values('id', inplace=True)
         friends_details_lookup.reset_index(drop=True, inplace=True)
