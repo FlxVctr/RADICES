@@ -18,7 +18,7 @@ if __name__ == "__main__":
     user_details_list = []
     for detail, sqldatatype in config.config["twitter_user_details"].items():
         if sqldatatype is not None:
-            user_details_list.append(detail + " " + sqldatatype)
+            user_details_list.append(detail)
 
     coordinator = Coordinator(seeds=args.seeds)
 
