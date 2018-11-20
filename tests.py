@@ -196,6 +196,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("target", sql_out)
         self.assertIn("source", sql_out)
         self.assertIn("burned", sql_out)
+        self.assertIn("timestamp", sql_out)
         conn.close()
 
     @skipIfDraining()
@@ -238,6 +239,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("source", cols)
         self.assertIn("target", cols)
         self.assertIn("burned", cols)
+        self.assertIn("timestamp", cols)
 
         engine.execute("DROP TABLE friends;")
         engine.execute("DROP TABLE user_details;")
@@ -381,6 +383,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
+        self.assertIn("timestamp", cols)
         engine.connect().execute("DROP TABLE friends;")
         engine.connect().execute("DROP TABLE user_details;")
 
@@ -402,6 +405,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
+        self.assertIn("timestamp", cols)
         conn.close()
 
 
