@@ -1,4 +1,3 @@
-import json
 import multiprocessing.dummy as mp
 import time
 from sys import stdout
