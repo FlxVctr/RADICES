@@ -1,13 +1,15 @@
 # functional test for network collector
 import copy
 import os
-import passwords
 import shutil
-import test_helpers
 import unittest
+from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
+
 import yaml
+
+import passwords
+import test_helpers
 from database_handler import DataBaseHandler
-from subprocess import check_output, STDOUT, CalledProcessError, Popen, PIPE
 
 config_dict = test_helpers.config_dict
 mock_sql_cfg = copy.deepcopy(config_dict)
@@ -26,8 +28,6 @@ class FirstUseTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if os.path.isfile("config.yml"):
-            os.rename("config.yml", "config.yml.bak")
         os.rename("seeds.csv", "seeds.csv.bak")
 
     @classmethod
@@ -35,16 +35,28 @@ class FirstUseTest(unittest.TestCase):
         if os.path.exists("seeds.csv"):
             os.remove("seeds.csv")
         os.rename("seeds.csv.bak", "seeds.csv")
+
+    def setUp(self):
+        if os.path.isfile("config.yml"):
+            os.rename("config.yml", "config.yml.bak")
+
+    def tearDown(self):
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
+        if os.path.isfile("seeds.csv"):
+            os.remove("seeds.csv")
 
     def test_starts_and_checks_for_necessary_input_seeds_missing(self):
         if os.path.isfile("seeds.csv"):
             os.remove("seeds.csv")
+
+        with open("config.yml", "w") as f:
+            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
+
         # User starts program with `start.py`
         try:
             response = str(check_output('python start.py', stderr=STDOUT,
-                           shell=True), encoding="ascii")
+                                        shell=True), encoding="ascii")
 
         # ... and encounters an error because the seeds.csv is missing.
         except CalledProcessError as e:
@@ -54,9 +66,13 @@ class FirstUseTest(unittest.TestCase):
     def test_starts_and_checks_for_necessary_input_seeds_empty(self):
         # User starts program with `start.py`
         shutil.copyfile("seeds_empty.csv", "seeds.csv")
+
+        with open("config.yml", "w") as f:
+            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
+
         try:
             response = str(check_output('python start.py', stderr=STDOUT,
-                           shell=True), encoding="ascii")
+                                        shell=True), encoding="ascii")
 
         # ... and encounters an error because the seeds.csv is empty.
         except CalledProcessError as e:
@@ -69,7 +85,7 @@ class FirstUseTest(unittest.TestCase):
             shutil.copyfile("seeds.csv.bak", "seeds.csv")
         try:
             response = str(check_output('python start.py', stderr=STDOUT,
-                           shell=True), encoding="ascii")
+                                        shell=True), encoding="ascii")
 
         # ... and encounters an error because:
         except CalledProcessError as e:
@@ -95,19 +111,25 @@ class FirstUseTest(unittest.TestCase):
 
             DataBaseHandler().engine.execute("DROP TABLES friends, user_details;")
 
-        # program looks for an existing twitter key file and imports the keys
-        # program looks for an existing seeds file and imports the seeds
+    def test_starting_collectors_and_writing_to_db(self):
+        shutil.copyfile("seeds_test.csv", "seeds.csv")
+        shutil.copyfile("seeds_test.csv", "seeds.csv")
 
-        # There is a config with result-database details or error
-        # (Filename, later IP adress, user name, password, etc., SQLITE oder SQL?)
+        with open("config.yml", "w") as f:
+            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
 
-        # There is no database. Do you wish to create a new SQlite database?
-        # True false, Name of # db
+        try:
+            response = str(check_output('python start.py -n 2 -l de -t',
+                                        stderr=STDOUT, shell=True),
+                           encoding="ascii")
+            print(response)
+        except CalledProcessError as e:
+            response = str(e.output)
+            print(response)
 
-        # Program returns number of available keys and tests whether they can
-        # connect
-        # Program returns number of seeds
-        # Program tests connection to database (MySQL or BigQuery?)
+        # TODO: consistency checks in Database
+
+        DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
 
 
 if __name__ == '__main__':

@@ -543,6 +543,10 @@ Accessing Twitter API.""")
 
                 stdout.write("No friends or unburned connections left, selecting random seed.\n")
 
+                self.token_queue.put((connection.token, connection.secret))
+
+                self.seed_queue.put(new_seed)
+
                 return new_seed
 
             self.dbh.write_friends(seed, friend_list)
@@ -554,6 +558,21 @@ Accessing Twitter API.""")
 
             if lang is not None:
                 friends_details = friends_details[friends_details['lang'] == lang]
+
+                if len(friends_details) == 0:
+                    new_seed = self.seed_pool.sample(n=1)
+                    new_seed = new_seed[0].values[0]
+
+                    stdout.write(
+                        "No friends found with language '{}', selecting random seed.\n".format(
+                            lang))
+                    stdout.flush()
+
+                    self.token_queue.put((connection.token, connection.secret))
+
+                    self.seed_queue.put(new_seed)
+
+                    return new_seed
 
             try:
                 friends_details.to_sql('user_details', if_exists='append',
@@ -608,9 +627,15 @@ Accessing Twitter API.""")
         if follows == 0:
             result = pd.DataFrame({'source': [seed], 'target': [new_seed]})
             result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+            print('\nno follow back: added ({seed})-->({new_seed})'.format(
+                seed=seed, new_seed=new_seed
+            ))
         if follows == 1:
             result = pd.DataFrame({'source': [seed, new_seed], 'target': [new_seed, seed]})
             result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+            print('\nfollow back: added ({seed})<-->({new_seed})'.format(
+                seed=seed, new_seed=new_seed
+            ))
 
         update_query = """
                         UPDATE friends
@@ -619,6 +644,8 @@ Accessing Twitter API.""")
                        """.format(source=seed, target=new_seed)
 
         self.dbh.engine.execute(update_query)
+
+        print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
 
         self.token_queue.put((connection.token, connection.secret))
 
@@ -642,8 +669,11 @@ Accessing Twitter API.""")
 
         processes = []
 
+        print("number of seeds: ", number_of_seeds)
+
         for i in range(number_of_seeds):
             seed = self.seed_queue.get(timeout=1)
+            print("seed ", i, ": ", seed)
             processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
                                         kwargs={'seed': seed,
                                                 'select': select,
