@@ -5,7 +5,7 @@ from collector import Coordinator
 from setup import Config
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-n', '--seeds', type=int, help="specifiy number of seeds", default=10)
+parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
 parser.add_argument('-l', '--language', help="specify language code of users to gather")
 parser.add_argument('-t', '--test', help="test for 2 loops only", action="store_true")
 
@@ -44,4 +44,5 @@ if __name__ == "__main__":
         for instance in collectors:
             instance.join()
             i += 1
-            stdout.write("\r{} collector(s) finished".format(i))
+            stdout.write("{} collector(s) finished\n".format(i))
+            stdout.flush()
