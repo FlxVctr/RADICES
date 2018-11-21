@@ -34,14 +34,20 @@ class DataBaseHandler():
             except Error as e:
                 raise e
             try:
-                create_friends_table_sql = """ CREATE TABLE IF NOT EXISTS friends (
-                                            source BIGINT NOT NULL,
-                                            target BIGINT NOT NULL,
-                                            burned TINYINT NOT NULL,
-                                            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                                            ); """
+                create_friends_table_sql = """CREATE TABLE IF NOT EXISTS friends (
+                                                source BIGINT NOT NULL,
+                                                target BIGINT NOT NULL,
+                                                burned TINYINT NOT NULL,
+                                                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                                              );"""
+                create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
+                                                source BIGINT NOT NULL,
+                                                target BIGINT NOT NULL,
+                                                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                                              );"""
                 c = self.engine.cursor()
                 c.execute(create_friends_table_sql)
+                c.execute(create_results_table_sql)
                 if user_details_list != []:
                     create_user_details_sql = """
                         CREATE TABLE IF NOT EXISTS user_details
@@ -64,12 +70,18 @@ class DataBaseHandler():
                 raise e
             try:
                 create_friends_table_sql = """CREATE TABLE IF NOT EXISTS friends (
-                                             source BIGINT NOT NULL,
-                                             target BIGINT NOT NULL,
-                                             burned TINYINT NOT NULL,
-                                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                            );"""
+                                                source BIGINT NOT NULL,
+                                                target BIGINT NOT NULL,
+                                                burned TINYINT NOT NULL,
+                                                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                              );"""
+                create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
+                                                source BIGINT NOT NULL,
+                                                target BIGINT NOT NULL,
+                                                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                              );"""
                 self.engine.execute(create_friends_table_sql)
+                self.engine.execute(create_results_table_sql)
                 if user_details_list != []:
                     create_user_details_sql = """
                         CREATE TABLE IF NOT EXISTS user_details

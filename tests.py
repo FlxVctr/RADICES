@@ -2,24 +2,23 @@ import argparse
 import copy
 import json
 import multiprocessing.dummy as mp
+import numpy as np
 import os
+import pandas as pd
 import shutil
 import sqlite3 as lite
 import sys
-import unittest
-from json import JSONDecodeError
-from sys import stdout
-
-import numpy as np
-import pandas as pd
 import tweepy
+import unittest
 import yaml
+from json import JSONDecodeError
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
 from pandas.util.testing import assert_frame_equal
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
+from sys import stdout
 
 import passwords
 import test_helpers
@@ -186,7 +185,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         except AssertionError:
             print("Database was not created!")
 
-    def test_dbh_creates_friends_table_with_correct_columns(self):
+    def test_dbh_creates_friends_and_results_tables_with_correct_columns(self):
         with open('config.yml', 'w') as f:
             yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
         DataBaseHandler()
@@ -196,6 +195,11 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("target", sql_out)
         self.assertIn("source", sql_out)
         self.assertIn("burned", sql_out)
+        self.assertIn("timestamp", sql_out)
+
+        sql_out = list(pd.read_sql(con=conn, sql="SELECT * FROM result"))
+        self.assertIn("target", sql_out)
+        self.assertIn("source", sql_out)
         self.assertIn("timestamp", sql_out)
         conn.close()
 
@@ -233,16 +237,19 @@ class DataBaseHandlerTest(unittest.TestCase):
         dbh = DataBaseHandler()
         engine = dbh.engine
         s = "SELECT * FROM friends"
-        sql_out = pd.read_sql(sql=s, con=engine)
-        cols = list(sql_out)
+        sql_out = list(pd.read_sql(sql=s, con=engine))
+        self.assertIn("source", sql_out)
+        self.assertIn("target", sql_out)
+        self.assertIn("burned", sql_out)
+        self.assertIn("timestamp", sql_out)
 
-        self.assertIn("source", cols)
-        self.assertIn("target", cols)
-        self.assertIn("burned", cols)
-        self.assertIn("timestamp", cols)
+        s = "SELECT * FROM result"
+        sql_out = list(pd.read_sql(sql=s, con=engine))
+        self.assertIn("source", sql_out)
+        self.assertIn("target", sql_out)
+        self.assertIn("timestamp", sql_out)
 
-        engine.execute("DROP TABLE friends;")
-        engine.execute("DROP TABLE user_details;")
+        engine.execute("DROP TABLES friends, user_details, result;")
 
     @skipIfDraining()
     def test_dbh_write_friends_function_also_works_with_mysql(self):
@@ -384,8 +391,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
         self.assertIn("timestamp", cols)
-        engine.connect().execute("DROP TABLE friends;")
-        engine.connect().execute("DROP TABLE user_details;")
+        engine.connect().execute("DROP TABLES friends, user_details;")
 
         # Second for sqlite
         cfg = copy.deepcopy(self.mock_sqlite_cfg)
@@ -586,8 +592,8 @@ class CollectorTest(unittest.TestCase):
         self.assertEqual(len(friends_df), len(friends_details))
 
         self.assertIsInstance(friends_df['id'][0], np.int64)
-        self.assertIsInstance(friends_df['screen_name'][0], str)
-        self.assertIsInstance(friends_df['friends_count'][0], np.int64)
+        self.assertIsInstance(friends_df['lang'][0], str)
+        self.assertIsInstance(friends_df['followers_count'][0], np.int64)
 
         friends_df_selected = Collector.make_friend_df(friends_details,
                                                        select=['id', 'followers_count',
@@ -637,6 +643,17 @@ class CollectorTest(unittest.TestCase):
 
         # BarackObama does not follow FlxVctr
         self.assertEqual(collector.check_follows(813286, 36476777), False)
+
+    def test_evade_key_errors_in_make_friend_df(self):
+        json_list = []
+        for filename in [os.listdir(os.path.join("tests", "tweet_jsons"))[0]]:
+            with open(os.path.join("tests", "tweet_jsons", filename), "r") as f:
+                json_list.append(json.load(f))
+
+        df = Collector.make_friend_df(friends_details=json_list,
+                                      provide_jsons=True)
+        self.assertEqual(["id", "followers_count", "lang", "created_at", "statuses_count"].sort(),
+                         list(df).sort())
 
 
 class CoordinatorTest(unittest.TestCase):
@@ -772,7 +789,7 @@ class CoordinatorTest(unittest.TestCase):
         # self.coordinator.seed_queue.close()
         # self.coordinator.seed_queue.join_thread()
 
-        friends_details.sort_values('id', inplace=True)
+        friends_details.sort_values(by=['id'], inplace=True)
         friends_details.reset_index(drop=True, inplace=True)
         friends_details_lookup.sort_values('id', inplace=True)
         friends_details_lookup.reset_index(drop=True, inplace=True)
@@ -785,8 +802,7 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertFalse(friends_details_lookup_fail)
 
-        self.dbh.engine.execute("DROP TABLE friends;")
-        self.dbh.engine.execute("DROP TABLE user_details;")
+        self.dbh.engine.execute("DROP TABLES friends, user_details;")
 
     def test_work_through_seed(self):
 

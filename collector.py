@@ -1,15 +1,47 @@
 import multiprocessing.dummy as mp
-import time
-from sys import stdout
-
 import pandas as pd
+import time
 import tweepy
+
 from sqlalchemy.exc import IntegrityError, ProgrammingError
+from sys import stdout
 
 from database_handler import DataBaseHandler
 from setup import FileImport
 
 # mp.set_start_method('spawn')
+
+
+def flatten_json(y: dict, columns: list, sep: str="_"):
+    '''
+    Flattens nested dictionaries.
+    adapted from: https://medium.com/@amirziai/flattening-json-objects-in-python-f5343c794b10
+    Attributes:
+        y (dict): Nested dictionary to be flattened.
+        columns (list of str): Dictionary keys that should not be flattened.
+        sep (str): Separator for new dictionary keys of nested structures.
+    '''
+
+    out = {}
+
+    def flatten(x, name=''):
+        if type(x) is dict and str(name[:-1]) not in columns:  # don't flatten nested fields
+            for a in x:
+                flatten(x[a], name + a + sep)
+        elif type(x) is list and str(name[:-1]) not in columns:  # same
+            i = 0
+            for a in x:
+                flatten(a, name + str(i) + sep)
+                i += 1
+        elif type(x) is list and str(name[:-1]) in columns:
+            out[str(name[:-1])] = list(x)
+        elif type(x) is dict and str(name[:-1]) in columns:
+            out[str(name[:-1])] = dict(x)
+        else:
+                out[str(name[:-1])] = x
+
+    flatten(y)
+    return out
 
 
 class Connection(object):
@@ -225,12 +257,20 @@ class Collector(object):
 
         return user_details
 
-    def make_friend_df(friends_details, select=[]):
+    @staticmethod
+    def make_friend_df(friends_details, select=["id", "followers_count", "lang",
+                                                      "created_at", "statuses_count"],
+                       provide_jsons: bool=False):
         """Transforms list of user details to pandas.DataFrame
 
         Args:
             friends_details (list of Tweepy user objects)
             select (list of str): columns to keep in DataFrame
+            provide_jsons (boolean): If true, will treat friends_details as list of jsons. This
+                                     allows creating a user details dataframe without having to
+                                     download the details first. Note that the jsons must have the
+                                     same format as the _json attribute of a user node of the
+                                     Twitter API.
 
         Returns:
             pandas.DataFrame with these columns or selected as by `select`:
@@ -351,16 +391,23 @@ class Collector(object):
                  'time_zone',
                  'translator_type',
                  'url',
-                 'verified']
-                 'utc_offset',
+                 'verified'
+                 'utc_offset'],
         """
 
-        json_list = [friend._json for friend in friends_details]
+        if not provide_jsons:
+            json_list_raw = [friend._json for friend in friends_details]
+        else:
+            json_list_raw = friends_details
+
+        json_list = []
+        for j in json_list_raw:
+            flat = flatten_json(j, sep=".", columns=select)
+            new = {k: v for k, v in flat.items() if k in select}
+            json_list.append(new)
+
 
         df = pd.io.json.json_normalize(json_list)
-
-        if select != []:
-            df = df[select]
 
         df.sort_index(axis=1, inplace=True)
 
