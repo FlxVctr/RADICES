@@ -1,11 +1,10 @@
 import multiprocessing.dummy as mp
-import time
-from sys import stdout
-
 import pandas as pd
-import numpy as np
+import time
 import tweepy
+
 from sqlalchemy.exc import IntegrityError, ProgrammingError
+from sys import stdout
 
 from database_handler import DataBaseHandler
 from setup import FileImport
