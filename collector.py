@@ -406,7 +406,6 @@ class Collector(object):
             new = {k: v for k, v in flat.items() if k in select}
             json_list.append(new)
 
-        with open("Data/flat.json", "w") as f:
             json.dump(flat, f)
         with open("Data/new.json", "w") as f:
             json.dump(new, f)
