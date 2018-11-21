@@ -406,7 +406,6 @@ class Collector(object):
             new = {k: v for k, v in flat.items() if k in select}
             json_list.append(new)
 
-            json.dump(new, f)
 
         df = pd.io.json.json_normalize(json_list)
 
