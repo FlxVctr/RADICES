@@ -646,8 +646,8 @@ class CollectorTest(unittest.TestCase):
 
     def test_evade_key_errors_in_make_friend_df(self):
         json_list = []
-        for filename in [os.listdir(os.path.join("Data", "tweet_jsons"))[0]]:
-            with open(os.path.join("Data", "tweet_jsons", filename), "r") as f:
+        for filename in [os.listdir(os.path.join("tests", "tweet_jsons"))[0]]:
+            with open(os.path.join("tests", "tweet_jsons", filename), "r") as f:
                 json_list.append(json.load(f))
 
         df = Collector.make_friend_df(friends_details=json_list,
