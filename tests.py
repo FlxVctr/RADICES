@@ -2,23 +2,24 @@ import argparse
 import copy
 import json
 import multiprocessing.dummy as mp
-import numpy as np
 import os
-import pandas as pd
 import shutil
 import sqlite3 as lite
 import sys
-import tweepy
 import unittest
-import yaml
 from json import JSONDecodeError
+from sys import stdout
+
+import numpy as np
+import pandas as pd
+import tweepy
+import yaml
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
 from pandas.util.testing import assert_frame_equal
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from sys import stdout
 
 import passwords
 import test_helpers
@@ -879,6 +880,18 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertNotEqual(new_seeds, seeds)
         self.assertEqual(new_seeds, expected_new_seeds)
+
+    def test_overlapping_friends(self):
+
+        coordinator = Coordinator(seed_list=[36476777, 83662933, 2367431])
+        worker_bees = coordinator.start_collectors()
+
+        for bee in worker_bees:
+            bee.join(timeout=1200)
+            if bee.err is not None:
+                raise bee.err
+
+        # TODO: find a way to test with an assertion whether this works correctly
 
 
 if __name__ == "__main__":

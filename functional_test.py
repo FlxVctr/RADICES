@@ -141,9 +141,9 @@ class FirstUseTest(unittest.TestCase):
             print(response)
             raise e
 
-        # TODO: consistency checks in Database
-
         DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
+
+        # TODO: consistency checks in Database
 
 
 if __name__ == '__main__':
