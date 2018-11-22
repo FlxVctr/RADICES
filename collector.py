@@ -680,16 +680,22 @@ Accessing Twitter API.""")
             number_of_seeds = self.number_of_seeds
 
         processes = []
+        seed_list = []
 
         print("number of seeds: ", number_of_seeds)
 
         for i in range(number_of_seeds):
             seed = self.seed_queue.get(timeout=1)
+            seed_list += [seed]
             print("seed ", i, ": ", seed)
             processes.append(MyProcess(target=self.work_through_seed_get_next_seed,
                                        kwargs={'seed': seed,
                                                'select': select,
                                                'lang': lang}))
+
+        latest_seeds = pd.DataFrame(seed_list)
+
+        latest_seeds.to_csv('latest_seeds.csv', index=False, header=False)
 
         for p in processes:
             p.start()
