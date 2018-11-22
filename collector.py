@@ -44,6 +44,17 @@ def flatten_json(y: dict, columns: list, sep: str="_"):
     return out
 
 
+class MyProcess(mp.Process):
+    def run(self):
+        try:
+            mp.Process.run(self)
+        except Exception as err:
+            self.err = err
+            raise self.err
+        else:
+            self.err = None
+
+
 class Connection(object):
     """Class that handles the connection to Twitter
 
@@ -673,6 +684,10 @@ Accessing Twitter API.""")
                                         kwargs={'seed': seed,
                                                 'select': select,
                                                 'lang': lang}))
+            processes.append(MyProcess(target=self.work_through_seed_get_next_seed,
+                                       kwargs={'seed': seed,
+                                               'select': select,
+                                               'lang': lang}))
 
         for p in processes:
             p.start()

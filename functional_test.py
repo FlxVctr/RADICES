@@ -126,6 +126,7 @@ class FirstUseTest(unittest.TestCase):
         except CalledProcessError as e:
             response = str(e.output)
             print(response)
+            raise e
 
         # TODO: consistency checks in Database
 
