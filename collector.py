@@ -1,10 +1,11 @@
 import multiprocessing.dummy as mp
-import pandas as pd
 import time
-import tweepy
-
-from sqlalchemy.exc import IntegrityError, ProgrammingError
+import uuid
 from sys import stdout
+
+import pandas as pd
+import tweepy
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from database_handler import DataBaseHandler
 from setup import FileImport
@@ -12,7 +13,7 @@ from setup import FileImport
 # mp.set_start_method('spawn')
 
 
-def flatten_json(y: dict, columns: list, sep: str="_"):
+def flatten_json(y: dict, columns: list, sep: str = "_"):
     '''
     Flattens nested dictionaries.
     adapted from: https://medium.com/@amirziai/flattening-json-objects-in-python-f5343c794b10
@@ -38,10 +39,21 @@ def flatten_json(y: dict, columns: list, sep: str="_"):
         elif type(x) is dict and str(name[:-1]) in columns:
             out[str(name[:-1])] = dict(x)
         else:
-                out[str(name[:-1])] = x
+            out[str(name[:-1])] = x
 
     flatten(y)
     return out
+
+
+class MyProcess(mp.Process):
+    def run(self):
+        try:
+            mp.Process.run(self)
+        except Exception as err:
+            self.err = err
+            raise self.err
+        else:
+            self.err = None
 
 
 class Connection(object):
@@ -260,7 +272,7 @@ class Collector(object):
     @staticmethod
     def make_friend_df(friends_details, select=["id", "followers_count", "lang",
                                                       "created_at", "statuses_count"],
-                       provide_jsons: bool=False):
+                       provide_jsons: bool = False):
         """Transforms list of user details to pandas.DataFrame
 
         Args:
@@ -405,7 +417,6 @@ class Collector(object):
             flat = flatten_json(j, sep=".", columns=select)
             new = {k: v for k, v in flat.items() if k in select}
             json_list.append(new)
-
 
         df = pd.io.json.json_normalize(json_list)
 
@@ -573,14 +584,20 @@ Accessing Twitter API.""")
                 friends_details.to_sql('user_details', if_exists='append',
                                        index=False, con=self.dbh.engine)
             except IntegrityError:  # duplicate id (primary key)
-                friends_details.to_sql('user_details_temp', if_exists='replace',
+                unique_id = uuid.uuid4()
+                temp_db_name = "temp_" + str(unique_id).replace('-', '_')
+                friends_details.to_sql(temp_db_name,
+                                       if_exists='fail',
                                        index=False, con=self.dbh.engine)
 
-                query = """
-                        REPLACE INTO user_details
-                        SELECT *, CURRENT_TIMESTAMP FROM user_details_temp
-                        """
+                query = "REPLACE INTO user_details SELECT *, CURRENT_TIMESTAMP FROM {};".format(
+                    temp_db_name)
+
                 self.dbh.engine.execute(query)
+
+                drop_query = "DROP TABLE {}".format(temp_db_name)
+
+                self.dbh.engine.execute(drop_query)
 
         max_follower_count = friends_details['followers_count'].max()
 
@@ -669,10 +686,10 @@ Accessing Twitter API.""")
         for i in range(number_of_seeds):
             seed = self.seed_queue.get(timeout=1)
             print("seed ", i, ": ", seed)
-            processes.append(mp.Process(target=self.work_through_seed_get_next_seed,
-                                        kwargs={'seed': seed,
-                                                'select': select,
-                                                'lang': lang}))
+            processes.append(MyProcess(target=self.work_through_seed_get_next_seed,
+                                       kwargs={'seed': seed,
+                                               'select': select,
+                                               'lang': lang}))
 
         for p in processes:
             p.start()

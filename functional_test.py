@@ -46,6 +46,19 @@ class FirstUseTest(unittest.TestCase):
         if os.path.isfile("seeds.csv"):
             os.remove("seeds.csv")
 
+        try:
+            DataBaseHandler().engine.execute("DROP TABLE friends")
+        except Exception:
+            pass
+        try:
+            DataBaseHandler().engine.execute("DROP TABLE user_details")
+        except Exception:
+            pass
+        try:
+            DataBaseHandler().engine.execute("DROP TABLE result")
+        except Exception:
+            pass
+
     def test_starts_and_checks_for_necessary_input_seeds_missing(self):
         if os.path.isfile("seeds.csv"):
             os.remove("seeds.csv")
@@ -109,7 +122,7 @@ class FirstUseTest(unittest.TestCase):
             with open("config.yml", "w") as f:
                 yaml.dump(mock_sql_cfg, f, default_flow_style=False)
 
-            DataBaseHandler().engine.execute("DROP TABLES friends, user_details;")
+            DataBaseHandler().engine.execute("DROP TABLES friends, user_details, result;")
 
     def test_starting_collectors_and_writing_to_db(self):
         shutil.copyfile("seeds_test.csv", "seeds.csv")
@@ -126,10 +139,11 @@ class FirstUseTest(unittest.TestCase):
         except CalledProcessError as e:
             response = str(e.output)
             print(response)
-
-        # TODO: consistency checks in Database
+            raise e
 
         DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
+
+        # TODO: consistency checks in Database
 
 
 if __name__ == '__main__':

@@ -43,6 +43,8 @@ if __name__ == "__main__":
 
         for instance in collectors:
             instance.join()
+            if instance.err is not None:
+                raise instance.err
             i += 1
             stdout.write("{} collector(s) finished\n".format(i))
             stdout.flush()
