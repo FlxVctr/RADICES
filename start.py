@@ -5,7 +5,14 @@ from collector import Coordinator
 from setup import Config
 
 
+class TestException(Exception):
+    pass
+
+
 def main_loop(coordinator, test_fail=False, select=[], lang=None):
+
+    if test_fail is True:
+        raise TestException("Let's raise and shine!")
 
     collectors = coordinator.start_collectors(select=select,
                                               lang=lang)
