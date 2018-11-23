@@ -1,6 +1,7 @@
 import multiprocessing.dummy as mp
 import time
 import uuid
+from exceptions import TestException
 from sys import stdout
 
 import pandas as pd
@@ -509,7 +510,7 @@ class Coordinator(object):
 
             return friend_detail
 
-    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None):
+    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None, fail=False):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:
@@ -521,6 +522,9 @@ class Coordinator(object):
         Returns:
             seed (int)
         """
+
+        if fail is True:
+            raise TestException
 
         if connection is None:
             connection = Connection(token_queue=self.token_queue)
@@ -665,7 +669,7 @@ Accessing Twitter API.""")
 
         return new_seed
 
-    def start_collectors(self, number_of_seeds=None, select=[], lang=None):
+    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -693,7 +697,8 @@ Accessing Twitter API.""")
             processes.append(MyProcess(target=self.work_through_seed_get_next_seed,
                                        kwargs={'seed': seed,
                                                'select': select,
-                                               'lang': lang}))
+                                               'lang': lang,
+                                               'fail': fail}))
 
         latest_seeds = pd.DataFrame(seed_list)
 
