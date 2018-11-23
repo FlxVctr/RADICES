@@ -50,16 +50,18 @@ class FirstUseTest(unittest.TestCase):
         if os.path.isfile("seeds.csv"):
             os.remove("seeds.csv")
 
+        dbh = DataBaseHandler()
+
         try:
-            DataBaseHandler().engine.execute("DROP TABLE friends")
+            dbh.engine.execute("DROP TABLE friends")
         except InternalError:
             pass
         try:
-            DataBaseHandler().engine.execute("DROP TABLE user_details")
+            dbh.engine.execute("DROP TABLE user_details")
         except InternalError:
             pass
         try:
-            DataBaseHandler().engine.execute("DROP TABLE result")
+            dbh.engine.execute("DROP TABLE result")
         except InternalError:
             pass
 
@@ -157,13 +159,27 @@ class FirstUseTest(unittest.TestCase):
 
     def test_restarts_after_exception(self):
 
-        shutil.copyfile("seeds.csv.bak", "seeds.csv")
+        shutil.copyfile("two_seeds.csv", "seeds.csv")
 
         with open("config.yml", "w") as f:
             yaml.dump(mock_sql_cfg, f, default_flow_style=False)
 
         with self.assertRaises(TestException):
             main_loop(Coordinator(), test_fail=True)
+
+        p = Popen("python start.py -n 2 -t -f", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+                  shell=True)
+
+        stdout, stderr = p.communicate()
+
+        self.assertIn("Retrying", str(stdout))
+
+        latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
+        seeds = set(pd.read_csv('seeds.csv', header=None)[0].values)
+
+        self.assertEqual(latest_seeds, seeds)
+
+        DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
 
 
 if __name__ == '__main__':
