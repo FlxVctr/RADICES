@@ -5,6 +5,7 @@ import shutil
 import unittest
 from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
 
+import pandas as pd
 import yaml
 from sqlalchemy.exc import InternalError
 
@@ -142,9 +143,15 @@ class FirstUseTest(unittest.TestCase):
             print(response)
             raise e
 
-        DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
+        dbh = DataBaseHandler()
 
-        # TODO: consistency checks in Database
+        result = pd.read_sql("result", dbh.engine)
+
+        self.assertLessEqual(len(result), 8)
+
+        self.assertNotIn(True, result.duplicated().values)
+
+        dbh.engine.execute("DROP TABLE friends, user_details, result;")
 
 
 if __name__ == '__main__':
