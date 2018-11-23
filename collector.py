@@ -674,6 +674,8 @@ Accessing Twitter API.""")
             number_of_seeds (int): Defaults to `self.number_of_seeds`
             select (list of strings): fields to save to user_details table in database
             lang (str): language code for langage to select
+        Returns:
+            list of mp.(dummy.)Process
         """
 
         if number_of_seeds is None:
