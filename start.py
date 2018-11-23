@@ -4,18 +4,11 @@ from sys import stdout
 from collector import Coordinator
 from setup import Config
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
-parser.add_argument('-l', '--language', help="specify language code of users to gather")
-parser.add_argument('-t', '--test', help="test for 2 loops only", action="store_true")
 
-args = parser.parse_args()
+def main_loop(coordinator, test_fail=False, select=[], lang=None):
 
-
-def main_loop(coordinator):
-
-    collectors = coordinator.start_collectors(select=user_details_list,
-                                              lang=args.language)
+    collectors = coordinator.start_collectors(select=select,
+                                              lang=lang)
 
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
     stdout.flush()
@@ -32,6 +25,13 @@ def main_loop(coordinator):
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
+    parser.add_argument('-l', '--language', help="specify language code of users to gather")
+    parser.add_argument('-t', '--test', help="test for 2 loops only", action="store_true")
+
+    args = parser.parse_args()
 
     config = Config()
 
@@ -53,4 +53,4 @@ if __name__ == "__main__":
             stdout.write("\nTEST RUN {}\n".format(k))
             stdout.flush()
 
-            main_loop(coordinator)
+            main_loop(coordinator, select=user_details_list, lang=args.language)

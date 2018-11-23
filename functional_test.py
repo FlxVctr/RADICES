@@ -11,7 +11,9 @@ from sqlalchemy.exc import InternalError
 
 import passwords
 import test_helpers
+from collector import Coordinator
 from database_handler import DataBaseHandler
+from start import main_loop
 
 config_dict = test_helpers.config_dict
 mock_sql_cfg = copy.deepcopy(config_dict)
@@ -22,6 +24,10 @@ mock_sql_cfg["sql"] = dict(
     passwd=passwords.sparsetwittermysqlpw,
     dbname="sparsetwitter"
 )
+
+
+class TestException(Exception):
+    pass
 
 
 class FirstUseTest(unittest.TestCase):
@@ -152,6 +158,16 @@ class FirstUseTest(unittest.TestCase):
         self.assertNotIn(True, result.duplicated().values)
 
         dbh.engine.execute("DROP TABLE friends, user_details, result;")
+
+    def test_restarts_after_exception(self):
+
+        shutil.copyfile("seeds.csv.bak", "seeds.csv")
+
+        with open("config.yml", "w") as f:
+            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
+
+        with self.assertRaises(TestException):
+            main_loop(Coordinator(), test_fail=True)
 
 
 if __name__ == '__main__':
