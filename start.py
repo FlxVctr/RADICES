@@ -11,6 +11,26 @@ parser.add_argument('-t', '--test', help="test for 2 loops only", action="store_
 
 args = parser.parse_args()
 
+
+def main_loop(coordinator):
+
+    collectors = coordinator.start_collectors(select=user_details_list,
+                                              lang=args.language)
+
+    stdout.write("\nstarting {} collectors\n".format(len(collectors)))
+    stdout.flush()
+
+    i = 0
+
+    for instance in collectors:
+        instance.join()
+        if instance.err is not None:
+            raise instance.err
+        i += 1
+        stdout.write("{} collector(s) finished\n".format(i))
+        stdout.flush()
+
+
 if __name__ == "__main__":
 
     config = Config()
@@ -33,18 +53,4 @@ if __name__ == "__main__":
             stdout.write("\nTEST RUN {}\n".format(k))
             stdout.flush()
 
-        collectors = coordinator.start_collectors(select=user_details_list,
-                                                  lang=args.language)
-
-        stdout.write("\nstarting {} collectors\n".format(len(collectors)))
-        stdout.flush()
-
-        i = 0
-
-        for instance in collectors:
-            instance.join()
-            if instance.err is not None:
-                raise instance.err
-            i += 1
-            stdout.write("{} collector(s) finished\n".format(i))
-            stdout.flush()
+            main_loop(coordinator)
