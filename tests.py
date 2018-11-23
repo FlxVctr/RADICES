@@ -863,6 +863,12 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertEqual(len(processes), 2)
 
+        saved_seeds = pd.read_csv('latest_seeds.csv', header=None)
+
+        saved_seeds = set(saved_seeds[0].values)
+
+        self.assertEqual(seeds, saved_seeds)
+
         for process in processes:
             self.assertIsInstance(process, mp.Process, msg="type is {}".format(type(process)))
             stdout.write("Waiting for processes to finish.")
@@ -875,8 +881,6 @@ class CoordinatorTest(unittest.TestCase):
             new_seeds.add(self.coordinator.seed_queue.get(timeout=1000))
 
         self.assertEqual(len(new_seeds), 2)
-
-        print(new_seeds)
 
         self.assertNotEqual(new_seeds, seeds)
         self.assertEqual(new_seeds, expected_new_seeds)

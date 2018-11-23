@@ -6,6 +6,7 @@ import unittest
 from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
 
 import yaml
+from sqlalchemy.exc import InternalError
 
 import passwords
 import test_helpers
@@ -48,15 +49,15 @@ class FirstUseTest(unittest.TestCase):
 
         try:
             DataBaseHandler().engine.execute("DROP TABLE friends")
-        except Exception:
+        except InternalError:
             pass
         try:
             DataBaseHandler().engine.execute("DROP TABLE user_details")
-        except Exception:
+        except InternalError:
             pass
         try:
             DataBaseHandler().engine.execute("DROP TABLE result")
-        except Exception:
+        except InternalError:
             pass
 
     def test_starts_and_checks_for_necessary_input_seeds_missing(self):
