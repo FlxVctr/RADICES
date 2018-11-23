@@ -11,4 +11,5 @@ currenttests.py
 passwords.py
 config_bu_perm.yml
 test_config.yml
-tests/tweet_jsons/
+tests/tweet_jsons
+latest_seeds.csv
