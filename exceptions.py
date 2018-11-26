@@ -1,2 +1,0 @@
-class TestException(Exception):
-    pass

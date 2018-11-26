@@ -5,15 +5,12 @@ import shutil
 import unittest
 from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
 
-import pandas as pd
 import yaml
 from sqlalchemy.exc import InternalError
 
 import passwords
 import test_helpers
-from collector import Coordinator
 from database_handler import DataBaseHandler
-from start import TestException, main_loop
 
 config_dict = test_helpers.config_dict
 mock_sql_cfg = copy.deepcopy(config_dict)
@@ -50,18 +47,16 @@ class FirstUseTest(unittest.TestCase):
         if os.path.isfile("seeds.csv"):
             os.remove("seeds.csv")
 
-        dbh = DataBaseHandler()
-
         try:
-            dbh.engine.execute("DROP TABLE friends")
+            DataBaseHandler().engine.execute("DROP TABLE friends")
         except InternalError:
             pass
         try:
-            dbh.engine.execute("DROP TABLE user_details")
+            DataBaseHandler().engine.execute("DROP TABLE user_details")
         except InternalError:
             pass
         try:
-            dbh.engine.execute("DROP TABLE result")
+            DataBaseHandler().engine.execute("DROP TABLE result")
         except InternalError:
             pass
 
@@ -147,39 +142,9 @@ class FirstUseTest(unittest.TestCase):
             print(response)
             raise e
 
-        dbh = DataBaseHandler()
-
-        result = pd.read_sql("result", dbh.engine)
-
-        self.assertLessEqual(len(result), 8)
-
-        self.assertNotIn(True, result.duplicated().values)
-
-        dbh.engine.execute("DROP TABLE friends, user_details, result;")
-
-    def test_restarts_after_exception(self):
-
-        shutil.copyfile("two_seeds.csv", "seeds.csv")
-
-        with open("config.yml", "w") as f:
-            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
-
-        with self.assertRaises(TestException):
-            main_loop(Coordinator(), test_fail=True)
-
-        p = Popen("python start.py -n 2 -t -f", stdout=PIPE, stderr=PIPE, stdin=PIPE,
-                  shell=True)
-
-        stdout, stderr = p.communicate()
-
-        self.assertIn("Retrying", str(stdout))
-
-        latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
-        seeds = set(pd.read_csv('seeds.csv', header=None)[0].values)
-
-        self.assertEqual(latest_seeds, seeds)
-
         DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
+
+        # TODO: consistency checks in Database
 
 
 if __name__ == '__main__':

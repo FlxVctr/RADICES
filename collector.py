@@ -1,7 +1,6 @@
 import multiprocessing.dummy as mp
 import time
 import uuid
-from exceptions import TestException
 from sys import stdout
 
 import pandas as pd
@@ -510,7 +509,7 @@ class Coordinator(object):
 
             return friend_detail
 
-    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None, fail=False):
+    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:
@@ -522,9 +521,6 @@ class Coordinator(object):
         Returns:
             seed (int)
         """
-
-        if fail is True:
-            raise TestException
 
         if connection is None:
             connection = Connection(token_queue=self.token_queue)
@@ -669,7 +665,7 @@ Accessing Twitter API.""")
 
         return new_seed
 
-    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False):
+    def start_collectors(self, number_of_seeds=None, select=[], lang=None):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -678,8 +674,6 @@ Accessing Twitter API.""")
             number_of_seeds (int): Defaults to `self.number_of_seeds`
             select (list of strings): fields to save to user_details table in database
             lang (str): language code for langage to select
-        Returns:
-            list of mp.(dummy.)Process
         """
 
         if number_of_seeds is None:
@@ -697,8 +691,7 @@ Accessing Twitter API.""")
             processes.append(MyProcess(target=self.work_through_seed_get_next_seed,
                                        kwargs={'seed': seed,
                                                'select': select,
-                                               'lang': lang,
-                                               'fail': fail}))
+                                               'lang': lang}))
 
         latest_seeds = pd.DataFrame(seed_list)
 
