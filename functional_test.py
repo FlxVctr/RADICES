@@ -131,7 +131,7 @@ class FirstUseTest(unittest.TestCase):
             DataBaseHandler().engine.execute("DROP TABLES friends, user_details, result;")
 
     def test_starting_collectors_and_writing_to_db(self):
-        shutil.copyfile("seeds_test.csv", "seeds.csv")
+
         shutil.copyfile("seeds_test.csv", "seeds.csv")
 
         with open("config.yml", "w") as f:
