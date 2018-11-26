@@ -510,7 +510,8 @@ class Coordinator(object):
 
             return friend_detail
 
-    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None, fail=False):
+    def work_through_seed_get_next_seed(self, seed, select=[], lang=None,
+                                        connection=None, fail=False):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:
