@@ -1,8 +1,11 @@
 from __future__ import unicode_literals
-import tweepy as tp
-from setup import FileImport
-import webbrowser
+
 import csv
+import webbrowser
+
+import tweepy as tp
+
+from setup import FileImport
 
 
 class OAuthorizer():
@@ -13,7 +16,7 @@ class OAuthorizer():
         try:
             redirect_url = auth.get_authorization_url()
         except tp.TweepError as e:
-            print("Error! Failes to get the request token.")
+            print("Error! Failed to get the request token.")
             raise e
 
         webbrowser.open(redirect_url)
