@@ -562,7 +562,24 @@ Accessing Twitter API.""")
 
             collector = Collector(connection, seed)
 
-            friend_list = collector.get_friend_list()
+            try:
+                friend_list = collector.get_friend_list()
+            except tweepy.error.TweepError as e:  # if account is protected
+                if "Not authorized." in e.reason:
+
+                    new_seed = self.seed_pool.sample(n=1)
+                    new_seed = new_seed[0].values[0]
+
+                    stdout.write("Account {} protected, selecting random seed.\n".format(seed))
+                    stdout.flush()
+
+                    self.token_queue.put((connection.token, connection.secret))
+
+                    self.seed_queue.put(new_seed)
+
+                    return new_seed
+                else:
+                    raise e
 
             if friend_list == []:  # if account follows nobody
                 new_seed = self.seed_pool.sample(n=1)
