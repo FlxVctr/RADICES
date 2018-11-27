@@ -185,7 +185,7 @@ class Collector(object):
                         return func(*args, **kwargs)
                     except tweepy.RateLimitError:
                         collector = args[0]
-                        print("rate limit hit … retrying")
+                        print("rate limit hit … retrying with next available token")
                         collector.connection.next_token()
                         continue
                     break
