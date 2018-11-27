@@ -21,11 +21,14 @@ from pandas.util.testing import assert_frame_equal
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
+# Needed so that developer do not have to append PYTHONPATH manually.
+sys.path.insert(0, os.getcwd())
 import passwords
 import test_helpers
 from collector import Collector, Connection, Coordinator
 from database_handler import DataBaseHandler
 from setup import Config, FileImport
+
 
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
@@ -753,16 +756,13 @@ class CoordinatorTest(unittest.TestCase):
     def test_coordinator_selects_n_random_seeds(self):
         coordinator = Coordinator(seeds=10)
         self.assertEqual(len(coordinator.seeds), 10)
-
         try:
             coordinator.seed_queue.close()
             coordinator.seed_queue.join_thread()
         except AttributeError:
             pass
-
         coordinator = Coordinator(seeds=2)
         self.assertEqual(len(coordinator.seeds), 2)
-
         try:
             coordinator.seed_queue.close()
             coordinator.seed_queue.join_thread()

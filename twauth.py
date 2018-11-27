@@ -16,8 +16,11 @@ class OAuthorizer():
         try:
             redirect_url = auth.get_authorization_url()
         except tp.TweepError as e:
-            print("Error! Failed to get the request token.")
-            raise e
+            if '"code":32' in e.reason:
+                raise tp.TweepError("""Failed to get the request token. Perhaps the Consumer Key
+                and / or secret in your 'keys.json' is incorrect?""")
+            else:
+                raise e
 
         webbrowser.open(redirect_url)
         token = auth.request_token["oauth_token"]
@@ -27,8 +30,11 @@ class OAuthorizer():
         try:
             auth.get_access_token(verifier)
         except tp.TweepError as e:
-            print("Failed to get access token! Perhaps the verifier you've entered is wrong.")
-            raise e
+            if "Invalid oauth_verifier parameter" in e.reason:
+                raise tp.TweepError("""Failed to get access token! Perhaps the
+                                    verifier you've entered is wrong.""")
+            else:
+                raise e
 
         with open('tokens.csv', 'a', newline='') as f:
             writer = csv.writer(f)
