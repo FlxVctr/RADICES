@@ -172,18 +172,24 @@ class Collector(object):
         self.seed = seed
         self.connection = connection
 
-    def retry_with_next_token_on_rate_limit_error(self, func):
-        def wrapper(*args, **kwargs):
-            while True:
-                try:
-                    return func(*args, **kwargs)
-                except tweepy.RateLimitError:
-                    print("rate limit hit … retrying")
-                    self.connection.next_token()
-                    continue
-                break
+        # just for testing
+        self.first_run = True
 
-        return wrapper
+    class Decorators(object):
+
+        @classmethod
+        def retry_with_next_token_on_rate_limit_error(cls, func):
+            def wrapper(*args, **kwargs):
+                while True:
+                    try:
+                        return func(*args, **kwargs)
+                    except tweepy.RateLimitError:
+                        collector = args[0]
+                        print("rate limit hit … retrying")
+                        collector.connection.next_token()
+                        continue
+                    break
+            return wrapper
 
     def check_API_calls_and_update_if_necessary(self, endpoint):
         """Checks for an endpoint how many calls are left and updates token if necessary.
