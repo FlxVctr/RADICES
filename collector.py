@@ -177,8 +177,8 @@ class Collector(object):
 
     class Decorators(object):
 
-        @classmethod
-        def retry_with_next_token_on_rate_limit_error(cls, func):
+        @staticmethod
+        def retry_with_next_token_on_rate_limit_error(func):
             def wrapper(*args, **kwargs):
                 while True:
                     try:
@@ -200,6 +200,7 @@ class Collector(object):
         else:
             return (arg, kwarg)
 
+    @Decorators.retry_with_next_token_on_rate_limit_error
     def check_API_calls_and_update_if_necessary(self, endpoint):
         """Checks for an endpoint how many calls are left and updates token if necessary.
 
