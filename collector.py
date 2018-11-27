@@ -85,14 +85,14 @@ class Connection(object):
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
-        # TODO: implement case if we have more than one token and secret
 
         self.api = tweepy.API(self.auth, wait_on_rate_limit=False, wait_on_rate_limit_notify=False)
 
     def next_token(self):
 
+        new_token, new_secret = self.token_queue.get()
         self.token_queue.put((self.token, self.secret))
-        self.token, self.secret = self.token_queue.get()
+        self.token, self.secret = new_token, new_secret
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
