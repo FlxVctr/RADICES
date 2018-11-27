@@ -172,9 +172,6 @@ class Collector(object):
         self.seed = seed
         self.connection = connection
 
-        # just for testing
-        self.first_run = True
-
     class Decorators(object):
 
         @staticmethod
@@ -190,15 +187,6 @@ class Collector(object):
                         continue
                     break
             return wrapper
-
-    # necessary for testing purposes only
-    @Decorators.retry_with_next_token_on_rate_limit_error
-    def raise_rate_limit_once(self, arg, kwarg=0):
-        if self.first_run:
-            self.first_run = False
-            raise tweepy.RateLimitError("testing (this should not lead to a fail)")
-        else:
-            return (arg, kwarg)
 
     @Decorators.retry_with_next_token_on_rate_limit_error
     def check_API_calls_and_update_if_necessary(self, endpoint):
