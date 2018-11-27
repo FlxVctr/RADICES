@@ -1,4 +1,5 @@
 import multiprocessing.dummy as mp
+import queue
 import time
 import uuid
 from exceptions import TestException
@@ -90,7 +91,13 @@ class Connection(object):
 
     def next_token(self):
 
-        new_token, new_secret = self.token_queue.get()
+        try:
+            new_token, new_secret = self.token_queue.get(timeout=5)
+        except queue.Empty:
+            stdout.write("Waiting for next token …")
+            stdout.flush()
+            new_token, new_secret = self.token_queue.get()
+
         self.token_queue.put((self.token, self.secret))
         self.token, self.secret = new_token, new_secret
 
@@ -204,7 +211,6 @@ class Collector(object):
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
         reset_time = self.connection.reset_time(endpoint=endpoint)
         attempts = 0
-        first_token = self.connection.token
 
         while remaining_calls == 0:
             attempts += 1
