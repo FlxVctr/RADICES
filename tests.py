@@ -660,17 +660,8 @@ class CollectorTest(unittest.TestCase):
 
         collector = Collector(self.connection, seed=36476777)
         token = self.connection.token
-        self.first_run = True
 
-        @collector.retry_with_next_token_on_rate_limit_error
-        def raise_rate_limit_once(arg, kwarg=0):
-            if self.first_run:
-                self.first_run = False
-                raise tweepy.RateLimitError("testing (this should not lead to a fail)")
-            else:
-                return (arg, kwarg)
-
-        self.assertEqual(raise_rate_limit_once(1, kwarg=2), (1, 2))
+        self.assertEqual(collector.raise_rate_limit_once(1, kwarg=2), (1, 2))
         self.assertNotEqual(token, self.connection.token)
 
 
