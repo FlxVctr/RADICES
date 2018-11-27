@@ -715,7 +715,8 @@ Accessing Twitter API.""")
                                        kwargs={'seed': seed,
                                                'select': select,
                                                'lang': lang,
-                                               'fail': fail}))
+                                               'fail': fail},
+                                       name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
 
