@@ -212,13 +212,6 @@ class Collector(object):
 
             self.connection.next_token()
 
-            if self.connection.token == first_token:  # tried all tokens
-                msg = "API calls for {e} depleted. Waiting {s} seconds.\n"
-                stdout.write(msg.format(e=endpoint, s=reset_time))
-                stdout.flush()
-                time.sleep(reset_time)
-                attempts = 0
-
             remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
             reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
 
