@@ -23,6 +23,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 # Needed so that developer do not have to append PYTHONPATH manually.
 sys.path.insert(0, os.getcwd())
+
 import passwords
 import test_helpers
 from collector import Collector, Connection, Coordinator
@@ -888,6 +889,23 @@ class CoordinatorTest(unittest.TestCase):
             c.get_friend_list()
 
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+
+        self.assertIsInstance(new_seed, np.int64)
+
+    def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
+
+        seed = 1621528116
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de')
+
+        self.assertIsInstance(new_seed, np.int64)
+
+        friends_details = self.coordinator.lookup_accounts_friend_details(
+            seed, self.dbh.engine)
+
+        self.assertEqual(0, len(friends_details))
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de')
 
         self.assertIsInstance(new_seed, np.int64)
 

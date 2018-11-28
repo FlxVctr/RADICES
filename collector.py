@@ -505,8 +505,8 @@ class Coordinator(object):
             db_connection (database connection/engine object)
             select (str): comma separated list of required fields, defaults to all available ("*")
         Returns:
-            None, if nothing found.
-            Otherwise DataFrame with all details.
+            None, if no friends found.
+            Otherwise DataFrame with all details. Might be empty if language filter is on.
         """
 
         if db_connection is None:
@@ -586,6 +586,7 @@ Accessing Twitter API.""")
                 new_seed = new_seed[0].values[0]
 
                 stdout.write("No friends or unburned connections left, selecting random seed.\n")
+                stdout.flush()
 
                 self.token_queue.put((connection.token, connection.secret))
 
@@ -636,6 +637,22 @@ Accessing Twitter API.""")
                 drop_query = "DROP TABLE {}".format(temp_db_name)
 
                 self.dbh.engine.execute(drop_query)
+
+        if lang is not None and len(friends_details) == 0:
+
+            new_seed = self.seed_pool.sample(n=1)
+            new_seed = new_seed[0].values[0]
+
+            stdout.write(
+                "No user details for friends with interface language '{}' found in db.\n".format(
+                    lang))
+            stdout.flush()
+
+            self.token_queue.put((connection.token, connection.secret))
+
+            self.seed_queue.put(new_seed)
+
+            return new_seed
 
         max_follower_count = friends_details['followers_count'].max()
 
