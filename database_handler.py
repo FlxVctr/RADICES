@@ -111,17 +111,16 @@ class DataBaseHandler():
            as the user_details table.
 
         Args:
-            type (str): The table that the temporary table is going to simulate. Currently, only
-                        "user_details" is supported.
+            type (str): The table that the temporary table is going to simulate.
+                        Possible values are ["friends", "result", "user_details"]
         Returns:
             The name of the temporary table.
         """
         uid = uuid.uuid4()
-        if type == "user_details":
-            temp_tbl_name = "temp_" + str(uid).replace('-', '_')
-            create_temp_tbl_sql = "CREATE TABLE " + temp_tbl_name + " LIKE user_details"
-            self.engine.execute(create_temp_tbl_sql)
-            return temp_tbl_name
+        temp_tbl_name = "temp_" + str(uid).replace('-', '_')
+        create_temp_tbl_sql = "CREATE TABLE " + temp_tbl_name + " LIKE {};".format(type)
+        self.engine.execute(create_temp_tbl_sql)
+        return temp_tbl_name
 
     def write_friends(self, seed, friendlist):
         """Writes the database entries for one user and their friends in format user, friends.
