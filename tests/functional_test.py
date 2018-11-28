@@ -16,5 +16,3 @@ class FirstUseTest(unittest.TestCase):
         # Program tests connection to database (MySQL or BigQuery?)
 
         pass
-
-# TODO: create Hans Bredow SparseTwitter App and OAuth some users
