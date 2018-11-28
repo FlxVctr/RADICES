@@ -11,7 +11,8 @@ from sqlalchemy.exc import InternalError
 import test_helpers
 from collector import Coordinator
 from database_handler import DataBaseHandler
-from start import TestException, main_loop
+from exceptions import TestException
+from start import main_loop
 
 
 mysql_cfg = test_helpers.config_dict_user_details_dtypes_mysql
