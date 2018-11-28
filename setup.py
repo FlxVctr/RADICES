@@ -36,7 +36,7 @@ class FileImport():
                     raise TypeError("Consumer secret is type" +
                                     str(type(self.key_file["consumer_secret"])) +
                                     "and consumer token is type " + str(type(
-                                     self.key_file["consumer_token"])) + '''. Both
+                                        self.key_file["consumer_token"])) + '''. Both
                                      must be of type str. ''')
 
         return (self.key_file["consumer_token"], self.key_file["consumer_secret"])
@@ -58,7 +58,6 @@ class FileImport():
         except pd.errors.EmptyDataError as e:
             print('"seeds.csv" is empty!')
             raise e
-        print(type(self.seeds))
         return self.seeds
 
     def read_token_file(self, filename="tokens.csv"):
@@ -78,17 +77,23 @@ class Config():
 
     Attributes:
         config_file (str): Path to configuration file
+        config_dict (dict): Dictionary containing the config information (in case
+                            the dictionary shall be directly passed instead of read
+                            out of a configuration file).
     """
     config_template = "config_template.py"
 
-    def __init__(self, config_file="config.yml"):
-        self.config_path = config_file
-        try:
-            with open(self.config_path, 'r') as f:
-                self.config = yaml.load(f)
-        except FileNotFoundError:
-            raise FileNotFoundError('Could not find "' + self.config_path + '''".\n
-            Please run "python3 make_config.py" or provide a config.yml''')
+    def __init__(self, config_file="config.yml", config_dict: dict=None):
+        if config_dict is not None:
+            self.config = config_dict
+        else:
+            self.config_path = config_file
+            try:
+                with open(self.config_path, 'r') as f:
+                    self.config = yaml.load(f)
+            except FileNotFoundError:
+                raise FileNotFoundError('Could not find "' + self.config_path + '''".\n
+                Please run "python3 make_config.py" or provide a config.yml''')
 
         if "sql" not in self.config:
             print("Config file " + config_file + """ does not contain key 'sql'!
@@ -135,5 +140,4 @@ class Config():
                   "new_database".''')
             self.dbname = "new_database"
 
-        # TODO: Add DataTypes from config.yml
-        # if "twitter_user_details" in self.config:
+        # TODO: Add mailgun config
