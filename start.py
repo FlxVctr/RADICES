@@ -1,8 +1,6 @@
 import argparse
-import sys
 import time
 import traceback
-from exceptions import TestException
 from sys import stdout
 
 import pandas as pd
