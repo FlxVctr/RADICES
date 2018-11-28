@@ -209,7 +209,8 @@ class Collector(object):
         """
 
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
-        print("REMAINING CALLS FOR {}: ".format(endpoint), remaining_calls)
+        print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+            endpoint, self.connection.token[:4]), remaining_calls)
         reset_time = self.connection.reset_time(endpoint=endpoint)
         token_dict = {}
         token = self.connection.token
@@ -218,7 +219,7 @@ class Collector(object):
 
         while remaining_calls == 0:
             attempts += 1
-            stdout.write("Attempt with next token: {}\n".format(attempts))
+            stdout.write("Attempt with next available token.\n".format(attempts))
 
             self.connection.next_token()
 
@@ -236,7 +237,8 @@ class Collector(object):
                 reset_time = self.connection.reset_time(endpoint=endpoint)
                 token_dict[token] = time.time() + reset_time
 
-        print("REMAINING CALLS FOR {}: ".format(endpoint), remaining_calls)
+        print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+            endpoint, self.connection.token[:4]), remaining_calls)
 
         return remaining_calls
 
@@ -272,9 +274,6 @@ class Collector(object):
             if remaining_calls == 0:
                 remaining_calls = self.check_API_calls_and_update_if_necessary(
                     endpoint='/friends/ids')
-
-            print("RESULT LENGTH: ", len(result))
-            print("PAGE STARTS WITH: ", page[0][:5])
 
         return result
 
