@@ -1,9 +1,10 @@
-# In the following, please fill the fields as you need them.
+# In the following config file, please fill the fields as you need them.
 # Do not use quotes, just plain text: e.g.:
 # sql:
  # dbtype: sqlite
 # etc.
 
+# ================== Database Information =====================
 sql:
     dbtype:   # either "sqlite" or "mysql"
     host:     # if dbtype = mysql, provide host
@@ -11,11 +12,14 @@ sql:
     passwd:   # if dbtype = mysql, provide password
     dbname:   # provide a name for the database.
 
-# If you wish to save certain twitter user details, please indicate the SQL data
-# type you wish to save it as in the SQL database. If you do not wish to save
-# a certain detail, just leave it empty like so:
+
+# ================== Twitter User Details =====================
+# If you wish to save certain twitter user details, please just add the SQL data
+# type you wish to save it as in the SQL database (recommended types are indicated
+# in parantheses). If you do not wish to save a certain detail, just leave it empty
+# like so:
 # twitter_user_details:
-    # contributors_enabled: TINYINT
+    # contributors_enabled: TINYINT(1)
     # created at:
 # This will save the detail "contributors_enabled" as booelan / tinyint into the
 # database but it will not save "created_at" at all.
@@ -142,8 +146,10 @@ twitter_user_details:
     url:  # TEXT
     verified:  # BOOLEAN
     utc_offset:  # TEXT (Rarely available)
-# NOTIFICATION EMAILS:
-# ====================
+
+
+# ================== Notification Emails =====================
+
 
 email_to_notify: 'user@example.com'
 

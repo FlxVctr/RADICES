@@ -36,6 +36,6 @@ if not os.path.isdir(os.path.join("tests", "tweet_jsons")):
 # Write details in json files
 ct = 1
 for friend_details in friends_details:
-    with open(os.path.join("tests", "tweet_jsons", "user_"+str(ct)+".json"), "w") as f:
+    with open(os.path.join("tests", "tweet_jsons", "user_" + str(ct) + ".json"), "w") as f:
         json.dump(friend_details._json, f)
     ct += 1
