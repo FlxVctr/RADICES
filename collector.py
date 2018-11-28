@@ -35,9 +35,9 @@ def flatten_json(y: dict, columns: list, sep: str = "_"):
                 flatten(a, name + str(i) + sep)
                 i += 1
         elif type(x) is list and str(name[:-1]) in columns:
-            out[str(name[:-1])] = list(x)
+            out[str(name[:-1])] = str(x)  # Must be str so that nested lists are written to db
         elif type(x) is dict and str(name[:-1]) in columns:
-            out[str(name[:-1])] = dict(x)
+            out[str(name[:-1])] = str(x)  # Same here
         else:
             out[str(name[:-1])] = x
 
@@ -291,8 +291,8 @@ class Collector(object):
                  'default_profile',
                  'default_profile_image',
                  'description',
-                 'entities.description.urls',
-                 'entities.url.urls',
+                 'entities_description_urls',
+                 'entities_url_urls',
                  'favourites_count',
                  'follow_request_sent',
                  'followers_count',
@@ -324,80 +324,80 @@ class Collector(object):
                  'profile_use_background_image',
                  'protected',
                  'screen_name',
-                 'status.contributors',
-                 'status.coordinates',
-                 'status.coordinates.coordinates',
-                 'status.coordinates.type',
-                 'status.created_at',
-                 'status.entities.hashtags',
-                 'status.entities.media',
-                 'status.entities.symbols',
-                 'status.entities.urls',
-                 'status.entities.user_mentions',
-                 'status.extended_entities.media',
-                 'status.favorite_count',
-                 'status.favorited',
-                 'status.geo',
-                 'status.geo.coordinates',
-                 'status.geo.type',
-                 'status.id',
-                 'status.id_str',
-                 'status.in_reply_to_screen_name',
-                 'status.in_reply_to_status_id',
-                 'status.in_reply_to_status_id_str',
-                 'status.in_reply_to_user_id',
-                 'status.in_reply_to_user_id_str',
-                 'status.is_quote_status',
-                 'status.lang',
-                 'status.place',
-                 'status.place.bounding_box.coordinates',
-                 'status.place.bounding_box.type',
-                 'status.place.contained_within',
-                 'status.place.country',
-                 'status.place.country_code',
-                 'status.place.full_name',
-                 'status.place.id',
-                 'status.place.name',
-                 'status.place.place_type',
-                 'status.place.url',
-                 'status.possibly_sensitive',
-                 'status.quoted_status_id',
-                 'status.quoted_status_id_str',
-                 'status.retweet_count',
-                 'status.retweeted',
-                 'status.retweeted_status.contributors',
-                 'status.retweeted_status.coordinates',
-                 'status.retweeted_status.created_at',
-                 'status.retweeted_status.entities.hashtags',
-                 'status.retweeted_status.entities.media',
-                 'status.retweeted_status.entities.symbols',
-                 'status.retweeted_status.entities.urls',
-                 'status.retweeted_status.entities.user_mentions',
-                 'status.retweeted_status.extended_entities.media',
-                 'status.retweeted_status.favorite_count',
-                 'status.retweeted_status.favorited',
-                 'status.retweeted_status.geo',
-                 'status.retweeted_status.id',
-                 'status.retweeted_status.id_str',
-                 'status.retweeted_status.in_reply_to_screen_name',
-                 'status.retweeted_status.in_reply_to_status_id',
-                 'status.retweeted_status.in_reply_to_status_id_str',
-                 'status.retweeted_status.in_reply_to_user_id',
-                 'status.retweeted_status.in_reply_to_user_id_str',
-                 'status.retweeted_status.is_quote_status',
-                 'status.retweeted_status.lang',
-                 'status.retweeted_status.place',
-                 'status.retweeted_status.possibly_sensitive',
-                 'status.retweeted_status.quoted_status_id',
-                 'status.retweeted_status.quoted_status_id_str',
-                 'status.retweeted_status.retweet_count',
-                 'status.retweeted_status.retweeted',
-                 'status.retweeted_status.source',
-                 'status.retweeted_status.text',
-                 'status.retweeted_status.truncated',
-                 'status.source',
-                 'status.text',
-                 'status.truncated',
+                 'status_contributors',
+                 'status_coordinates',
+                 'status_coordinates_coordinates',
+                 'status_coordinates_type',
+                 'status_created_at',
+                 'status_entities_hashtags',
+                 'status_entities_media',
+                 'status_entities_symbols',
+                 'status_entities_urls',
+                 'status_entities_user_mentions',
+                 'status_extended_entities_media',
+                 'status_favorite_count',
+                 'status_favorited',
+                 'status_geo',
+                 'status_geo_coordinates',
+                 'status_geo_type',
+                 'status_id',
+                 'status_id_str',
+                 'status_in_reply_to_screen_name',
+                 'status_in_reply_to_status_id',
+                 'status_in_reply_to_status_id_str',
+                 'status_in_reply_to_user_id',
+                 'status_in_reply_to_user_id_str',
+                 'status_is_quote_status',
+                 'status_lang',
+                 'status_place',
+                 'status_place_bounding_box_coordinates',
+                 'status_place_bounding_box_type',
+                 'status_place_contained_within',
+                 'status_place_country',
+                 'status_place_country_code',
+                 'status_place_full_name',
+                 'status_place_id',
+                 'status_place_name',
+                 'status_place_place_type',
+                 'status_place_url',
+                 'status_possibly_sensitive',
+                 'status_quoted_status_id',
+                 'status_quoted_status_id_str',
+                 'status_retweet_count',
+                 'status_retweeted',
+                 'status_retweeted_status_contributors',
+                 'status_retweeted_status_coordinates',
+                 'status_retweeted_status_created_at',
+                 'status_retweeted_status_entities_hashtags',
+                 'status_retweeted_status_entities_media',
+                 'status_retweeted_status_entities_symbols',
+                 'status_retweeted_status_entities_urls',
+                 'status_retweeted_status_entities_user_mentions',
+                 'status_retweeted_status_extended_entities_media',
+                 'status_retweeted_status_favorite_count',
+                 'status_retweeted_status_favorited',
+                 'status_retweeted_status_geo',
+                 'status_retweeted_status_id',
+                 'status_retweeted_status_id_str',
+                 'status_retweeted_status_in_reply_to_screen_name',
+                 'status_retweeted_status_in_reply_to_status_id',
+                 'status_retweeted_status_in_reply_to_status_id_str',
+                 'status_retweeted_status_in_reply_to_user_id',
+                 'status_retweeted_status_in_reply_to_user_id_str',
+                 'status_retweeted_status_is_quote_status',
+                 'status_retweeted_status_lang',
+                 'status_retweeted_status_place',
+                 'status_retweeted_status_possibly_sensitive',
+                 'status_retweeted_status_quoted_status_id',
+                 'status_retweeted_status_quoted_status_id_str',
+                 'status_retweeted_status_retweet_count',
+                 'status_retweeted_status_retweeted',
+                 'status_retweeted_status_source',
+                 'status_retweeted_status_text',
+                 'status_retweeted_status_truncated',
+                 'status_source',
+                 'status_text',
+                 'status_truncated',
                  'statuses_count',
                  'suspended',
                  'time_zone',
@@ -414,14 +414,21 @@ class Collector(object):
 
         json_list = []
         for j in json_list_raw:
-            flat = flatten_json(j, sep=".", columns=select)
+            flat = flatten_json(j, sep="_", columns=select)
             new = {k: v for k, v in flat.items() if k in select}
             json_list.append(new)
 
         df = pd.io.json.json_normalize(json_list)
 
-        df.sort_index(axis=1, inplace=True)
+        if "created_at" in list(df):
+            df["created_at"] = pd.to_datetime(df["created_at"])
+        if "status_created_at" in list(df):
+            df["status_created_at"] = pd.to_datetime(df["status_created_at"])
+        if "status_retweeted_status_created_at" in list(df):
+            df["status_retweeted_status_created_at"] = pd.to_datetime(
+                df['status_retweeted_status_created_at'])
 
+        df.sort_index(axis=1, inplace=True)
         return df
 
     def check_follows(self, source, target):
@@ -479,6 +486,8 @@ class Coordinator(object):
 
         self.dbh = DataBaseHandler()
 
+    # TODO: Könnte man schöner machen, wenn man select eine Liste mitgeben könnte
+    # Die dann für den Query einfach gejoint wird mit ", ".join(select)
     def lookup_accounts_friend_details(self,
                                        account_id, db_connection=None, select="*"):
         """Looks up and retrieves details from friends of `account_id` via database.
@@ -601,8 +610,8 @@ Accessing Twitter API.""")
 
         max_follower_count = friends_details['followers_count'].max()
 
-        new_seed = friends_details[friends_details['followers_count']
-                                   == max_follower_count]['id'].values[0]
+        new_seed = friends_details[friends_details
+                                   ['followers_count'] == max_follower_count]['id'].values[0]
 
         check_exists_query = """
                                 SELECT EXISTS(
