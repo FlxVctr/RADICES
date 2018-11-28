@@ -589,7 +589,9 @@ class CollectorTest(unittest.TestCase):
 
         user_friends = collector.get_friend_list()
 
+        self.assertIsInstance(user_friends, list)
         self.assertGreater(len(user_friends), 100000)
+        self.assertLess(len(user_friends), 200000)
 
     def test_collector_gets_friend_details_and_makes_df(self):
 

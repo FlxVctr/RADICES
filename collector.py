@@ -209,6 +209,7 @@ class Collector(object):
         """
 
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+        print("REMAINING CALLS FOR {}: ".format(endpoint), remaining_calls)
         reset_time = self.connection.reset_time(endpoint=endpoint)
         attempts = 0
 
@@ -241,14 +242,23 @@ class Collector(object):
 
         remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
 
-        for page in tweepy.Cursor(self.connection.api.friends_ids, user_id=twitter_id).pages():
-            result = result + page
+        cursor = -1
+        while True:
+            page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
+            if len(page[0]) > 0:
+                result += page[0]
+            else:
+                break
+            cursor = page[1][1]
 
             remaining_calls -= 1
 
             if remaining_calls == 0:
                 remaining_calls = self.check_API_calls_and_update_if_necessary(
                     endpoint='/friends/ids')
+
+            print("RESULT LENGTH: ", len(result))
+            print("PAGE STARTS WITH: ", page[0][:5])
 
         return result
 
@@ -656,8 +666,8 @@ Accessing Twitter API.""")
 
         max_follower_count = friends_details['followers_count'].max()
 
-        new_seed = friends_details[friends_details['followers_count']
-                                   == max_follower_count]['id'].values[0]
+        new_seed = friends_details[
+            friends_details['followers_count'] == max_follower_count]['id'].values[0]
 
         check_exists_query = """
                                 SELECT EXISTS(
