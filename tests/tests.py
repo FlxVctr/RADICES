@@ -679,6 +679,29 @@ class CollectorTest(unittest.TestCase):
         self.assertEqual(["id", "followers_count", "lang", "created_at", "statuses_count"].sort(),
                          list(df).sort())
 
+    def test_retry_if_rate_limited(self):
+
+        class TestCollector(Collector):
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self.first_run = True
+
+            @Collector.Decorators.retry_with_next_token_on_rate_limit_error
+            def raise_rate_limit_once(self, arg, kwarg=0):
+                if self.first_run:
+                    self.first_run = False
+                    raise tweepy.RateLimitError("testing (this should not lead to a fail)")
+                else:
+                    return (arg, kwarg)
+
+        collector = TestCollector(self.connection, seed=36476777)
+        token = self.connection.token
+
+        self.assertEqual(collector.raise_rate_limit_once(1, kwarg=2), (1, 2))
+        self.assertNotEqual(token, self.connection.token)
+
 
 class CoordinatorTest(unittest.TestCase):
 
@@ -858,6 +881,37 @@ class CoordinatorTest(unittest.TestCase):
         seed = 770602317242523648
 
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+
+        self.assertIsInstance(new_seed, np.int64)
+
+    def test_work_through_seed_if_account_is_protected(self):
+
+        seed = 557558765
+
+        with self.assertRaises(tweepy.error.TweepError,
+                               msg="User with id {} is not protected anymore.".format(seed)):
+            connection = Connection()
+            c = Collector(connection, seed)
+            c.get_friend_list()
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+
+        self.assertIsInstance(new_seed, np.int64)
+
+    def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
+
+        seed = 1621528116
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de')
+
+        self.assertIsInstance(new_seed, np.int64)
+
+        friends_details = self.coordinator.lookup_accounts_friend_details(
+            seed, self.dbh.engine)
+
+        self.assertEqual(0, len(friends_details))
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de')
 
         self.assertIsInstance(new_seed, np.int64)
 

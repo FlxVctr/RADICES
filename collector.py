@@ -1,4 +1,5 @@
 import multiprocessing.dummy as mp
+import queue
 import time
 from exceptions import TestException
 from sys import stdout
@@ -84,14 +85,20 @@ class Connection(object):
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
-        # TODO: implement case if we have more than one token and secret
 
-        self.api = tweepy.API(self.auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+        self.api = tweepy.API(self.auth, wait_on_rate_limit=False, wait_on_rate_limit_notify=False)
 
     def next_token(self):
 
+        try:
+            new_token, new_secret = self.token_queue.get(timeout=5)
+        except queue.Empty:
+            stdout.write("Waiting for next token …")
+            stdout.flush()
+            new_token, new_secret = self.token_queue.get()
+
         self.token_queue.put((self.token, self.secret))
-        self.token, self.secret = self.token_queue.get()
+        self.token, self.secret = new_token, new_secret
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -171,6 +178,23 @@ class Collector(object):
         self.seed = seed
         self.connection = connection
 
+    class Decorators(object):
+
+        @staticmethod
+        def retry_with_next_token_on_rate_limit_error(func):
+            def wrapper(*args, **kwargs):
+                while True:
+                    try:
+                        return func(*args, **kwargs)
+                    except tweepy.RateLimitError:
+                        collector = args[0]
+                        print("rate limit hit … retrying with next available token")
+                        collector.connection.next_token()
+                        continue
+                    break
+            return wrapper
+
+    @Decorators.retry_with_next_token_on_rate_limit_error
     def check_API_calls_and_update_if_necessary(self, endpoint):
         """Checks for an endpoint how many calls are left and updates token if necessary.
 
@@ -186,20 +210,12 @@ class Collector(object):
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
         reset_time = self.connection.reset_time(endpoint=endpoint)
         attempts = 0
-        first_token = self.connection.token
 
         while remaining_calls == 0:
             attempts += 1
             stdout.write("Attempt with next token: {}\n".format(attempts))
 
             self.connection.next_token()
-
-            if self.connection.token == first_token:  # tried all tokens
-                msg = "API calls for {e} depleted. Waiting {s} seconds.\n"
-                stdout.write(msg.format(e=endpoint, s=reset_time))
-                stdout.flush()
-                time.sleep(reset_time)
-                attempts = 0
 
             remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
             reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
@@ -497,8 +513,8 @@ class Coordinator(object):
             db_connection (database connection/engine object)
             select (str): comma separated list of required fields, defaults to all available ("*")
         Returns:
-            None, if nothing found.
-            Otherwise DataFrame with all details.
+            None, if no friends found.
+            Otherwise DataFrame with all details. Might be empty if language filter is on.
         """
 
         if db_connection is None:
@@ -518,8 +534,8 @@ class Coordinator(object):
 
             return friend_detail
 
-    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None,
-                                        fail=False):
+    def work_through_seed_get_next_seed(self, seed, select=[], lang=None,
+                                        connection=None, fail=False):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:
@@ -554,13 +570,31 @@ Accessing Twitter API.""")
 
             collector = Collector(connection, seed)
 
-            friend_list = collector.get_friend_list()
+            try:
+                friend_list = collector.get_friend_list()
+            except tweepy.error.TweepError as e:  # if account is protected
+                if "Not authorized." in e.reason:
+
+                    new_seed = self.seed_pool.sample(n=1)
+                    new_seed = new_seed[0].values[0]
+
+                    stdout.write("Account {} protected, selecting random seed.\n".format(seed))
+                    stdout.flush()
+
+                    self.token_queue.put((connection.token, connection.secret))
+
+                    self.seed_queue.put(new_seed)
+
+                    return new_seed
+                else:
+                    raise e
 
             if friend_list == []:  # if account follows nobody
                 new_seed = self.seed_pool.sample(n=1)
                 new_seed = new_seed[0].values[0]
 
                 stdout.write("No friends or unburned connections left, selecting random seed.\n")
+                stdout.flush()
 
                 self.token_queue.put((connection.token, connection.secret))
 
@@ -604,6 +638,22 @@ Accessing Twitter API.""")
                         temp_tbl_name)
                 self.dbh.engine.execute(query)
                 self.dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")
+
+        if lang is not None and len(friends_details) == 0:
+
+            new_seed = self.seed_pool.sample(n=1)
+            new_seed = new_seed[0].values[0]
+
+            stdout.write(
+                "No user details for friends with interface language '{}' found in db.\n".format(
+                    lang))
+            stdout.flush()
+
+            self.token_queue.put((connection.token, connection.secret))
+
+            self.seed_queue.put(new_seed)
+
+            return new_seed
 
         max_follower_count = friends_details['followers_count'].max()
 
@@ -700,7 +750,8 @@ Accessing Twitter API.""")
                                        kwargs={'seed': seed,
                                                'select': select,
                                                'lang': lang,
-                                               'fail': fail}))
+                                               'fail': fail},
+                                       name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
 
