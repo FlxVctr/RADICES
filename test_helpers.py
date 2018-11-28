@@ -325,10 +325,10 @@ config_dict_user_details_dtypes_mysql = {
         "profile_use_background_image": "TINYINT(1)",
         "protected": "TINYINT(1)",
         "screen_name": "VARCHAR(50)",
-        "status_contributors": "TEXT",  # TODO: SEE IF THIS IS NEEDED
+        "status_contributors": "TEXT",
         "status_coordinates": "TEXT",
-        "status_coordinates_coordinates": "TEXT",  # TODO: SEE IF THIS IS NEEDED
-        "status_coordinates_type": "TEXT",  # TODO: SEE IF THIS IS NEEDED
+        "status_coordinates_coordinates": "TEXT",
+        "status_coordinates_type": "TEXT",
         "status_created_at": "DATETIME",
         "status_entities_hashtags": "TEXT",
         "status_entities_media": "TEXT",
@@ -339,8 +339,8 @@ config_dict_user_details_dtypes_mysql = {
         "status_favorite_count": "INT(20)",
         "status_favorited": "TINYINT(1)",
         "status_geo": "TEXT",
-        "status_geo_coordinates": "TEXT",  # TODO: SEE IF THIS IS NEEDED
-        "status_geo_type": "TEXT",  # TODO: SEE IF THIS IS NEEDED
+        "status_geo_coordinates": "TEXT",
+        "status_geo_type": "TEXT",
         "status_id": "BIGINT(50)",
         "status_id_str": "VARCHAR(50)",
         "status_in_reply_to_screen_name": "VARCHAR(50)",
@@ -351,14 +351,14 @@ config_dict_user_details_dtypes_mysql = {
         "status_is_quote_status": "TINYINT(1)",
         "status_lang": "VARCHAR(10)",
         "status_place": "TEXT",
-        "status_place_bounding_box_coordinates": "TEXT",  # TODO: SEE IF THIS IS NEEDED
-        "status_place_bounding_box_type": "TEXT",  # TODO: SEE IF THIS IS NEEDED
-        "status_place_contained_within": "TEXT",   # TODO: SEE IF THIS IS NEEDED
-        "status_place_country": "TEXT",  # TODO: SEE IF THIS IS NEEDED
-        "status_place_country_code": "TEXT",  # TODO: SEE IF THIS IS NEEDED
-        "status_place_full_name": "TEXT",  # TODO: SEE IF THIS IS NEEDED
-        "status_place_id": "TEXT",  # TODO: SEE IF THIS IS NEEDED
-        "status_place_name": "TEXT",  # TODO: SEE IF THIS IS NEEDED
+        "status_place_bounding_box_coordinates": "TEXT",  # Rarely available
+        "status_place_bounding_box_type": "TEXT",  # Rarely available
+        "status_place_contained_within": "TEXT",   # Rarely available
+        "status_place_country": "TEXT",  # Rarely available
+        "status_place_country_code": "TEXT",  # Rarely available
+        "status_place_full_name": "TEXT",  # Rarely available
+        "status_place_id": "TEXT",  # Rarely available
+        "status_place_name": "TEXT",  # Rarely available
         "status_place_place_type": "TEXT",  # TODO: SEE IF THIS IS NEEDED
         "status_place_url": "TEXT",  # TODO: SEE IF THIS IS NEEDED
         "status_possibly_sensitive": "TINYINT(1)",
@@ -401,10 +401,10 @@ config_dict_user_details_dtypes_mysql = {
         "status_truncated": "TINYINT(1)",
         "statuses_count": "BIGINT(30)",
         "suspended": "TINYINT(1)",
-        "time_zone": "TEXT",  # TODO: SEE IF THIS IS NEEDED
+        "time_zone": "TEXT",
         "translator_type": "VARCHAR(50)",
         "url": "TEXT",
         "verified": "BOOLEAN",
-        "utc_offset": "TEXT"   # TODO: SEE IF THIS IS NEEDED
+        "utc_offset": "TEXT"
     }
 }

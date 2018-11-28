@@ -21,7 +21,6 @@ sql:
 # database but it will not save "created_at" at all.
 
 # TODO: add descriptions for user_details
-# TODO: add support for db types
 
 twitter_user_details:
     contributors_enabled:  # TINYINT(1)
@@ -39,34 +38,34 @@ twitter_user_details:
     geo_enabled:  # TINYINT(1)
     has_extended_profile:  # TINYINT(1)
     id:  # BIGINT(30) PRIMARY KEY
-    id_str:  # VARCHAR(30) #REALLY
+    id_str:  # VARCHAR(30)
     is_translation_enabled:  # TINYINT(1)
     is_translator:  # TINYINT(1)
-    lang:  # VARCHAR(10) #REALLY
+    lang:  # VARCHAR(10)
     listed_count:  # BIGINT(30)
     location:  # TEXT
-    name:  # VARCHAR (50) #REALLY
+    name:  # VARCHAR (50)
     needs_phone_verification:  #TINYINT(1)
     notifications:  # TINYINT(1)
-    profile_background_color:  # CHAR(6) (is a Hex Color Code) #REALLY
+    profile_background_color:  # CHAR(6) (is a Hex Color Code)
     profile_background_image_url:  # TEXT
     profile_background_image_url_https:  # TEXT
     profile_background_tile:  # TINYINT(1)
     profile_banner_url:  # TEXT
     profile_image_url:  # TEXT
     profile_image_url_https:  # TEXT
-    profile_link_color:  # CHAR(6) (is a Hex Color Code) #REALLY
-    profile_sidebar_border_color:  # CHAR(6) (is a Hex Color Code) #REALLY
-    profile_sidebar_fill_color:  # CHAR(6) (is a Hex Color Code) #REALLY
-    profile_text_color:  # CHAR(6) (is a Hex Color Code) #REALLY
+    profile_link_color:  # CHAR(6) (is a Hex Color Code)
+    profile_sidebar_border_color:  # CHAR(6) (is a Hex Color Code)
+    profile_sidebar_fill_color:  # CHAR(6) (is a Hex Color Code)
+    profile_text_color:  # CHAR(6) (is a Hex Color Code)
     profile_use_background_image:  # TINYINT(1)
     protected:  # TINYINT(1)
-    screen_name:  # VARCHAR(50) #REALLY
-    status.contributors:  # DE FACTO NON EXISTENT
+    screen_name:  # VARCHAR(50)
+    status.contributors:  # TEXT (Rarely available)
     status.coordinates:  # TEXT (contains a dict)
-    status.coordinates.coordinates:  # DE FACTO NON EXISTENT
-    status.coordinates.type:  # DE FACTO NON EXISTENT
-    status.created_at:  # DATETIME #REALLY
+    status.coordinates.coordinates:  # TEXT (Rarely available)
+    status.coordinates.type:  # TEXT (Rarely available)
+    status.created_at:  # DATETIME
     status.entities.hashtags:  # TEXT (contains a dict)
     status.entities.media:  # TEXT (contains a dict)
     status.entities.symbols:  # TEXT (contains a dict) # DE FACTO ALWAYS EMPTY
@@ -76,8 +75,8 @@ twitter_user_details:
     status.favorite_count:  # INT(20)
     status.favorited:  # TINYINT(1)
     status.geo:  # TEXT (contains a dict)
-    status.geo.coordinates:  # DE FACTO NON EXISTENT
-    status.geo.type:  # DE FACTO NON EXISTENT
+    status.geo.coordinates:  # TEXT (Rarely available)
+    status.geo.type:  # TEXT (Rarely available)
     status.id:  # BIGINT(50)
     status.id_str: # VARCHAR(50)
     status.in_reply_to_screen_name:  # VARCHAR(50)
@@ -86,29 +85,29 @@ twitter_user_details:
     status.in_reply_to_user_id:  # BIGINT(30)
     status.in_reply_to_user_id_str:  # VARCHAR(30)
     status.is_quote_status:  # TINYINT(1)
-    status.lang:  # VARCHAR(10) #REALLY
+    status.lang:  # VARCHAR(10)
     status.place:  # TEXT (contains a dict)
-    status.place.bounding_box.coordinates: # DE FACTO NON EXISTENT
-    status.place.bounding_box.type:  # DE FACTO NON EXISTENT
-    status.place.contained_within:  # DE FACTO NON EXISTENT
-    status.place.country:  # DE FACTO NON EXISTENT
-    status.place.country_code:  # DE FACTO NON EXISTENT
-    status.place.full_name:  # DE FACTO NON EXISTENT
-    status.place.id:  # DE FACTO NON EXISTENT
-    status.place.name:  # DE FACTO NON EXISTENT
-    status.place.place_type:  # DE FACTO NON EXISTENT
-    status.place.url:  # DE FACTO NON EXISTENT
+    status.place.bounding_box.coordinates: # TEXT (Rarely available)
+    status.place.bounding_box.type:  # TEXT (Rarely available)
+    status.place.contained_within:  # TEXT (Rarely available)
+    status.place.country:  # TEXT (Rarely available)
+    status.place.country_code:  # TEXT (Rarely available)
+    status.place.full_name:  # TEXT (Rarely available)
+    status.place.id:  # TEXT (Rarely available)
+    status.place.name: # TEXT (Rarely available)
+    status.place.place_type:  # TEXT (Rarely available)
+    status.place.url:  # TEXT (Rarely available)
     status.possibly_sensitive:  # TINYINT(1)
     status.quoted_status_id:  # BIGINT(50)
     status.quoted_status_id_str:  # VARCHAR(50)
     status.retweet_count:  # INT(30)
     status.retweeted:  # TINYINT(1)
-    status.retweeted_status.contributors:  # DE FACTO NON EXISTENT
+    status.retweeted_status.contributors:  # TEXT (Rarely available)
     status.retweeted_status.coordinates:  # TEXT (contains a dict)
-    status.retweeted_status.created_at:  # DATETIME #REALLY
+    status.retweeted_status.created_at:  # DATETIME
     status.retweeted_status.entities.hashtags:  # TEXT (contains a dict)
     status.retweeted_status.entities.media:  # TEXT (contains a dict)
-    status.retweeted_status.entities.symbols:  # TEXT # DE FACTO ALWAY EMPTY
+    status.retweeted_status.entities.symbols:  # TEXT (Rarely available)
     status.retweeted_status.entities.urls:  # TEXT (contains a dict)
     status.retweeted_status.entities.user_mentions:  # TEXT (contains a dict)
     status.retweeted_status.extended_entities.media: # TEXT (contains a dict)
@@ -138,11 +137,11 @@ twitter_user_details:
     status.truncated:  # TINYINT(1)
     statuses_count:  # BIGINT(30)
     suspended:  # TINYINT(1)
-    time_zone:  # DE FACTO NON EXISTENT
+    time_zone: # TEXT (Rarely available)
     translator_type:  # VARCHAR(50)
     url:  # TEXT
     verified:  # BOOLEAN
-    utc_offset:  # DE FACTO NON EXISTENT
+    utc_offset:  # TEXT (Rarely available)
 # NOTIFICATION EMAILS:
 # ====================
 
