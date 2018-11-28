@@ -94,7 +94,7 @@ class Connection(object):
         try:
             new_token, new_secret = self.token_queue.get(timeout=5)
         except queue.Empty:
-            stdout.write("Waiting for next token …")
+            stdout.write("Waiting for next token put in queue …")
             stdout.flush()
             new_token, new_secret = self.token_queue.get()
 
@@ -211,6 +211,9 @@ class Collector(object):
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
         print("REMAINING CALLS FOR {}: ".format(endpoint), remaining_calls)
         reset_time = self.connection.reset_time(endpoint=endpoint)
+        token_dict = {}
+        token = self.connection.token
+        token_dict[token] = time.time() + reset_time
         attempts = 0
 
         while remaining_calls == 0:
@@ -219,8 +222,21 @@ class Collector(object):
 
             self.connection.next_token()
 
-            remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
-            reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
+            token = self.connection.token
+
+            try:
+                next_reset_at = token_dict[token]
+                if time.time() >= next_reset_at:
+                    remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+                else:
+                    time.sleep(1)
+                    continue
+            except KeyError:
+                remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+                reset_time = self.connection.reset_time(endpoint=endpoint)
+                token_dict[token] = time.time() + reset_time
+
+        print("REMAINING CALLS FOR {}: ".format(endpoint), remaining_calls)
 
         return remaining_calls
 
