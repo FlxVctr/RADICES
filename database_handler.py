@@ -118,7 +118,7 @@ class DataBaseHandler():
         """
         uid = uuid.uuid4()
         temp_tbl_name = "temp_" + str(uid).replace('-', '_')
-        create_temp_tbl_sql = "CREATE TABLE " + temp_tbl_name + " LIKE {};".format(type)
+        create_temp_tbl_sql = f"CREATE TABLE {temp_tbl_name} LIKE {type};"
         self.engine.execute(create_temp_tbl_sql)
         return temp_tbl_name
 

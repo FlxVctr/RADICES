@@ -434,7 +434,7 @@ class DataBaseHandlerTest(unittest.TestCase):
 
         self.assertEqual(select_vars.sort(), sql_vars.sort())
 
-    def test_make_temp_tbl_makes_a_temp_tbl_equal_to_user_details(self):
+    def test_make_temp_tbl_makes_a_temp_tbl_equal_to_type(self):
         cfg = test_helpers.config_dict_user_details_dtypes_mysql
         dbh = DataBaseHandler(config_dict=cfg)
         temp_tbl_name = dbh.make_temp_tbl()
