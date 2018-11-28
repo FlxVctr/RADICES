@@ -31,8 +31,7 @@ from setup import Config, FileImport
 
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
-                    help='''Indicates whether or not to skip tests that drain Twitter API
-                         calls. 1=yes, 0=no''',
+                    help='''If set, skips api call draining tests.''',
                     required=False,
                     action='store_true')
 parser.add_argument('unittest_args', nargs='*')
@@ -434,6 +433,21 @@ class DataBaseHandlerTest(unittest.TestCase):
         sql_vars = list(pd.read_sql(sql=s, con=dbh.engine))
 
         self.assertEqual(select_vars.sort(), sql_vars.sort())
+
+    def test_make_temp_tbl_makes_a_temp_tbl_equal_to_user_details(self):
+        cfg = test_helpers.config_dict_user_details_dtypes_mysql
+        dbh = DataBaseHandler(config_dict=cfg)
+        temp_tbl_name = dbh.make_temp_tbl()
+
+        user_details_colnames = list(pd.read_sql("SELECT * FROM user_details;",
+                                                 con=dbh.engine))
+        temp_tbl_colnames = list(pd.read_sql("SELECT * FROM " + temp_tbl_name + ";",
+                                             con=dbh.engine))
+
+        self.assertEqual(user_details_colnames, temp_tbl_colnames)
+        self.assertIsInstance(temp_tbl_name, str)
+
+        dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")
 
 
 class ConfigTest(unittest.TestCase):
