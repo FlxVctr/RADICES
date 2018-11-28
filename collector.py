@@ -87,7 +87,7 @@ class Connection(object):
         self.auth.set_access_token(self.token, self.secret)
         # TODO: implement case if we have more than one token and secret
 
-        self.api = tweepy.API(self.auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+        self.api = tweepy.API(self.auth, wait_on_rate_limit=False, wait_on_rate_limit_notify=False)
 
     def next_token(self):
 
@@ -172,6 +172,23 @@ class Collector(object):
         self.seed = seed
         self.connection = connection
 
+    class Decorators(object):
+
+        @staticmethod
+        def retry_with_next_token_on_rate_limit_error(func):
+            def wrapper(*args, **kwargs):
+                while True:
+                    try:
+                        return func(*args, **kwargs)
+                    except tweepy.RateLimitError:
+                        collector = args[0]
+                        print("rate limit hit … retrying with next available token")
+                        collector.connection.next_token()
+                        continue
+                    break
+            return wrapper
+
+    @Decorators.retry_with_next_token_on_rate_limit_error
     def check_API_calls_and_update_if_necessary(self, endpoint):
         """Checks for an endpoint how many calls are left and updates token if necessary.
 
@@ -510,7 +527,8 @@ class Coordinator(object):
 
             return friend_detail
 
-    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None, fail=False):
+    def work_through_seed_get_next_seed(self, seed, select=[], lang=None,
+                                        connection=None, fail=False):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:

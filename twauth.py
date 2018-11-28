@@ -1,8 +1,11 @@
 from __future__ import unicode_literals
-import tweepy as tp
-from setup import FileImport
-import webbrowser
+
 import csv
+import webbrowser
+
+import tweepy as tp
+
+from setup import FileImport
 
 
 class OAuthorizer():
