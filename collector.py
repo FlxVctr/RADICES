@@ -219,7 +219,7 @@ class Collector(object):
 
         while remaining_calls == 0:
             attempts += 1
-            stdout.write("Attempt with next available token.\n".format(attempts))
+            stdout.write("Attempt with next available token.\n")
 
             self.connection.next_token()
 
