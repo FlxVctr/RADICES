@@ -877,6 +877,20 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertIsInstance(new_seed, np.int64)
 
+    def test_work_through_seed_if_account_is_protected(self):
+
+        seed = 557558765
+
+        with self.assertRaises(tweepy.error.TweepError,
+                               msg="User with id {} is not protected anymore.".format(seed)):
+            connection = Connection()
+            c = Collector(connection, seed)
+            c.get_friend_list()
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+
+        self.assertIsInstance(new_seed, np.int64)
+
     def test_start_collectors(self):
 
         seeds = set(self.seed_list)

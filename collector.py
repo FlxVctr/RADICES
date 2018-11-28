@@ -1,4 +1,5 @@
 import multiprocessing.dummy as mp
+import queue
 import time
 import uuid
 from exceptions import TestException
@@ -85,14 +86,20 @@ class Connection(object):
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
-        # TODO: implement case if we have more than one token and secret
 
         self.api = tweepy.API(self.auth, wait_on_rate_limit=False, wait_on_rate_limit_notify=False)
 
     def next_token(self):
 
+        try:
+            new_token, new_secret = self.token_queue.get(timeout=5)
+        except queue.Empty:
+            stdout.write("Waiting for next token …")
+            stdout.flush()
+            new_token, new_secret = self.token_queue.get()
+
         self.token_queue.put((self.token, self.secret))
-        self.token, self.secret = self.token_queue.get()
+        self.token, self.secret = new_token, new_secret
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -204,20 +211,12 @@ class Collector(object):
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
         reset_time = self.connection.reset_time(endpoint=endpoint)
         attempts = 0
-        first_token = self.connection.token
 
         while remaining_calls == 0:
             attempts += 1
             stdout.write("Attempt with next token: {}\n".format(attempts))
 
             self.connection.next_token()
-
-            if self.connection.token == first_token:  # tried all tokens
-                msg = "API calls for {e} depleted. Waiting {s} seconds.\n"
-                stdout.write(msg.format(e=endpoint, s=reset_time))
-                stdout.flush()
-                time.sleep(reset_time)
-                attempts = 0
 
             remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
             reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
@@ -563,7 +562,24 @@ Accessing Twitter API.""")
 
             collector = Collector(connection, seed)
 
-            friend_list = collector.get_friend_list()
+            try:
+                friend_list = collector.get_friend_list()
+            except tweepy.error.TweepError as e:  # if account is protected
+                if "Not authorized." in e.reason:
+
+                    new_seed = self.seed_pool.sample(n=1)
+                    new_seed = new_seed[0].values[0]
+
+                    stdout.write("Account {} protected, selecting random seed.\n".format(seed))
+                    stdout.flush()
+
+                    self.token_queue.put((connection.token, connection.secret))
+
+                    self.seed_queue.put(new_seed)
+
+                    return new_seed
+                else:
+                    raise e
 
             if friend_list == []:  # if account follows nobody
                 new_seed = self.seed_pool.sample(n=1)
@@ -716,7 +732,8 @@ Accessing Twitter API.""")
                                        kwargs={'seed': seed,
                                                'select': select,
                                                'lang': lang,
-                                               'fail': fail}))
+                                               'fail': fail},
+                                       name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
 
