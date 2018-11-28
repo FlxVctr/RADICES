@@ -35,7 +35,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
     parser.add_argument('-l', '--language', help="specify language code of users to gather")
-    parser.add_argument('-t', '--test', help="dev only: test for 2 loops only", action="store_true")
+    parser.add_argument('-t', '--test', help="dev only: test for 2 loops only",
+                        action="store_true")
     parser.add_argument(
         '-f', '--fail', help="dev only: test unexpected exception", action="store_true")
 

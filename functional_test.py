@@ -1,5 +1,4 @@
 # functional test for network collector
-import copy
 import os
 import shutil
 import unittest
@@ -9,21 +8,13 @@ import pandas as pd
 import yaml
 from sqlalchemy.exc import InternalError
 
-import passwords
 import test_helpers
 from collector import Coordinator
 from database_handler import DataBaseHandler
 from start import TestException, main_loop
 
-config_dict = test_helpers.config_dict
-mock_sql_cfg = copy.deepcopy(config_dict)
-mock_sql_cfg["sql"] = dict(
-    dbtype='mysql',
-    host='127.0.0.1',
-    user='sparsetwitter',
-    passwd=passwords.sparsetwittermysqlpw,
-    dbname="sparsetwitter"
-)
+
+mysql_cfg = test_helpers.config_dict_user_details_dtypes_mysql
 
 
 class FirstUseTest(unittest.TestCase):
@@ -50,7 +41,7 @@ class FirstUseTest(unittest.TestCase):
         if os.path.isfile("seeds.csv"):
             os.remove("seeds.csv")
 
-        dbh = DataBaseHandler()
+        dbh = DataBaseHandler(config_dict=mysql_cfg, create_all=False)
 
         try:
             dbh.engine.execute("DROP TABLE friends")
@@ -70,7 +61,7 @@ class FirstUseTest(unittest.TestCase):
             os.remove("seeds.csv")
 
         with open("config.yml", "w") as f:
-            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
+            yaml.dump(mysql_cfg, f, default_flow_style=False)
 
         # User starts program with `start.py`
         try:
@@ -87,7 +78,7 @@ class FirstUseTest(unittest.TestCase):
         shutil.copyfile("seeds_empty.csv", "seeds.csv")
 
         with open("config.yml", "w") as f:
-            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
+            yaml.dump(mysql_cfg, f, default_flow_style=False)
 
         try:
             response = str(check_output('python start.py', stderr=STDOUT,
@@ -126,7 +117,7 @@ class FirstUseTest(unittest.TestCase):
             self.assertTrue(os.path.exists("config.yml"))
 
             with open("config.yml", "w") as f:
-                yaml.dump(mock_sql_cfg, f, default_flow_style=False)
+                yaml.dump(mysql_cfg, f, default_flow_style=False)
 
             DataBaseHandler().engine.execute("DROP TABLES friends, user_details, result;")
 
@@ -135,12 +126,11 @@ class FirstUseTest(unittest.TestCase):
         shutil.copyfile("seeds_test.csv", "seeds.csv")
 
         with open("config.yml", "w") as f:
-            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
+            yaml.dump(mysql_cfg, f, default_flow_style=False)
 
         try:
             response = str(check_output('python start.py -n 2 -l de -t',
-                                        stderr=STDOUT, shell=True),
-                           encoding="ascii")
+                                        stderr=STDOUT, shell=True))
             print(response)
         except CalledProcessError as e:
             response = str(e.output)
@@ -162,7 +152,7 @@ class FirstUseTest(unittest.TestCase):
         shutil.copyfile("two_seeds.csv", "seeds.csv")
 
         with open("config.yml", "w") as f:
-            yaml.dump(mock_sql_cfg, f, default_flow_style=False)
+            yaml.dump(mysql_cfg, f, default_flow_style=False)
 
         with self.assertRaises(TestException):
             main_loop(Coordinator(), test_fail=True)
