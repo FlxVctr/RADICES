@@ -1,5 +1,6 @@
 import sqlite3 as lite
 import pandas as pd
+import uuid
 from sqlite3 import Error
 from setup import Config
 from sqlalchemy import create_engine
@@ -101,6 +102,26 @@ class DataBaseHandler():
                               user_details table.""")
                 except OperationalError as e:
                     raise e
+
+    def make_temp_tbl(self, type: str="user_details"):
+        """Creates a new temporary table with a random name consisting of a temp_ prefix
+           and a uid. The structure of the table depends on the chosen type param. The
+           table's structure will be a copy of an existing table, for example, a temporary
+           user_details table will have the same columns and attributes (Keys, constraints, etc.)
+           as the user_details table.
+
+        Args:
+            type (str): The table that the temporary table is going to simulate. Currently, only
+                        "user_details" is supported.
+        Returns:
+            The name of the temporary table.
+        """
+        uid = uuid.uuid4()
+        if type == "user_details":
+            temp_tbl_name = "temp_" + str(uid).replace('-', '_')
+            create_temp_tbl_sql = "CREATE TABLE " + temp_tbl_name + " LIKE user_details"
+            self.engine.execute(create_temp_tbl_sql)
+            return temp_tbl_name
 
     def write_friends(self, seed, friendlist):
         """Writes the database entries for one user and their friends in format user, friends.

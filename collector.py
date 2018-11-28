@@ -1,6 +1,5 @@
 import multiprocessing.dummy as mp
 import time
-import uuid
 from exceptions import TestException
 from sys import stdout
 
@@ -519,7 +518,8 @@ class Coordinator(object):
 
             return friend_detail
 
-    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None, fail=False):
+    def work_through_seed_get_next_seed(self, seed, select=[], lang=None, connection=None,
+                                        fail=False):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:
@@ -597,20 +597,13 @@ Accessing Twitter API.""")
                 friends_details.to_sql('user_details', if_exists='append',
                                        index=False, con=self.dbh.engine)
             except IntegrityError:  # duplicate id (primary key)
-                unique_id = uuid.uuid4()
-                temp_db_name = "temp_" + str(unique_id).replace('-', '_')
-                friends_details.to_sql(temp_db_name,
-                                       if_exists='fail',
-                                       index=False, con=self.dbh.engine)
-
-                query = "REPLACE INTO user_details SELECT *, CURRENT_TIMESTAMP FROM {};".format(
-                    temp_db_name)
-
+                temp_tbl_name = self.dbh.make_temp_tbl()
+                friends_details.to_sql(temp_tbl_name, if_exists="append", index=False,
+                                       con=self.dbh.engine)
+                query = "REPLACE INTO user_details SELECT * FROM {};".format(
+                        temp_tbl_name)
                 self.dbh.engine.execute(query)
-
-                drop_query = "DROP TABLE {}".format(temp_db_name)
-
-                self.dbh.engine.execute(drop_query)
+                self.dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")
 
         max_follower_count = friends_details['followers_count'].max()
 
