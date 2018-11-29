@@ -3,6 +3,7 @@ import queue
 import time
 import uuid
 from exceptions import TestException
+from functools import wraps
 from sys import stdout
 
 import pandas as pd
@@ -45,6 +46,39 @@ def flatten_json(y: dict, columns: list, sep: str = "_"):
 
     flatten(y)
     return out
+
+
+def retry_x_times(x):
+    def retry_decorator(func):
+
+        @wraps(func)
+        def func_wrapper(*args, **kwargs):
+
+            try:
+                if kwargs['fail'] is True or kwargs['test_fail'] is True:
+                    # if we're testing fails:
+                    return func(*args, **kwargs)
+            except KeyError:
+                pass
+
+            i = 0
+
+            for i in range(x - 1):
+                try:
+                    return (func(*args, **kwargs))
+                except Exception:
+                    waiting_time = 2**i
+                    print(
+                        f"Encountered exception in {func.__name__}{args, kwargs}.",
+                        f"Retrying in {waiting_time}.")
+                    time.sleep(waiting_time)
+                i += 1
+
+            return func(*args, **kwargs)
+
+        return func_wrapper
+
+    return retry_decorator
 
 
 class MyProcess(mp.Process):
@@ -191,17 +225,40 @@ class Collector(object):
         self.seed = seed
         self.connection = connection
 
+        self.token_blacklist = {}
+
     class Decorators(object):
 
         @staticmethod
         def retry_with_next_token_on_rate_limit_error(func):
             def wrapper(*args, **kwargs):
+                collector = args[0]
+                old_token = collector.connection.token
                 while True:
                     try:
-                        return func(*args, **kwargs)
+                        try:
+                            if kwargs['force_retry_token'] is True:
+                                print('Forced retry with token.')
+                                return func(*args, **kwargs)
+                        except KeyError:
+                            pass
+                        try:
+                            if collector.token_blacklist[old_token] <= time.time():
+                                print(f'Token starting with {old_token[:4]} should work again.')
+                                return func(*args, **kwargs)
+                            else:
+                                print(f'Token starting with {old_token[:4]} not ready yet.')
+                                collector.connection.next_token()
+                                time.sleep(10)
+                                continue
+                        except KeyError:
+                            print(f'Token starting with {old_token[:4]} not tried yet. Trying.')
+                            return func(*args, **kwargs)
                     except tweepy.RateLimitError:
-                        collector = args[0]
-                        print("rate limit hit … retrying with next available token")
+                        collector.token_blacklist[old_token] = time.time() + 900
+                        print(f'Token starting with {old_token[:4]} hit rate limit.')
+                        print("Retrying with next available token.")
+                        print(f"Blacklisted until {collector.token_blacklist[old_token]}")
                         collector.connection.next_token()
                         continue
                     break
@@ -242,15 +299,15 @@ class Collector(object):
                 if time.time() >= next_reset_at:
                     remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
                 else:
-                    time.sleep(1)
+                    time.sleep(10)
                     continue
             except KeyError:
                 remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
                 reset_time = self.connection.reset_time(endpoint=endpoint)
                 token_dict[token] = time.time() + reset_time
 
-        print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
-            endpoint, self.connection.token[:4]), remaining_calls)
+            print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+                endpoint, self.connection.token[:4]), remaining_calls)
 
         return remaining_calls
 
@@ -563,6 +620,7 @@ class Coordinator(object):
 
             return friend_detail
 
+    @retry_x_times(10)
     def work_through_seed_get_next_seed(self, seed, select=[], lang=None,
                                         connection=None, fail=False):
         """Takes a seed and determines the next seed and saves all details collected to db.
