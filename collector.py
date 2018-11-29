@@ -1,4 +1,5 @@
 import multiprocessing.dummy as mp
+import queue
 import time
 import uuid
 from exceptions import TestException
@@ -105,11 +106,16 @@ class Connection(object):
 
             new_token, new_secret = self.token_queue.get()
 
-            if (new_token, new_secret) == (old_token, old_secret):
-                self.token_queue.put((self.token, self.secret))
-                stdout.write("Waiting for next token put in queue …\n")
-                stdout.flush()
-                time.sleep(1)
+            if (new_token, new_secret) == (old_token, old_secret):  # if same token
+                try:  # see if there's another token
+                    new_token, new_secret = self.token_queue.get(block=False)
+                    self.token_queue.put((self.token, self.secret))
+                    break
+                except queue.Empty:  # if not
+                    self.token_queue.put((self.token, self.secret))  # put token back and wait
+                    stdout.write("Waiting for next token put in queue …\n")
+                    stdout.flush()
+                    time.sleep(10)
             else:
                 break
 
