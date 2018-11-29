@@ -977,8 +977,6 @@ class CoordinatorTest(unittest.TestCase):
             except queue.Empty:
                 break
 
-        print(tokens)
-
         coordinator.token_queue.put(tokens[0])  # put only two back
         coordinator.token_queue.put(tokens[1])
 
