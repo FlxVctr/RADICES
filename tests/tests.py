@@ -428,9 +428,27 @@ class DataBaseHandlerTest(unittest.TestCase):
                                index=False, con=dbh.engine)
 
         s = "SELECT * FROM user_details"
-        sql_vars = list(pd.read_sql(sql=s, con=dbh.engine))
+        sql_friends_details = pd.read_sql(sql=s, con=dbh.engine)
 
-        self.assertEqual(select_vars.sort(), sql_vars.sort())
+        # Dropping timestamp column, fill up missing cols, and converting TINYINT to bool
+        sql_friends_details.drop(columns="timestamp", inplace=True)
+        select_items = cfg["twitter_user_details"].items()
+        for var, val in select_items:
+            if var not in friends_details.columns:
+                friends_details[var] = None
+            if val == "TINYINT(1)":
+                sql_friends_details[var] = sql_friends_details[var].astype('bool')
+                # some of the fields in the json are not converted correctly, thus:
+                friends_details[var] = friends_details[var].astype('bool')
+
+        # Sorting dfs + indices so they have the same structure
+        sql_friends_details.sort_index(axis=1, inplace=True)
+        sql_friends_details.sort_values("id", inplace=True)
+        friends_details.sort_index(axis=1, inplace=True)
+        friends_details.sort_values("id", inplace=True)
+        friends_details.reset_index(drop=True, inplace=True)
+
+        assert_frame_equal(friends_details, sql_friends_details)
 
     def test_make_temp_tbl_makes_a_temp_tbl_equal_to_type(self):
         cfg = test_helpers.config_dict_user_details_dtypes_mysql

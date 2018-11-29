@@ -273,7 +273,7 @@ config_dict_user_details_dtypes_sqlite = {
         "time_zone": "TEXT",  # TODO: SEE IF THIS IS NEEDED
         "translator_type": "VARCHAR(50)",
         "url": "TEXT",
-        "verified": "BOOLEAN",
+        "verified": "TINYINT(1)",
         "utc_offset": "TEXT"   # TODO: SEE IF THIS IS NEEDED
     }
 }
