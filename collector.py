@@ -93,7 +93,7 @@ class Connection(object):
         try:
             new_token, new_secret = self.token_queue.get(timeout=5)
         except queue.Empty:
-            stdout.write("Waiting for next token …")
+            stdout.write("Waiting for next token put in queue …")
             stdout.flush()
             new_token, new_secret = self.token_queue.get()
 
@@ -208,17 +208,36 @@ class Collector(object):
         """
 
         remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+        print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+            endpoint, self.connection.token[:4]), remaining_calls)
         reset_time = self.connection.reset_time(endpoint=endpoint)
+        token_dict = {}
+        token = self.connection.token
+        token_dict[token] = time.time() + reset_time
         attempts = 0
 
         while remaining_calls == 0:
             attempts += 1
-            stdout.write("Attempt with next token: {}\n".format(attempts))
+            stdout.write("Attempt with next available token.\n")
 
             self.connection.next_token()
 
-            remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
-            reset_time = min(reset_time, self.connection.reset_time(endpoint=endpoint))
+            token = self.connection.token
+
+            try:
+                next_reset_at = token_dict[token]
+                if time.time() >= next_reset_at:
+                    remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+                else:
+                    time.sleep(1)
+                    continue
+            except KeyError:
+                remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+                reset_time = self.connection.reset_time(endpoint=endpoint)
+                token_dict[token] = time.time() + reset_time
+
+        print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+            endpoint, self.connection.token[:4]), remaining_calls)
 
         return remaining_calls
 
@@ -240,8 +259,14 @@ class Collector(object):
 
         remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
 
-        for page in tweepy.Cursor(self.connection.api.friends_ids, user_id=twitter_id).pages():
-            result = result + page
+        cursor = -1
+        while True:
+            page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
+            if len(page[0]) > 0:
+                result += page[0]
+            else:
+                break
+            cursor = page[1][1]
 
             remaining_calls -= 1
 
@@ -657,8 +682,8 @@ Accessing Twitter API.""")
 
         max_follower_count = friends_details['followers_count'].max()
 
-        new_seed = friends_details[friends_details
-                                   ['followers_count'] == max_follower_count]['id'].values[0]
+        new_seed = friends_details[
+            friends_details['followers_count'] == max_follower_count]['id'].values[0]
 
         check_exists_query = """
                                 SELECT EXISTS(

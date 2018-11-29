@@ -630,6 +630,17 @@ class CollectorTest(unittest.TestCase):
 
         self.assertGreater(len(user_friends), 5000)
 
+    @skipIfDraining()
+    def test_collector_gets_all_friends_if_more_than_15_requests_needed(self):
+
+        collector = Collector(self.connection, seed=14230524)  # Lady Gaga
+
+        user_friends = collector.get_friend_list()
+
+        self.assertIsInstance(user_friends, list)
+        self.assertGreater(len(user_friends), 100000)
+        self.assertLess(len(user_friends), 200000)
+
     def test_collector_gets_friend_details_and_makes_df(self):
 
         collector = Collector(self.connection, seed=36476777)
