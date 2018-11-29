@@ -32,13 +32,18 @@ from setup import Config, FileImport
 
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
-                    help='''If set, module skips api call draining tests.''',
+                    help='If set, module skips api call draining tests.',
+                    required=False,
+                    action='store_true')
+parser.add_argument('-w', '--show_resource_warnings',
+                    help='If set, will show possible resource warnings from the requests package.',
                     required=False,
                     action='store_true')
 parser.add_argument('unittest_args', nargs='*')
 
 args = parser.parse_args()
 skiptest = args.skip_draining_tests
+show_warnings = args.show_resource_warnings
 sys.argv[1:] = args.unittest_args
 
 
@@ -49,9 +54,10 @@ def skipIfDraining():
 
 
 def setUpModule():
-    warnings.filterwarnings(action="ignore",
-                            message="unclosed",
-                            category=ResourceWarning)
+    if not show_warnings:
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
 
 
 class FileImportTest(unittest.TestCase):

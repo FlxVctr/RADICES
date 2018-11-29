@@ -1,7 +1,9 @@
 # functional test for network collector
+import argparse
 import pandas as pd
 import os
 import shutil
+import sys
 import unittest
 import warnings
 import yaml
@@ -15,13 +17,25 @@ from exceptions import TestException
 from start import main_loop
 
 
+parser = argparse.ArgumentParser(description='SparseTwitter FunctionalTestSuite')
+parser.add_argument('-w', '--show_resource_warnings',
+                    help='If set, will show possible resource warnings from the requests package.',
+                    required=False,
+                    action='store_true')
+parser.add_argument('unittest_args', nargs='*')
+
+args = parser.parse_args()
+show_warnings = args.show_resource_warnings
+sys.argv[1:] = args.unittest_args
+
 mysql_cfg = test_helpers.config_dict_user_details_dtypes_mysql
 
 
 def setUpModule():
-    warnings.filterwarnings(action="ignore",
-                            message="unclosed",
-                            category=ResourceWarning)
+    if not show_warnings:
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
 
 
 class FirstUseTest(unittest.TestCase):
