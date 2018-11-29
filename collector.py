@@ -1,5 +1,4 @@
 import multiprocessing.dummy as mp
-import queue
 import time
 import uuid
 from exceptions import TestException
@@ -90,15 +89,29 @@ class Connection(object):
         self.api = tweepy.API(self.auth, wait_on_rate_limit=False, wait_on_rate_limit_notify=False)
 
     def next_token(self):
-
+        '''
         try:
             new_token, new_secret = self.token_queue.get(timeout=5)
         except queue.Empty:
             stdout.write("Waiting for next token put in queue …")
             stdout.flush()
             new_token, new_secret = self.token_queue.get()
+        '''
 
-        self.token_queue.put((self.token, self.secret))
+        while True:
+            old_token, old_secret = self.token, self.secret
+
+            self.token_queue.put((self.token, self.secret))
+
+            new_token, new_secret = self.token_queue.get()
+
+            if (new_token, new_secret) == (old_token, old_secret):
+                stdout.write("Waiting for next token put in queue …\n")
+                stdout.flush()
+                time.sleep(5)
+            else:
+                break
+
         self.token, self.secret = new_token, new_secret
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
