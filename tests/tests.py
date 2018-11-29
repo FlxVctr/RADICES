@@ -17,7 +17,7 @@ import yaml
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
-from pandas.util.testing import assert_frame_equal
+from pandas.util.testing import assert_frame_equal, assert_index_equal
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
@@ -31,7 +31,7 @@ from setup import Config, FileImport
 
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
-                    help='''If set, skips api call draining tests.''',
+                    help='''If set, module skips api call draining tests.''',
                     required=False,
                     action='store_true')
 parser.add_argument('unittest_args', nargs='*')
@@ -190,13 +190,13 @@ class DataBaseHandlerTest(unittest.TestCase):
         DataBaseHandler()
         db_name = self.db_name
         conn = lite.connect(db_name + ".db")
-        sql_out = list(pd.read_sql(con=conn, sql="SELECT * FROM friends"))
+        sql_out = pd.read_sql(con=conn, sql="SELECT * FROM friends").columns
         self.assertIn("target", sql_out)
         self.assertIn("source", sql_out)
         self.assertIn("burned", sql_out)
         self.assertIn("timestamp", sql_out)
 
-        sql_out = list(pd.read_sql(con=conn, sql="SELECT * FROM result"))
+        sql_out = pd.read_sql(con=conn, sql="SELECT * FROM result").columns
         self.assertIn("target", sql_out)
         self.assertIn("source", sql_out)
         self.assertIn("timestamp", sql_out)
@@ -229,21 +229,21 @@ class DataBaseHandlerTest(unittest.TestCase):
         with self.assertRaises(OperationalError):
             DataBaseHandler()
 
-    def test_mysql_db_connects_and_creates_friends_database_with_correct_columns(self):
+    def test_mysql_db_connects_and_creates_friends_table_with_correct_columns(self):
         with open('config.yml', 'w') as f:
             yaml.dump(self.config_dict_mysql, f, default_flow_style=False)
 
         dbh = DataBaseHandler()
         engine = dbh.engine
         s = "SELECT * FROM friends"
-        sql_out = list(pd.read_sql(sql=s, con=engine))
+        sql_out = pd.read_sql(sql=s, con=engine).columns
         self.assertIn("source", sql_out)
         self.assertIn("target", sql_out)
         self.assertIn("burned", sql_out)
         self.assertIn("timestamp", sql_out)
 
         s = "SELECT * FROM result"
-        sql_out = list(pd.read_sql(sql=s, con=engine))
+        sql_out = pd.read_sql(sql=s, con=engine).columns
         self.assertIn("source", sql_out)
         self.assertIn("target", sql_out)
         self.assertIn("timestamp", sql_out)
@@ -384,8 +384,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         dbh = DataBaseHandler()
         engine = dbh.engine
         s = "SELECT * FROM user_details"
-        sql_out = pd.read_sql(sql=s, con=engine)
-        cols = list(sql_out)
+        cols = pd.read_sql(sql=s, con=engine).columns
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
@@ -405,8 +404,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         conn = lite.connect(config.dbname + ".db")
         DataBaseHandler()
         s = "SELECT * FROM user_details"
-        sql_out = pd.read_sql(sql=s, con=conn)
-        cols = list(sql_out)
+        cols = pd.read_sql(sql=s, con=conn).columns
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
@@ -439,12 +437,12 @@ class DataBaseHandlerTest(unittest.TestCase):
         dbh = DataBaseHandler(config_dict=cfg)
         temp_tbl_name = dbh.make_temp_tbl()
 
-        user_details_colnames = list(pd.read_sql("SELECT * FROM user_details;",
-                                                 con=dbh.engine))
-        temp_tbl_colnames = list(pd.read_sql("SELECT * FROM " + temp_tbl_name + ";",
-                                             con=dbh.engine))
+        user_details_colnames = pd.read_sql("SELECT * FROM user_details;",
+                                            con=dbh.engine).columns
+        temp_tbl_colnames = pd.read_sql("SELECT * FROM " + temp_tbl_name + ";",
+                                        con=dbh.engine).columns
 
-        self.assertEqual(user_details_colnames, temp_tbl_colnames)
+        assert_index_equal(user_details_colnames, temp_tbl_colnames)
         self.assertIsInstance(temp_tbl_name, str)
 
         dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")

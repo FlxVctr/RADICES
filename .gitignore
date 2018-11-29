@@ -7,7 +7,6 @@ keys*.*
 token*.csv
 .swp
 *.db
-currenttests.py
 passwords.py
 config_bu_perm.yml
 test_config.yml
