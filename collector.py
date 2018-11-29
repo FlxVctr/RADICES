@@ -245,6 +245,12 @@ class Collector(object):
                 while True:
                     try:
                         try:
+                            if kwargs['force_retry_token'] is True:
+                                print('Forced retry with token.')
+                                return func(*args, **kwargs)
+                        except KeyError:
+                            pass
+                        try:
                             if collector.token_blacklist[old_token] <= time.time():
                                 print(f'Token starting with {old_token[:4]} should work again.')
                                 return func(*args, **kwargs)
