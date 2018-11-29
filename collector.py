@@ -98,17 +98,18 @@ class Connection(object):
             new_token, new_secret = self.token_queue.get()
         '''
 
+        self.token_queue.put((self.token, self.secret))
+
         while True:
             old_token, old_secret = self.token, self.secret
-
-            self.token_queue.put((self.token, self.secret))
 
             new_token, new_secret = self.token_queue.get()
 
             if (new_token, new_secret) == (old_token, old_secret):
+                self.token_queue.put((self.token, self.secret))
                 stdout.write("Waiting for next token put in queue …\n")
                 stdout.flush()
-                time.sleep(5)
+                time.sleep(1)
             else:
                 break
 
