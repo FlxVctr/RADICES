@@ -3,6 +3,7 @@ import copy
 import json
 import multiprocessing.dummy as mp
 import os
+import queue
 import shutil
 import sqlite3 as lite
 import sys
@@ -351,8 +352,7 @@ class DataBaseHandlerTest(unittest.TestCase):
                 yaml.dump(cfg, f, default_flow_style=False)
             config = Config()
             engine = create_engine(
-                'mysql+pymysql://' + config.dbuser + ':' + config.dbpwd + '@' +
-                config.dbhost + '/' + config.dbname)
+                f'mysql+pymysql://{config.dbuser}:{config.dbpwd}@{config.dbhost}/{config.dbname}')
             DataBaseHandler()
 
             with self.assertRaises(ProgrammingError):
@@ -962,6 +962,35 @@ class CoordinatorTest(unittest.TestCase):
                 raise bee.err
 
         # TODO: find a way to test with an assertion whether this works correctly
+
+    def test_with_more_seeds_than_tokens_for_deadlock(self):
+
+        coordinator = Coordinator(seed_list=[36476777, 83662933, 2367431])
+
+        tokens = []
+
+        while True:  # get all tokens from queue
+            try:
+                token, secret = coordinator.token_queue.get(timeout=3)
+                tokens.append((token, secret))
+
+            except queue.Empty:
+                break
+
+        coordinator.token_queue.put(tokens[0])  # put only two back
+        coordinator.token_queue.put(tokens[1])
+
+        worker_bees = coordinator.start_collectors()
+
+        for bee in worker_bees:
+            bee.join(timeout=60)  # waiting time might be longer
+
+        for bee in worker_bees:
+            if bee.is_alive():
+                self.fail("There might be a deadlock or a thread is very slow.")
+
+        # TODO: Improve this test. Right now it does not deadlock.
+        # All tokens would have to be drained completely and then we'd have to wait 15 minutes.
 
 
 if __name__ == "__main__":

@@ -91,14 +91,26 @@ class Connection(object):
 
     def next_token(self):
 
-        try:
-            new_token, new_secret = self.token_queue.get(timeout=5)
-        except queue.Empty:
-            stdout.write("Waiting for next token put in queue …")
-            stdout.flush()
+        self.token_queue.put((self.token, self.secret))
+
+        while True:
+            old_token, old_secret = self.token, self.secret
+
             new_token, new_secret = self.token_queue.get()
 
-        self.token_queue.put((self.token, self.secret))
+            if (new_token, new_secret) == (old_token, old_secret):  # if same token
+                try:  # see if there's another token
+                    new_token, new_secret = self.token_queue.get(block=False)
+                    self.token_queue.put((self.token, self.secret))
+                    break
+                except queue.Empty:  # if not
+                    self.token_queue.put((self.token, self.secret))  # put token back and wait
+                    stdout.write("Waiting for next token put in queue …\n")
+                    stdout.flush()
+                    time.sleep(10)
+            else:
+                break
+
         self.token, self.secret = new_token, new_secret
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
