@@ -437,30 +437,36 @@ class DataBaseHandlerTest(unittest.TestCase):
                                                    provide_jsons=True)
 
         dbh = DataBaseHandler(config_dict=cfg)
-        friends_details.to_sql('user_details', if_exists='append',
-                               index=False, con=dbh.engine)
 
-        s = "SELECT * FROM user_details"
-        sql_friends_details = pd.read_sql(sql=s, con=dbh.engine)
-
-        # Dropping timestamp column, fill up missing cols, and converting TINYINT to bool
-        sql_friends_details.drop(columns="timestamp", inplace=True)
+        datetypes = test_helpers.friends_details_pddf_dtypes
         select_items = cfg["twitter_user_details"].items()
         for var, val in select_items:
             if var not in friends_details.columns:
                 friends_details[var] = None
-            if val == "TINYINT(1)":
-                sql_friends_details[var] = sql_friends_details[var].astype('bool')
-                # some of the fields in the json are not converted correctly, thus:
-                friends_details[var] = friends_details[var].astype('bool')
+        for key, value in datetypes.items():
+            if key in friends_details:
+                friends_details[key] = friends_details[key].astype(value)
 
+                if value == pd.Timestamp:
+                    friends_details[key] = pd.to_datetime(friends_details[key])
+        friends_details.to_sql('user_details', if_exists='append',
+                               index=False, con=dbh.engine)
+        s = "SELECT * FROM user_details"
+        sql_friends_details = pd.read_sql(sql=s, con=dbh.engine)
+
+        # Dropping timestamp column, fill up missing cols, and converting INT columns
+        # to the corresponding np.datatypes (e.g., b/c int cannot deal with missing values)
+        sql_friends_details.drop(columns="timestamp", inplace=True)
+        for var, val in select_items:
+            if "TINYINT" in val:
+                friends_details[var] = friends_details[var].astype('bool')
+                sql_friends_details[var] = sql_friends_details[var].astype('bool')
         # Sorting dfs + indices so they have the same structure
         sql_friends_details.sort_index(axis=1, inplace=True)
         sql_friends_details.sort_values("id", inplace=True)
         friends_details.sort_index(axis=1, inplace=True)
         friends_details.sort_values("id", inplace=True)
         friends_details.reset_index(drop=True, inplace=True)
-
         assert_frame_equal(friends_details, sql_friends_details)
 
     def test_make_temp_tbl_makes_a_temp_tbl_equal_to_type(self):
