@@ -3,6 +3,7 @@ import queue
 import time
 import uuid
 from exceptions import TestException
+from functools import wraps
 from sys import stdout
 
 import pandas as pd
@@ -45,6 +46,29 @@ def flatten_json(y: dict, columns: list, sep: str = "_"):
 
     flatten(y)
     return out
+
+
+def retry_x_times(x):
+    def retry_decorator(func):
+
+        @wraps(func)
+        def func_wrapper(*args, **kwargs):
+
+            i = 0
+
+            for i in range(x - 1):
+                try:
+                    return (func(*args, **kwargs))
+                except Exception:
+                    waiting_time = 2**i
+                    print(f"Encountered exception in {func.__name__}{args, kwargs}. Retrying in {waiting_time}.")
+                i += 1
+
+            return func(*args, **kwargs)
+
+        return func_wrapper
+
+    return retry_decorator
 
 
 class MyProcess(mp.Process):

@@ -27,8 +27,9 @@ sys.path.insert(0, os.getcwd())
 
 import passwords
 import test_helpers
-from collector import Collector, Connection, Coordinator
+from collector import Collector, Connection, Coordinator, retry_x_times
 from database_handler import DataBaseHandler
+from exceptions import TestException
 from setup import Config, FileImport
 
 
@@ -993,6 +994,22 @@ class CoordinatorTest(unittest.TestCase):
 
         # TODO: Improve this test. Right now it does not deadlock.
         # All tokens would have to be drained completely and then we'd have to wait 15 minutes.
+
+
+class GeneralTests(unittest.TestCase):
+
+    def test_retry_decorator(self):
+
+        self.first_run = True
+
+        @retry_x_times(2)
+        def fail_once():
+            if self.first_run is True:
+                self.first_run = False
+                raise TestException
+            return 0
+
+        self.assertEqual(0, fail_once())
 
 
 if __name__ == "__main__":
