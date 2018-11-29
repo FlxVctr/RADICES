@@ -7,6 +7,7 @@ import shutil
 import sqlite3 as lite
 import sys
 import unittest
+import warnings
 from json import JSONDecodeError
 from sys import stdout
 
@@ -45,6 +46,12 @@ def skipIfDraining():
     if skiptest:
         return unittest.skip("This test drains API calls")
     return lambda x: x
+
+
+def setUpModule():
+    warnings.filterwarnings(action="ignore",
+                            message="unclosed",
+                            category=ResourceWarning)
 
 
 class FileImportTest(unittest.TestCase):

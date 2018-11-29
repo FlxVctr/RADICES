@@ -1,12 +1,12 @@
 # functional test for network collector
+import pandas as pd
 import os
 import shutil
 import unittest
-from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
-
-import pandas as pd
+import warnings
 import yaml
 from sqlalchemy.exc import InternalError
+from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
 
 import test_helpers
 from collector import Coordinator
@@ -16,6 +16,12 @@ from start import main_loop
 
 
 mysql_cfg = test_helpers.config_dict_user_details_dtypes_mysql
+
+
+def setUpModule():
+    warnings.filterwarnings(action="ignore",
+                            message="unclosed",
+                            category=ResourceWarning)
 
 
 class FirstUseTest(unittest.TestCase):
