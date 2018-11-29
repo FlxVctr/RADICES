@@ -267,7 +267,7 @@ class Collector(object):
                             print(f'Token starting with {old_token[:4]} not tried yet. Trying.')
                             return func(*args, **kwargs)
                     except tweepy.RateLimitError:
-                        collector.token_blacklist[old_token] = time.time() + 900
+                        collector.token_blacklist[old_token] = time.time() + 60
                         print(f'Token starting with {old_token[:4]} hit rate limit.')
                         print("Retrying with next available token.")
                         print(f"Blacklisted until {collector.token_blacklist[old_token]}")
