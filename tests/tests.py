@@ -919,6 +919,15 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertIsInstance(new_seed, np.int64)
 
+    @unittest.skip("was just a test")
+    def test_work_through_seed_if_seed_has_no_tweets(self):
+
+        seed = 949268624
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, test_fail=True)
+
+        self.assertIsInstance(new_seed, np.int64)
+
     def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
 
         seed = 1621528116
