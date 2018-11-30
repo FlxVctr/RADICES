@@ -17,6 +17,8 @@ from setup import FileImport
 # mp.set_start_method('spawn')
 
 
+# TODO: there might be a better way to drop columns that we don't want than flatten everything
+# and removing the columns thereafter.
 def flatten_json(y: dict, columns: list, sep: str = "_",
                  nonetype: dict = {'date': None, 'num': None, 'str': None}):
     '''
@@ -44,7 +46,7 @@ def flatten_json(y: dict, columns: list, sep: str = "_",
             out[str(name[:-1])] = str(x)  # Must be str so that nested lists are written to db
         elif type(x) is dict and str(name[:-1]) in columns:
             out[str(name[:-1])] = str(x)  # Same here
-        elif x is None:
+        elif x is None and str(name[:-1]) in columns:
             if friends_details_dtypes[str(name[:-1])] == pd.Timestamp:
                 out[str(name[:-1])] = nonetype["date"]
             elif friends_details_dtypes[str(name[:-1])] == np.int64:
@@ -552,7 +554,6 @@ class Collector(object):
             json_list_raw = friends_details
         json_list = []
         dtypes = {key: value for (key, value) in friends_details_dtypes.items() if key in select}
-
         for j in json_list_raw:
             flat = flatten_json(j, sep="_", columns=select, nonetype=nonetype)
             # In case that there are keys in the user_details json that are not in select
