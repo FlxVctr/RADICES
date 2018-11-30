@@ -128,14 +128,6 @@ class Connection(object):
         self.api = tweepy.API(self.auth, wait_on_rate_limit=False, wait_on_rate_limit_notify=False)
 
     def next_token(self):
-        '''
-        try:
-            new_token, new_secret = self.token_queue.get(timeout=5)
-        except queue.Empty:
-            stdout.write("Waiting for next token put in queue …")
-            stdout.flush()
-            new_token, new_secret = self.token_queue.get()
-        '''
 
         self.token_queue.put((self.token, self.secret))
 
