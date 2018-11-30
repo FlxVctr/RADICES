@@ -19,13 +19,15 @@ from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
 from pandas.util.testing import assert_frame_equal, assert_index_equal
+from parse import parse
 from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError
 
 # Needed so that developer do not have to append PYTHONPATH manually.
 sys.path.insert(0, os.getcwd())
+import helpers
 import test_helpers
-from collector import Collector, Connection, Coordinator
+from collector import Collector, Connection, Coordinator, flatten_json
 from database_handler import DataBaseHandler
 from setup import Config, FileImport
 
@@ -437,30 +439,32 @@ class DataBaseHandlerTest(unittest.TestCase):
                                                    provide_jsons=True)
 
         dbh = DataBaseHandler(config_dict=cfg)
-
-        datetypes = test_helpers.friends_details_pddf_dtypes
+        datetypes = helpers.friends_details_dtypes
         select_items = cfg["twitter_user_details"].items()
-        for var, val in select_items:
-            if var not in friends_details.columns:
-                friends_details[var] = None
-        for key, value in datetypes.items():
-            if key in friends_details:
-                friends_details[key] = friends_details[key].astype(value)
 
-                if value == pd.Timestamp:
-                    friends_details[key] = pd.to_datetime(friends_details[key])
-        friends_details.to_sql('user_details', if_exists='append',
-                               index=False, con=dbh.engine)
+        try:
+            friends_details.to_sql('user_details', if_exists='append',
+                                   index=False, con=dbh.engine)
+        # Error Handling for duplicate IDs
+        except IntegrityError as e:
+                friends_details.drop_duplicates(subset="id", keep='last', inplace=True)
+                friends_details.to_sql('user_details', if_exists='append',
+                                       index=False, con=dbh.engine)
         s = "SELECT * FROM user_details"
         sql_friends_details = pd.read_sql(sql=s, con=dbh.engine)
 
-        # Dropping timestamp column, fill up missing cols, and converting INT columns
-        # to the corresponding np.datatypes (e.g., b/c int cannot deal with missing values)
+        for key, value in datetypes.items():
+            if value == bool:
+                friends_details[key] = friends_details[key].fillna(False).astype(value)
+
+        # Dropping timestamp column and make boolean vars comparable
+        # Remember that 'Null'.astype('bool') = True (thats why NAs first have to be filled)
         sql_friends_details.drop(columns="timestamp", inplace=True)
         for var, val in select_items:
-            if "TINYINT" in val:
-                friends_details[var] = friends_details[var].astype('bool')
-                sql_friends_details[var] = sql_friends_details[var].astype('bool')
+            if val == "TINYINT(1)":
+                friends_details[var] = friends_details[var].fillna(False).astype('bool')
+                sql_friends_details[var] = sql_friends_details[var].fillna(False).astype('bool')
+
         # Sorting dfs + indices so they have the same structure
         sql_friends_details.sort_index(axis=1, inplace=True)
         sql_friends_details.sort_values("id", inplace=True)
@@ -747,6 +751,31 @@ class CollectorTest(unittest.TestCase):
 
         self.assertEqual(collector.raise_rate_limit_once(1, kwarg=2), (1, 2))
         self.assertNotEqual(token, self.connection.token)
+
+''' TODO: make this work (add nonetype_replace param to flatten_json)
+    def test_flatten_json_nonetype_param_works_as_expected(self):
+        testdict = {
+            "testy":[1, 2, 3, 4, 5],
+            "mc": None,
+            "testtest": {
+                "johnny": ["what", "a", "nice", "list", "of", "strings"],
+                "mary": None,
+                "robert": 1337
+            }
+        }
+        cols = ["testy", "mc", "mary", "robert", "testtest_johnny"]
+        expected_dict = {
+            'testy': '[1, 2, 3, 4, 5]',
+            'mc': -1,
+            'testtest_johnny': "['what', 'a', 'nice', 'list', 'of', 'strings']",
+            'testtest_mary': -1,
+            'testtest_robert': 1337
+        }
+        flat_dict = flatten_json(testdict, columns=cols, nonetype=-1)
+        print(flat_dict)
+        self.assertEqual(flat_dict, expected_dict)
+'''
+
 
 
 class CoordinatorTest(unittest.TestCase):
