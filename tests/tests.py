@@ -28,7 +28,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError
 sys.path.insert(0, os.getcwd())
 import helpers
 import test_helpers
-from collector import Collector, Connection, Coordinator, retry_x_times, flatten_json
+from collector import Collector, Connection, Coordinator, retry_x_times
 from database_handler import DataBaseHandler
 from exceptions import TestException
 from setup import Config, FileImport
@@ -190,7 +190,7 @@ class DataBaseHandlerTest(unittest.TestCase):
     config_dict_sqlite = test_helpers.config_dict_sqlite
     db_name = Config(config_dict=config_dict_sqlite).dbname
 
-    def test_setup_and_database_handler_creates_database_from_given_name(self):
+    def test_setup_and_dbh_creates_database_from_given_name(self):
         with open('config.yml', 'w') as f:
             yaml.dump(self.config_dict_sqlite, f, default_flow_style=False)
 
@@ -349,43 +349,43 @@ class DataBaseHandlerTest(unittest.TestCase):
             pd.read_sql(sql=s, con=conn)
         conn.close()
 
-        def test_dbh_user_details_is_not_created_if_user_details_config_empty(self):
-            # First for mysql
-            cfg = self.config_dict_mysql.copy()
-            cfg["twitter_user_details"] = dict(
-                id=None,
-                followers_count=None,
-                lang=None,
-                time_zone=None
-            )
-            with open("config.yml", "w") as f:
-                yaml.dump(cfg, f, default_flow_style=False)
-            config = Config()
-            engine = create_engine(
-                f'mysql+pymysql://{config.dbuser}:{config.dbpwd}@{config.dbhost}/{config.dbname}')
-            DataBaseHandler()
+    def test_dbh_user_details_is_not_created_if_user_details_config_empty(self):
+        # First for mysql
+        cfg = self.config_dict_mysql.copy()
+        cfg["twitter_user_details"] = dict(
+            id=None,
+            followers_count=None,
+            lang=None,
+            time_zone=None
+        )
+        with open("config.yml", "w") as f:
+            yaml.dump(cfg, f, default_flow_style=False)
+        config = Config()
+        engine = create_engine(
+            f'mysql+pymysql://{config.dbuser}:{config.dbpwd}@{config.dbhost}/{config.dbname}')
+        DataBaseHandler()
 
-            with self.assertRaises(ProgrammingError):
-                s = "SELECT * FROM user_details"
-                pd.read_sql(sql=s, con=engine)
-            engine.connect().execute("DROP TABLE friends;")
+        with self.assertRaises(ProgrammingError):
+            s = "SELECT * FROM user_details"
+            pd.read_sql(sql=s, con=engine)
+        engine.connect().execute("DROP TABLE friends;")
 
-            # Second for sqlite
-            cfg = self.config_dict_sqlite.copy()
-            cfg["twitter_user_details"] = dict(
-                id=None,
-                followers_count=None,
-                lang=None,
-                time_zone=None
-            )
-            with open("config.yml", "w") as f:
-                yaml.dump(cfg, f, default_flow_style=False)
-            config = Config()
-            conn = lite.connect(config.dbname + ".db")
-            with self.assertRaises(DatabaseError):
-                s = "SELECT * FROM user_details"
-                pd.read_sql(sql=s, con=conn)
-            conn.close()
+        # Second for sqlite
+        cfg = self.config_dict_sqlite.copy()
+        cfg["twitter_user_details"] = dict(
+            id=None,
+            followers_count=None,
+            lang=None,
+            time_zone=None
+        )
+        with open("config.yml", "w") as f:
+            yaml.dump(cfg, f, default_flow_style=False)
+        config = Config()
+        conn = lite.connect(config.dbname + ".db")
+        with self.assertRaises(DatabaseError):
+            s = "SELECT * FROM user_details"
+            pd.read_sql(sql=s, con=conn)
+        conn.close()
 
     def test_user_details_table_is_created_and_contains_columns_indicated_in_config(self):
         # First for mysql
