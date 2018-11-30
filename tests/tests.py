@@ -20,7 +20,6 @@ from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
 from pandas.util.testing import assert_frame_equal, assert_index_equal
-from parse import parse
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError
 
@@ -754,6 +753,7 @@ class CollectorTest(unittest.TestCase):
                          (1, 2))
         self.assertNotEqual(token, self.connection.token)
 
+
 ''' TODO: make this work (add nonetype_replace param to flatten_json)
     def test_flatten_json_nonetype_param_works_as_expected(self):
         testdict = {
@@ -777,7 +777,6 @@ class CollectorTest(unittest.TestCase):
         print(flat_dict)
         self.assertEqual(flat_dict, expected_dict)
 '''
-
 
 
 class CoordinatorTest(unittest.TestCase):
