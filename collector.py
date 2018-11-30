@@ -4,17 +4,20 @@ import time
 from exceptions import TestException
 from sys import stdout
 
+import numpy as np
 import pandas as pd
 import tweepy
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from database_handler import DataBaseHandler
+from helpers import friends_details_dtypes
 from setup import FileImport
 
 # mp.set_start_method('spawn')
 
 
-def flatten_json(y: dict, columns: list, sep: str = "_"):
+def flatten_json(y: dict, columns: list, sep: str = "_",
+                 nonetype: dict = {'date': None, 'num': None, 'str': None}):
     '''
     Flattens nested dictionaries.
     adapted from: https://medium.com/@amirziai/flattening-json-objects-in-python-f5343c794b10
@@ -22,6 +25,7 @@ def flatten_json(y: dict, columns: list, sep: str = "_"):
         y (dict): Nested dictionary to be flattened.
         columns (list of str): Dictionary keys that should not be flattened.
         sep (str): Separator for new dictionary keys of nested structures.
+        nonetype (Value): specify the value that should be used if a key's value is None
     '''
 
     out = {}
@@ -39,6 +43,19 @@ def flatten_json(y: dict, columns: list, sep: str = "_"):
             out[str(name[:-1])] = str(x)  # Must be str so that nested lists are written to db
         elif type(x) is dict and str(name[:-1]) in columns:
             out[str(name[:-1])] = str(x)  # Same here
+        elif x is None:
+            if friends_details_dtypes[str(name[:-1])] == pd.Timestamp:
+                out[str(name[:-1])] = nonetype["date"]
+            elif friends_details_dtypes[str(name[:-1])] == np.int64:
+                out[str(name[:-1])] = nonetype["num"]
+            elif friends_details_dtypes[str(name[:-1])] == str:
+                out[str(name[:-1])] = nonetype["str"]
+            elif friends_details_dtypes[str(name[:-1])] == bool:
+                # TODO: CHANGE THIS
+                out[str(name[:-1])] = x
+            else:
+                raise NotImplementedError("twitter user_detail does not have a supported"
+                                          "corresponding data type")
         else:
             out[str(name[:-1])] = x
 
@@ -313,7 +330,8 @@ class Collector(object):
     @staticmethod
     def make_friend_df(friends_details, select=["id", "followers_count", "lang",
                                                       "created_at", "statuses_count"],
-                       provide_jsons: bool = False):
+                       provide_jsons: bool = False, replace_nonetype: bool = True,
+                       nonetype: dict = {'date': '1970-01-01', 'num': -1, 'str': '-1'}):
         """Transforms list of user details to pandas.DataFrame
 
         Args:
@@ -324,6 +342,15 @@ class Collector(object):
                                      download the details first. Note that the jsons must have the
                                      same format as the _json attribute of a user node of the
                                      Twitter API.
+            replace_nonetype (boolean): Whether or not to replace values in the user_details that
+                                        are None. Setting this to False is experimental, since code
+                                        to avoid errors resulting from it has not yet been
+                                        implemented. By default, missing dates will be replaced by
+                                        1970/01/01, missing numericals by -1, and missing strs by
+                                        '-1'. Use the 'nonetype' param to change the default.
+            nonetype (dict): Contains the defaults for nonetype replacement (see docs for
+                             'replace_nonetype' param).
+                             {'date': 'yyyy-mm-dd', 'num': int, 'str': 'str'}
 
         Returns:
             pandas.DataFrame with these columns or selected as by `select`:
@@ -448,16 +475,32 @@ class Collector(object):
                  'utc_offset'],
         """
 
+        # TODO: What to do with boolean dtypes?
+
         if not provide_jsons:
             json_list_raw = [friend._json for friend in friends_details]
         else:
             json_list_raw = friends_details
-
         json_list = []
+        dtypes = {key: value for (key, value) in friends_details_dtypes.items() if key in select}
+
         for j in json_list_raw:
-            flat = flatten_json(j, sep="_", columns=select)
-            new = {k: v for k, v in flat.items() if k in select}
-            json_list.append(new)
+            flat = flatten_json(j, sep="_", columns=select, nonetype=nonetype)
+            # In case that there are keys in the user_details json that are not in select
+            newflat = {key: value for (key, value) in flat.items() if key in select}
+
+            for var in select:
+                if var not in newflat.keys():
+                    if dtypes[var] == pd.Timestamp:
+                        newflat[var] = nonetype["date"]
+                    elif dtypes[var] == np.int64:
+                        newflat[var] = nonetype["num"]
+                    elif dtypes[var] == str:
+                        newflat[var] = nonetype["str"]
+                    else:  # TODO: add support for boolean case
+                        newflat[var] = np.nan
+
+            json_list.append(newflat)
 
         df = pd.io.json.json_normalize(json_list)
 
