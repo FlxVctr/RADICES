@@ -72,9 +72,9 @@ def retry_x_times(x):
                     return (func(*args, **kwargs))
                 except Exception:
                     waiting_time = 2**i
-                    print(
-                        f"Encountered exception in {func.__name__}{args, kwargs}.",
-                        f"Retrying in {waiting_time}.")
+                    stdout.write(f"Encountered exception in {func.__name__}{args, kwargs}.\n")
+                    stdout.write(f"Retrying in {waiting_time}.\n")
+                    stdout.flush()
                     time.sleep(waiting_time)
                 i += 1
 
