@@ -71,8 +71,9 @@ class DataBaseHandler():
         elif self.config.dbtype.lower() == "mysql":
             try:
                 self.engine = create_engine(
-                    'mysql+pymysql://' + self.config.dbuser + ':' + self.config.dbpwd + '@' +
-                    self.config.dbhost + '/' + self.config.dbname)
+                    f'mysql+pymysql://{self.config.dbuser}:'
+                    f'{self.config.dbpwd}@{self.config.dbhost}/{self.config.dbname}'
+                )
                 print('Connected to database "' + self.config.dbname + '" via mySQL!')
             except OperationalError as e:
                 raise e
