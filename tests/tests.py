@@ -905,6 +905,20 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertIsInstance(new_seed, np.int64)
 
+    def test_work_through_seed_if_seed_does_not_exist(self):
+
+        seed = 1040403366
+
+        with self.assertRaises(tweepy.error.TweepError,
+                               msg="User with id {} exists.".format(seed)):
+            connection = Connection()
+            c = Collector(connection, seed)
+            c.get_friend_list()
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, test_fail=True)
+
+        self.assertIsInstance(new_seed, np.int64)
+
     def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
 
         seed = 1621528116
