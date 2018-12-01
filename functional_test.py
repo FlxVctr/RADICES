@@ -13,7 +13,8 @@ import passwords
 import test_helpers
 from collector import Coordinator
 from database_handler import DataBaseHandler
-from start import TestException, main_loop
+from exceptions import TestException
+from start import main_loop
 
 config_dict = test_helpers.config_dict
 mock_sql_cfg = copy.deepcopy(config_dict)
