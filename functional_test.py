@@ -177,12 +177,24 @@ class FirstUseTest(unittest.TestCase):
 
         stdout, stderr = p.communicate()
 
-        self.assertIn("Retrying", str(stdout))
+        self.assertIn("Retrying", str(stdout))  # tries to restart itself
 
         latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
         seeds = set(pd.read_csv('seeds.csv', header=None)[0].values)
 
         self.assertEqual(latest_seeds, seeds)
+
+        q = Popen("python start.py -t --restart", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+                  shell=True)
+
+        stdout, stderr = q.communicate()
+
+        self.assertIn("Restarting with latest seeds:", stdout.decode('utf-8'),
+                      msg=f"{stdout.decode('utf-8')}\n{stderr.decode('utf-8')}")
+
+        latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
+
+        self.assertNotEqual(latest_seeds, seeds)
 
         DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
 
