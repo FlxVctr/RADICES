@@ -34,12 +34,16 @@ class FirstUseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         os.rename("seeds.csv", "seeds.csv.bak")
+        if os.path.exists("latest_seeds.csv"):
+            os.rename("latest_seeds.csv", "latest_seeds.csv.bak")
 
     @classmethod
     def tearDownClass(cls):
         if os.path.exists("seeds.csv"):
             os.remove("seeds.csv")
         os.rename("seeds.csv.bak", "seeds.csv")
+        if os.path.exists("latest_seeds.csv.bak"):
+            os.rename("latest_seeds.csv.bak", "latest_seeds.csv")
 
     def setUp(self):
         if os.path.isfile("config.yml"):
