@@ -1017,17 +1017,26 @@ class CoordinatorTest(unittest.TestCase):
         # TODO: Improve this test. Right now it does not deadlock.
         # All tokens would have to be drained completely and then we'd have to wait 15 minutes.
 
+    def test_failing_work_through_seed(self):
+
+        c = Coordinator(seed_list=[36476777, 83662933, 2367431])
+
+        workers = c.start_collectors(fail_hidden=True)
+
+        for worker in workers:
+            worker.join()
+
 
 class GeneralTests(unittest.TestCase):
 
     def test_retry_decorator(self):
 
-        self.first_run = True
+        self.first_run = 1
 
-        @retry_x_times(2)
+        @retry_x_times(4)
         def fail_once():
-            if self.first_run is True:
-                self.first_run = False
+            if self.first_run <= 3:
+                self.first_run += 1
                 raise TestException
             return 0
 

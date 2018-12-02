@@ -1,4 +1,5 @@
 import argparse
+import multiprocessing.dummy as mp
 import time
 import traceback
 from sys import stdout
@@ -20,7 +21,9 @@ def main_loop(coordinator, select=[], lang=None, test_fail=False):
     i = 0
 
     for instance in collectors:
-        instance.join()
+        instance.join(timeout=3600)
+        if instance.is_alive():
+            raise mp.TimeoutError
         if instance.err is not None:
             raise instance.err
         i += 1

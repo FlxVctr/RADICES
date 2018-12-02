@@ -225,11 +225,12 @@ class Collector(object):
 
     """
 
-    def __init__(self, connection, seed):
+    def __init__(self, connection, seed, friend_limit=70000):
         self.seed = seed
         self.connection = connection
 
         self.token_blacklist = {}
+        self.friend_limit = friend_limit
 
     class Decorators(object):
 
@@ -259,7 +260,7 @@ class Collector(object):
                             print(f'Token starting with {old_token[:4]} not tried yet. Trying.')
                             return func(*args, **kwargs)
                     except tweepy.RateLimitError:
-                        collector.token_blacklist[old_token] = time.time() + 60
+                        collector.token_blacklist[old_token] = time.time() + 300
                         print(f'Token starting with {old_token[:4]} hit rate limit.')
                         print("Retrying with next available token.")
                         print(f"Blacklisted until {collector.token_blacklist[old_token]}")
@@ -336,7 +337,7 @@ class Collector(object):
         cursor = -1
         while True:
             page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
-            if len(page[0]) > 0:
+            if len(page[0]) > 0 and len(result) <= self.friend_limit:
                 result += page[0]
             else:
                 break
@@ -624,7 +625,7 @@ class Coordinator(object):
 
             return friend_detail
 
-    @retry_x_times(10)
+    @retry_x_times(9)
     def work_through_seed_get_next_seed(self, seed, select=[], lang=None,
                                         connection=None, fail=False, **kwargs):
         """Takes a seed and determines the next seed and saves all details collected to db.
@@ -640,6 +641,9 @@ class Coordinator(object):
         """
 
         if fail is True:
+            raise TestException
+
+        if 'fail_hidden' in kwargs.keys() and kwargs['fail_hidden'] is True:
             raise TestException
 
         if connection is None:
@@ -831,7 +835,8 @@ Accessing Twitter API.""")
 
         return new_seed
 
-    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False):
+    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False,
+                         fail_hidden=False):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -860,7 +865,8 @@ Accessing Twitter API.""")
                                        kwargs={'seed': seed,
                                                'select': select,
                                                'lang': lang,
-                                               'fail': fail},
+                                               'fail': fail,
+                                               'fail_hidden': fail_hidden},
                                        name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
