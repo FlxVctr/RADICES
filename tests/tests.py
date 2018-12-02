@@ -461,9 +461,11 @@ class DataBaseHandlerTest(unittest.TestCase):
         # Remember that 'Null'.astype('bool') = True (thats why NAs first have to be filled)
         sql_friends_details.drop(columns="timestamp", inplace=True)
         for var, val in select_items:
-            if val == "TINYINT(1)":
-                friends_details[var] = friends_details[var].fillna(False).astype('bool')
-                sql_friends_details[var] = sql_friends_details[var].fillna(False).astype('bool')
+            # If orginally boolean, make both dtypes int8 so the test succeeds
+            if val == "SMALLINT":
+                friends_details[var] = friends_details[var].fillna(-1)
+                sql_friends_details[var] = sql_friends_details[var].astype('int8')
+                friends_details[var] = friends_details[var].astype('int8')
 
         # Sorting dfs + indices so they have the same structure
         sql_friends_details.sort_index(axis=1, inplace=True)

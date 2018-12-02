@@ -20,7 +20,7 @@ from setup import FileImport
 # TODO: there might be a better way to drop columns that we don't want than flatten everything
 # and removing the columns thereafter.
 def flatten_json(y: dict, columns: list, sep: str = "_",
-                 nonetype: dict = {'date': None, 'num': None, 'str': None}):
+                 nonetype: dict = {'date': None, 'num': None, 'str': None, 'bool': None}):
     '''
     Flattens nested dictionaries.
     adapted from: https://medium.com/@amirziai/flattening-json-objects-in-python-f5343c794b10
@@ -46,16 +46,17 @@ def flatten_json(y: dict, columns: list, sep: str = "_",
             out[str(name[:-1])] = str(x)  # Must be str so that nested lists are written to db
         elif type(x) is dict and str(name[:-1]) in columns:
             out[str(name[:-1])] = str(x)  # Same here
+        elif type(x) is bool and str(name[:-1]) in columns:
+            out[str(name[:-1])] = int(x)  # Same here
         elif x is None and str(name[:-1]) in columns:
-            if friends_details_dtypes[str(name[:-1])] == pd.Timestamp:
+            if friends_details_dtypes[str(name[:-1])] == np.datetime64:
                 out[str(name[:-1])] = nonetype["date"]
             elif friends_details_dtypes[str(name[:-1])] == np.int64:
                 out[str(name[:-1])] = nonetype["num"]
             elif friends_details_dtypes[str(name[:-1])] == str:
                 out[str(name[:-1])] = nonetype["str"]
-            elif friends_details_dtypes[str(name[:-1])] == bool:
-                # TODO: CHANGE THIS
-                out[str(name[:-1])] = x
+            elif friends_details_dtypes[str(name[:-1])] == np.int8:
+                out[str(name[:-1])] = nonetype["bool"]
             else:
                 raise NotImplementedError("twitter user_detail does not have a supported"
                                           "corresponding data type")
@@ -402,7 +403,10 @@ class Collector(object):
     def make_friend_df(friends_details, select=["id", "followers_count", "lang",
                                                       "created_at", "statuses_count"],
                        provide_jsons: bool = False, replace_nonetype: bool = True,
-                       nonetype: dict = {'date': '1970-01-01', 'num': -1, 'str': '-1'}):
+                       nonetype: dict = {'date': '1970-01-01',
+                                         'num': -1,
+                                         'str': '-1',
+                                         'bool': -1}):
         """Transforms list of user details to pandas.DataFrame
 
         Args:
@@ -417,11 +421,12 @@ class Collector(object):
                                         are None. Setting this to False is experimental, since code
                                         to avoid errors resulting from it has not yet been
                                         implemented. By default, missing dates will be replaced by
-                                        1970/01/01, missing numericals by -1, and missing strs by
-                                        '-1'. Use the 'nonetype' param to change the default.
+                                        1970/01/01, missing numericals by -1, missing strs by
+                                        '-1', and missing booleans by -1.
+                                        Use the 'nonetype' param to change the default.
             nonetype (dict): Contains the defaults for nonetype replacement (see docs for
                              'replace_nonetype' param).
-                             {'date': 'yyyy-mm-dd', 'num': int, 'str': 'str'}
+                             {'date': 'yyyy-mm-dd', 'num': int, 'str': 'str', 'bool': int}
 
         Returns:
             pandas.DataFrame with these columns or selected as by `select`:
@@ -546,8 +551,6 @@ class Collector(object):
                  'utc_offset'],
         """
 
-        # TODO: What to do with boolean dtypes?
-
         if not provide_jsons:
             json_list_raw = [friend._json for friend in friends_details]
         else:
@@ -558,29 +561,36 @@ class Collector(object):
             flat = flatten_json(j, sep="_", columns=select, nonetype=nonetype)
             # In case that there are keys in the user_details json that are not in select
             newflat = {key: value for (key, value) in flat.items() if key in select}
-
-            for var in select:
-                if var not in newflat.keys():
-                    if dtypes[var] == pd.Timestamp:
-                        newflat[var] = nonetype["date"]
-                    elif dtypes[var] == np.int64:
-                        newflat[var] = nonetype["num"]
-                    elif dtypes[var] == str:
-                        newflat[var] = nonetype["str"]
-                    else:  # TODO: add support for boolean case
-                        newflat[var] = np.nan
-
             json_list.append(newflat)
 
         df = pd.io.json.json_normalize(json_list)
 
-        if "created_at" in list(df):
-            df["created_at"] = pd.to_datetime(df["created_at"])
-        if "status_created_at" in list(df):
-            df["status_created_at"] = pd.to_datetime(df["status_created_at"])
-        if "status_retweeted_status_created_at" in list(df):
-            df["status_retweeted_status_created_at"] = pd.to_datetime(
-                df['status_retweeted_status_created_at'])
+        for var in select:
+            if var not in df.columns:
+                if dtypes[var] == np.datetime64:
+                    df[var] = pd.to_datetime(nonetype["date"])
+                elif dtypes[var] == np.int64:
+                    df[var] = nonetype["num"]
+                elif dtypes[var] == str:
+                    df[var] = nonetype["str"]
+                elif dtypes[var] == np.int8:
+                    df[var] = nonetype["bool"]
+                else:
+                    df[var] = np.nan
+            else:
+                if dtypes[var] == np.datetime64:
+                    df[var] = df[var].fillna(pd.to_datetime(nonetype["date"]))
+                elif dtypes[var] == np.int64:
+                    df[var] = df[var].fillna(nonetype["num"])
+                elif dtypes[var] == str:
+                    df[var] = df[var].fillna(nonetype["str"])
+                elif dtypes[var] == np.int8:
+                    df[var] = df[var].fillna(nonetype["bool"])
+                try:
+                    df[var] = df[var].astype(dtypes[var])
+                except:
+                    input(df[var])
+                    exit()
 
         df.sort_index(axis=1, inplace=True)
         return df
