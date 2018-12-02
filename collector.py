@@ -74,11 +74,15 @@ def retry_x_times(x):
         def func_wrapper(*args, **kwargs):
 
             try:
-                if kwargs['fail'] is True or kwargs['test_fail'] is True:
+                if kwargs['fail'] is True:
                     # if we're testing fails:
                     return func(*args, **kwargs)
             except KeyError:
-                pass
+                try:
+                    if kwargs['test_fail'] is True:
+                        return func(*args, **kwargs)
+                except KeyError:
+                    pass
 
             i = 0
 
@@ -87,9 +91,9 @@ def retry_x_times(x):
                     return (func(*args, **kwargs))
                 except Exception:
                     waiting_time = 2**i
-                    print(
-                        f"Encountered exception in {func.__name__}{args, kwargs}.",
-                        f"Retrying in {waiting_time}.")
+                    stdout.write(f"Encountered exception in {func.__name__}{args, kwargs}.\n")
+                    stdout.write(f"Retrying in {waiting_time}.\n")
+                    stdout.flush()
                     time.sleep(waiting_time)
                 i += 1
 
@@ -274,7 +278,7 @@ class Collector(object):
                             print(f'Token starting with {old_token[:4]} not tried yet. Trying.')
                             return func(*args, **kwargs)
                     except tweepy.RateLimitError:
-                        collector.token_blacklist[old_token] = time.time() + 900
+                        collector.token_blacklist[old_token] = time.time() + 60
                         print(f'Token starting with {old_token[:4]} hit rate limit.')
                         print("Retrying with next available token.")
                         print(f"Blacklisted until {collector.token_blacklist[old_token]}")
@@ -684,7 +688,7 @@ class Coordinator(object):
 
     @retry_x_times(10)
     def work_through_seed_get_next_seed(self, seed, select=[], lang=None,
-                                        connection=None, fail=False):
+                                        connection=None, fail=False, **kwargs):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:
@@ -724,17 +728,29 @@ Accessing Twitter API.""")
             except tweepy.error.TweepError as e:  # if account is protected
                 if "Not authorized." in e.reason:
 
-                    new_seed = self.seed_pool.sample(n=1)
-                    new_seed = new_seed[0].values[0]
-
                     stdout.write("Account {} protected, selecting random seed.\n".format(seed))
                     stdout.flush()
 
-                    self.token_queue.put((connection.token, connection.secret))
+                    new_seed = self.seed_pool.sample(n=1)
+                    new_seed = new_seed[0].values[0]
 
+                    self.token_queue.put((connection.token, connection.secret))
                     self.seed_queue.put(new_seed)
 
                     return new_seed
+
+                elif "does not exist" in e.reason:
+
+                    print(f"Account {seed} does not exist. Selecting random seed.")
+
+                    new_seed = self.seed_pool.sample(n=1)
+                    new_seed = new_seed[0].values[0]
+
+                    self.token_queue.put((connection.token, connection.secret))
+                    self.seed_queue.put(new_seed)
+
+                    return new_seed
+
                 else:
                     raise e
 
