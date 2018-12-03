@@ -225,7 +225,7 @@ class Collector(object):
 
     """
 
-    def __init__(self, connection, seed, friend_limit=70000):
+    def __init__(self, connection, seed, friend_limit=5001):
         self.seed = seed
         self.connection = connection
 
