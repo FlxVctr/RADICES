@@ -52,7 +52,7 @@ if __name__ == "__main__":
     if args.restart:
         latest_seeds_df = pd.read_csv('latest_seeds.csv', header=None)[0]
         latest_seeds = list(latest_seeds_df.values)
-        coordinator = Coordinator(seed_list=latest_seeds_df)
+        coordinator = Coordinator(seed_list=latest_seeds)
         print("Restarting with latest seeds:\n")
         print(latest_seeds_df)
     else:
