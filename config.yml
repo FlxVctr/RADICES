@@ -19,7 +19,7 @@ sql:
 # in parantheses). If you do not wish to save a certain detail, just leave it empty
 # like so:
 # twitter_user_details:
-    # contributors_enabled: TINYINT(1)
+    # contributors_enabled: SMALLINT
     # created at:
 # This will save the detail "contributors_enabled" as booelan / tinyint into the
 # database but it will not save "created_at" at all.
@@ -27,34 +27,34 @@ sql:
 # TODO: add descriptions for user_details
 
 twitter_user_details:
-    contributors_enabled:  # TINYINT(1)
-    created_at:  # DATETIME #REALLY
-    default_profile:  # TINYINT(1)
-    default_profile_image:  # TINYINT(1)
+    contributors_enabled:  # SMALLINT
+    created_at:  # DATETIME
+    default_profile:  # SMALLINT
+    default_profile_image:  # SMALLINT
     description:  # TEXT (contains a dict)
     entities_description_urls:  # TEXT
     entities_url_urls:  # TEXT (contains a dict)
-    favourites_count:  # BIGINT(30)
-    follow_request_sent:  # TINYINT(1)
-    followers_count:  # BIGINT(30)
-    following:  # TINYINT(1)
-    friends_count:  # BIGINT(30)
-    geo_enabled:  # TINYINT(1)
-    has_extended_profile:  # TINYINT(1)
-    id:  # BIGINT(30) PRIMARY KEY
+    favourites_count:  # BIGINT
+    follow_request_sent:  # SMALLINT
+    followers_count:  # BIGINT
+    following:  # SMALLINT
+    friends_count:  # BIGINT
+    geo_enabled:  # SMALLINT
+    has_extended_profile:  # SMALLINT
+    id:  # BIGINT PRIMARY KEY
     id_str:  # VARCHAR(30)
-    is_translation_enabled:  # TINYINT(1)
-    is_translator:  # TINYINT(1)
+    is_translation_enabled:  # SMALLINT
+    is_translator:  # SMALLINT
     lang:  # VARCHAR(10)
-    listed_count:  # BIGINT(30)
+    listed_count:  # BIGINT
     location:  # TEXT
     name:  # VARCHAR (50)
-    needs_phone_verification:  #TINYINT(1)
-    notifications:  # TINYINT(1)
+    needs_phone_verification:  #SMALLINT
+    notifications:  # SMALLINT
     profile_background_color:  # CHAR(6) (is a Hex Color Code)
     profile_background_image_url:  # TEXT
     profile_background_image_url_https:  # TEXT
-    profile_background_tile:  # TINYINT(1)
+    profile_background_tile:  # SMALLINT
     profile_banner_url:  # TEXT
     profile_image_url:  # TEXT
     profile_image_url_https:  # TEXT
@@ -62,8 +62,8 @@ twitter_user_details:
     profile_sidebar_border_color:  # CHAR(6) (is a Hex Color Code)
     profile_sidebar_fill_color:  # CHAR(6) (is a Hex Color Code)
     profile_text_color:  # CHAR(6) (is a Hex Color Code)
-    profile_use_background_image:  # TINYINT(1)
-    protected:  # TINYINT(1)
+    profile_use_background_image:  # SMALLINT
+    protected:  # SMALLINT
     screen_name:  # VARCHAR(50)
     status_contributors:  # TEXT (Rarely available)
     status_coordinates:  # TEXT (contains a dict)
@@ -76,19 +76,19 @@ twitter_user_details:
     status_entities_urls:  # TEXT (contains a dict)
     status_entities_user_mentions:  # TEXT (contains a dict)
     status_extended_entities_media:  # TEXT (contains a dict)
-    status_favorite_count:  # INT(20)
-    status_favorited:  # TINYINT(1)
+    status_favorite_count:  # INT
+    status_favorited:  # SMALLINT
     status_geo:  # TEXT (contains a dict)
     status_geo_coordinates:  # TEXT (Rarely available)
     status_geo_type:  # TEXT (Rarely available)
-    status_id:  # BIGINT(50)
+    status_id:  # BIGINT
     status_id_str: # VARCHAR(50)
     status_in_reply_to_screen_name:  # VARCHAR(50)
-    status_in_reply_to_status_id:  # BIGINT(50)
+    status_in_reply_to_status_id:  # BIGINT
     status_in_reply_to_status_id_str:  # VARCHAR(50)
-    status_in_reply_to_user_id:  # BIGINT(30)
+    status_in_reply_to_user_id:  # BIGINT
     status_in_reply_to_user_id_str:  # VARCHAR(30)
-    status_is_quote_status:  # TINYINT(1)
+    status_is_quote_status:  # SMALLINT
     status_lang:  # VARCHAR(10)
     status_place:  # TEXT (contains a dict)
     status_place_bounding_box_coordinates: # TEXT (Rarely available)
@@ -101,11 +101,11 @@ twitter_user_details:
     status_place_name: # TEXT (Rarely available)
     status_place_place_type:  # TEXT (Rarely available)
     status_place_url:  # TEXT (Rarely available)
-    status_possibly_sensitive:  # TINYINT(1)
-    status_quoted_status_id:  # BIGINT(50)
+    status_possibly_sensitive:  # SMALLINT
+    status_quoted_status_id:  # BIGINT
     status_quoted_status_id_str:  # VARCHAR(50)
-    status_retweet_count:  # INT(30)
-    status_retweeted:  # TINYINT(1)
+    status_retweet_count:  # INT
+    status_retweeted:  # SMALLINT
     status_retweeted_status_contributors:  # TEXT (Rarely available)
     status_retweeted_status_coordinates:  # TEXT (contains a dict)
     status_retweeted_status_created_at:  # DATETIME
@@ -115,32 +115,32 @@ twitter_user_details:
     status_retweeted_status_entities_urls:  # TEXT (contains a dict)
     status_retweeted_status_entities_user_mentions:  # TEXT (contains a dict)
     status_retweeted_status_extended_entities_media: # TEXT (contains a dict)
-    status_retweeted_status_favorite_count:  # INT(30)
-    status_retweeted_status_favorited:  # TINYINT(1)
+    status_retweeted_status_favorite_count:  # INT
+    status_retweeted_status_favorited:  # SMALLINT
     status_retweeted_status_geo:  # TEXT (contains a dict)
-    status_retweeted_status_id:  # BIGINT(50)
+    status_retweeted_status_id:  # BIGINT
     status_retweeted_status_id_str:  # VARCHAR(50)
     status_retweeted_status_in_reply_to_screen_name:  # VARCHAR(30)
-    status_retweeted_status_in_reply_to_status_id:  # BIGINT(50)
+    status_retweeted_status_in_reply_to_status_id:  # BIGINT
     status_retweeted_status_in_reply_to_status_id_str:  # VARCHAR(50)
-    status_retweeted_status_in_reply_to_user_id:  # BIGINT(30)
+    status_retweeted_status_in_reply_to_user_id:  # BIGINT
     status_retweeted_status_in_reply_to_user_id_str:  # VARCHAR(30)
-    status_retweeted_status_is_quote_status:  # TINYINT(1)
+    status_retweeted_status_is_quote_status:  # SMALLINT
     status_retweeted_status_lang:  # VARCHAR(10)
     status_retweeted_status_place:  # TEXT (contains a dict)
-    status_retweeted_status_possibly_sensitive:  # TINYINT(1)
-    status_retweeted_status_quoted_status_id:  # BIGINT(50)
+    status_retweeted_status_possibly_sensitive:  # SMALLINT
+    status_retweeted_status_quoted_status_id:  # BIGINT
     status_retweeted_status_quoted_status_id_str:  # VARCHAR(50)
-    status_retweeted_status_retweet_count:  # INT(30)
-    status_retweeted_status_retweeted:  # TINYINT(1)
+    status_retweeted_status_retweet_count:  # INT
+    status_retweeted_status_retweeted:  # SMALLINT
     status_retweeted_status_source:  # TEXT
     status_retweeted_status_text:  # TEXT
-    status_retweeted_status_truncated:  # TINYINT(1)
+    status_retweeted_status_truncated:  # SMALLINT
     status_source:  # TEXT
     status_text:  # TEXT
-    status_truncated:  # TINYINT(1)
-    statuses_count:  # BIGINT(30)
-    suspended:  # TINYINT(1)
+    status_truncated:  # SMALLINT
+    statuses_count:  # BIGINT
+    suspended:  # SMALLINT
     time_zone: # TEXT (Rarely available)
     translator_type:  # VARCHAR(50)
     url:  # TEXT
@@ -151,10 +151,10 @@ twitter_user_details:
 # ================== Notification Emails =====================
 
 
-#email_to_notify: 'user@example.com'
+email_to_notify: 'user@example.com'
 
 # mailgun details
 # (find them under the respective domain name here: https://mailgun.com/app/domains)
-#mailgun_default_smtp_login: ''
-#mailgun_api_base_url: ''
-#mailgun_api_key: ''
+mailgun_default_smtp_login: ''
+mailgun_api_base_url: ''
+mailgun_api_key: ''
