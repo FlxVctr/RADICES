@@ -677,6 +677,8 @@ class CollectorTest(unittest.TestCase):
 
         self.assertEqual(len(friends_df_selected.columns), 3)
         self.assertIsInstance(friends_df['id'][0], np.int64)
+
+        # Date columns equal pd Timestamps b/c pandas stores all dates as datetime64[ns] format.
         self.assertIsInstance(friends_df['created_at'][0], pd.Timestamp)
         self.assertIsInstance(friends_df['followers_count'][0], np.int64)
 

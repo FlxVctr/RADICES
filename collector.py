@@ -590,11 +590,7 @@ class Collector(object):
                     df[var] = df[var].fillna(nonetype["str"])
                 elif dtypes[var] == np.int8:
                     df[var] = df[var].fillna(nonetype["bool"])
-                try:
-                    df[var] = df[var].astype(dtypes[var])
-                except:
-                    input(df[var])
-                    exit()
+                df[var] = df[var].astype(dtypes[var])
 
         df.sort_index(axis=1, inplace=True)
         return df
