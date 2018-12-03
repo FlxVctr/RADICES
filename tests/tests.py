@@ -388,12 +388,7 @@ class DataBaseHandlerTest(unittest.TestCase):
 
     def test_user_details_table_is_created_and_contains_columns_indicated_in_config(self):
         # First for mysql
-        cfg = copy.deepcopy(self.config_dict_mysql)
-        cfg["twitter_user_details"] = dict(
-            id="INT(30) PRIMARY KEY",
-            followers_count="INT(30)",
-            lang="CHAR(30)",
-        )
+        cfg = test_helpers.config_dict_user_details_dtypes_mysql
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
         dbh = DataBaseHandler()
@@ -407,17 +402,11 @@ class DataBaseHandlerTest(unittest.TestCase):
         engine.connect().execute("DROP TABLES friends, user_details;")
 
         # Second for sqlite
-        cfg = copy.deepcopy(self.config_dict_sqlite)
-        cfg["twitter_user_details"] = dict(
-            id="INT(30) PRIMARY KEY",
-            followers_count="INT(30)",
-            lang="CHAR(30)"
-        )
+        cfg = test_helpers.config_dict_user_details_dtypes_sqlite
         with open('config.yml', 'w') as f:
             yaml.dump(cfg, f, default_flow_style=False)
-        config = Config()
-        conn = lite.connect(config.dbname + ".db")
-        DataBaseHandler()
+        dbh = DataBaseHandler()
+        conn = lite.connect(dbh.config.dbname + ".db")
         s = "SELECT * FROM user_details"
         cols = pd.read_sql(sql=s, con=conn).columns
         self.assertIn("id", cols)
@@ -932,9 +921,9 @@ class CoordinatorTest(unittest.TestCase):
             self.fail("could not retrieve friend details from database")
 
         # test whether seed->new_seed connection is in database
-        query = """
-                SELECT source, target FROM result WHERE source = {}
-                """.format(seed)
+        query = f"""
+                SELECT source, target FROM result WHERE source = {seed}
+                """
         edge = pd.read_sql(query, con=self.dbh.engine)
         self.assertIn(new_seed, edge['target'].values)
 
@@ -942,9 +931,9 @@ class CoordinatorTest(unittest.TestCase):
 
         # test whether connection is burned in friendlist
 
-        query = """
-                SELECT burned FROM friends WHERE source = {} AND target = {}
-                """.format(seed, new_seed)
+        query = f"""
+                SELECT burned FROM friends WHERE source = {seed} AND target = {new_seed}
+                """
         burned_edge = pd.read_sql(query, con=self.dbh.engine)
         self.assertEqual(len(burned_edge), 1)
         self.assertEqual(burned_edge['burned'].values[0], 1)

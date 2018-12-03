@@ -681,7 +681,7 @@ class Coordinator(object):
             friends = friends['target'].values
             friends = tuple(friends)
 
-            query = "SELECT {} from user_details WHERE id IN {}".format(select, friends)
+            query = f"SELECT {select} from user_details WHERE id IN {friends}"
             friend_detail = pd.read_sql(query, db_connection)
 
             return friend_detail

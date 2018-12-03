@@ -33,7 +33,6 @@ class DataBaseHandler():
         else:
             print("""Key "twitter_user_details" could not be found in config.yml. Will not create
                   a user_details table.""")
-
         if self.config.dbtype.lower() == "sqlite":
             try:
                 self.engine = lite.connect(self.config.dbname + ".db")
@@ -47,15 +46,19 @@ class DataBaseHandler():
                                                     target BIGINT NOT NULL,
                                                     burned TINYINT NOT NULL,
                                                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                                                  );"""
+                                                    );"""
+                    create_friends_index_sql = "CREATE INDEX iFSource ON friends(source);"
                     create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
                                                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                                                  );"""
+                                                    );"""
+                    create_results_index_sql = "CREATE INDEX iRSource ON result(source);"
                     c = self.engine.cursor()
                     c.execute(create_friends_table_sql)
+                    c.execute(create_friends_index_sql)
                     c.execute(create_results_table_sql)
+                    c.execute(create_results_index_sql)
                     if user_details_list != []:
                         create_user_details_sql = """
                             CREATE TABLE IF NOT EXISTS user_details
@@ -63,6 +66,7 @@ class DataBaseHandler():
                              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"""
                         c.execute(create_user_details_sql)
                     else:
+                        # TODO: Make this a minimal user_details table?
                         print("""No user_details configured in config.yml. Will not create a
                               user_details table.""")
                 except Error as e:
@@ -83,13 +87,15 @@ class DataBaseHandler():
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
                                                     burned TINYINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                                  );"""
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    INDEX(source)
+                                                    );"""
                     create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                                  );"""
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    INDEX(source)
+                                                    );"""
                     self.engine.execute(create_friends_table_sql)
                     self.engine.execute(create_results_table_sql)
                     if user_details_list != []:
