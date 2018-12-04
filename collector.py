@@ -85,11 +85,13 @@ def retry_x_times(x):
                     pass
 
             i = 0
+            restart = False
 
             for i in range(x - 1):
                 try:
-                    return (func(*args, **kwargs))
+                    return (func(*args, **kwargs, restart=restart))
                 except Exception as e:
+                    restart = True
                     waiting_time = 2**i
                     stdout.write(f"Encountered exception in {func.__name__}{args, kwargs}.\n{e}")
                     stdout.write(f"Retrying in {waiting_time}.\n")
@@ -97,7 +99,7 @@ def retry_x_times(x):
                     time.sleep(waiting_time)
                 i += 1
 
-            return func(*args, **kwargs)
+            return func(*args, **kwargs, restart=restart)
 
         return func_wrapper
 

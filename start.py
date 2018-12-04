@@ -87,4 +87,6 @@ if __name__ == "__main__":
             stdout.flush()
             latest_seeds = list(pd.read_csv('latest_seeds.csv', header=None)[0].values)
             coordinator = Coordinator(seed_list=latest_seeds)
+            args.restart = True
+            restart_counter = 0
             time.sleep(5)
