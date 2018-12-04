@@ -48,21 +48,32 @@ class DataBaseHandler():
                                                     burned TINYINT NOT NULL,
                                                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
                                                   );"""
+                    create_friends_index_sql_1 = "CREATE INDEX iFSource ON friends(source);"
+                    create_friends_index_sql_2 = "CREATE INDEX iFTimestamp ON friends(timestamp);"
                     create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
                                                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
                                                   );"""
+                    create_results_index_sql_1 = "CREATE INDEX iRSource ON result(source);"
+                    create_results_index_sql_2 = "CREATE INDEX iRTimestamp ON result(timestamp);"
                     c = self.engine.cursor()
                     c.execute(create_friends_table_sql)
+                    c.execute(create_friends_index_sql_1)
+                    c.execute(create_friends_index_sql_2)
                     c.execute(create_results_table_sql)
+                    c.execute(create_results_index_sql_1)
+                    c.execute(create_results_index_sql_2)
                     if user_details_list != []:
                         create_user_details_sql = """
                             CREATE TABLE IF NOT EXISTS user_details
                             (""" + ", ".join(user_details_list) + """,
                              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"""
+                        create_ud_index = "CREATE INDEX iUTimestamp ON user_details(timestamp)"
                         c.execute(create_user_details_sql)
+                        c.execute(create_ud_index)
                     else:
+                        # TODO: Make this a minimal user_details table?
                         print("""No user_details configured in config.yml. Will not create a
                               user_details table.""")
                 except Error as e:
@@ -83,12 +94,14 @@ class DataBaseHandler():
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
                                                     burned TINYINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                                  );"""
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    INDEX(source), INDEX(timestamp)
+                                                    );"""
                     create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    INDEX(source), INDEX(timestamp)
                                                   );"""
                     self.engine.execute(create_friends_table_sql)
                     self.engine.execute(create_results_table_sql)
@@ -96,7 +109,8 @@ class DataBaseHandler():
                         create_user_details_sql = """
                             CREATE TABLE IF NOT EXISTS user_details
                             (""" + ", ".join(user_details_list) + """, timestamp TIMESTAMP
-                                DEFAULT CURRENT_TIMESTAMP);"""
+                            DEFAULT CURRENT_TIMESTAMP,
+                            INDEX(timestamp));"""
                         self.engine.execute(create_user_details_sql)
                     else:
                         print("""No user_details configured in config.yml. Will not create a
