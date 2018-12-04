@@ -29,13 +29,13 @@ except TweepError as e:
         raise TweepError("The seed you have given is not a valid Twitter user ID")
 friends_details = collector.get_details(friends)
 
-# CHeck for the relevant directory
+# Check for the relevant directory
 if not os.path.isdir(os.path.join("tests", "tweet_jsons")):
     os.mkdir(os.path.join("tests", "tweet_jsons"))
 
 # Write details in json files
 ct = 1
 for friend_details in friends_details:
-    with open(os.path.join("tests", "tweet_jsons", "user_"+str(ct)+".json"), "w") as f:
+    with open(os.path.join("tests", "tweet_jsons", "user_" + str(ct) + ".json"), "w") as f:
         json.dump(friend_details._json, f)
     ct += 1
