@@ -154,7 +154,7 @@ class FirstUseTest(unittest.TestCase):
             yaml.dump(mysql_cfg, f, default_flow_style=False)
 
         try:
-            response = str(check_output('python start.py -n 2 -l de -t',
+            response = str(check_output('python start.py -n 2 -l de -t -p 1',
                                         stderr=STDOUT, shell=True))
             print(response)
         except CalledProcessError as e:
@@ -182,7 +182,7 @@ class FirstUseTest(unittest.TestCase):
         with self.assertRaises(TestException):
             main_loop(Coordinator(), test_fail=True)
 
-        p = Popen("python start.py -n 2 -t -f", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+        p = Popen("python start.py -n 2 -t -f -p 1", stdout=PIPE, stderr=PIPE, stdin=PIPE,
                   shell=True)
 
         stdout, stderr = p.communicate()
@@ -194,7 +194,7 @@ class FirstUseTest(unittest.TestCase):
 
         self.assertEqual(latest_seeds, seeds)
 
-        q = Popen("python start.py -t --restart", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+        q = Popen("python start.py -t --restart -p 1", stdout=PIPE, stderr=PIPE, stdin=PIPE,
                   shell=True)
 
         stdout, stderr = q.communicate()
