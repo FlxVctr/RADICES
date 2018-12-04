@@ -208,6 +208,30 @@ class FirstUseTest(unittest.TestCase):
 
         DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
 
+    def test_collects_only_requested_number_of_pages_of_friends(self):
+
+        shutil.copyfile("seed_with_lots_of_friends.csv", "seeds.csv")
+
+        with open("config.yml", "w") as f:
+            yaml.dump(mysql_cfg, f, default_flow_style=False)
+
+        try:
+            response = str(check_output('python start.py -n 1 -t -p 1',
+                                        stderr=STDOUT, shell=True))
+            print(response)
+        except CalledProcessError as e:
+            response = str(e.output)
+            print(response)
+            raise e
+
+        dbh = DataBaseHandler()
+
+        result = pd.read_sql("friends", dbh.engine)
+
+        self.assertLessEqual(len(result), 5000)
+
+        dbh.engine.execute("DROP TABLE friends, user_details, result;")
+
 
 if __name__ == '__main__':
     unittest.main()
