@@ -8,6 +8,7 @@ import shutil
 import sqlite3 as lite
 import sys
 import unittest
+import warnings
 from json import JSONDecodeError
 from sys import stdout
 
@@ -18,14 +19,13 @@ import yaml
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
-from pandas.util.testing import assert_frame_equal
+from pandas.util.testing import assert_frame_equal, assert_index_equal
 from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError
 
 # Needed so that developer do not have to append PYTHONPATH manually.
 sys.path.insert(0, os.getcwd())
-
-import passwords
+import helpers
 import test_helpers
 from collector import Collector, Connection, Coordinator, retry_x_times
 from database_handler import DataBaseHandler
@@ -35,14 +35,18 @@ from setup import Config, FileImport
 
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
-                    help='''Indicates whether or not to skip tests that drain Twitter API
-                         calls. 1=yes, 0=no''',
+                    help='If set, module skips api call draining tests.',
+                    required=False,
+                    action='store_true')
+parser.add_argument('-w', '--show_resource_warnings',
+                    help='If set, will show possible resource warnings from the requests package.',
                     required=False,
                     action='store_true')
 parser.add_argument('unittest_args', nargs='*')
 
 args = parser.parse_args()
 skiptest = args.skip_draining_tests
+show_warnings = args.show_resource_warnings
 sys.argv[1:] = args.unittest_args
 
 
@@ -50,6 +54,13 @@ def skipIfDraining():
     if skiptest:
         return unittest.skip("This test drains API calls")
     return lambda x: x
+
+
+def setUpModule():
+    if not show_warnings:
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
 
 
 class FileImportTest(unittest.TestCase):
@@ -156,34 +167,31 @@ class DataBaseHandlerTest(unittest.TestCase):
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
 
-    config_dict = test_helpers.config_dict
-    mock_sql_cfg = copy.deepcopy(config_dict)
-    mock_sql_cfg["sql"] = dict(
-        dbtype='mysql',
-        host='127.0.0.1',
-        user='sparsetwitter',
-        passwd=passwords.sparsetwittermysqlpw,
-        dbname="sparsetwitter"
-    )
-
-    mock_sqlite_cfg = copy.deepcopy(config_dict)
-    mock_sqlite_cfg["sql"] = dict(
-        dbtype='sqlite',
-        host='',
-        user='',
-        passwd='',
-        dbname="test_db"
-    )
-
-    db_name = Config().dbname
-
     def tearDown(self):
+        dbh = DataBaseHandler(config_dict=test_helpers.config_dict_user_details_dtypes_mysql,
+                              create_all=False)
         if os.path.isfile(self.db_name + ".db"):
             os.remove(self.db_name + ".db")
+        try:
+            dbh.engine.execute("DROP TABLES friends;")
+        except Exception:
+            pass
+        try:
+            dbh.engine.execute("DROP TABLES result;")
+        except Exception:
+            pass
+        try:
+            dbh.engine.execute("DROP TABLES user_details;")
+        except Exception:
+            pass
 
-    def test_setup_and_database_handler_creates_database_from_given_name(self):
+    config_dict_mysql = test_helpers.config_dict_mysql
+    config_dict_sqlite = test_helpers.config_dict_sqlite
+    db_name = Config(config_dict=config_dict_sqlite).dbname
+
+    def test_setup_and_dbh_creates_database_from_given_name(self):
         with open('config.yml', 'w') as f:
-            yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
+            yaml.dump(self.config_dict_sqlite, f, default_flow_style=False)
 
         DataBaseHandler()
         db_name = self.db_name
@@ -194,17 +202,17 @@ class DataBaseHandlerTest(unittest.TestCase):
 
     def test_dbh_creates_friends_and_results_tables_with_correct_columns(self):
         with open('config.yml', 'w') as f:
-            yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
+            yaml.dump(self.config_dict_sqlite, f, default_flow_style=False)
         DataBaseHandler()
         db_name = self.db_name
         conn = lite.connect(db_name + ".db")
-        sql_out = list(pd.read_sql(con=conn, sql="SELECT * FROM friends"))
+        sql_out = pd.read_sql(con=conn, sql="SELECT * FROM friends").columns
         self.assertIn("target", sql_out)
         self.assertIn("source", sql_out)
         self.assertIn("burned", sql_out)
         self.assertIn("timestamp", sql_out)
 
-        sql_out = list(pd.read_sql(con=conn, sql="SELECT * FROM result"))
+        sql_out = pd.read_sql(con=conn, sql="SELECT * FROM result").columns
         self.assertIn("target", sql_out)
         self.assertIn("source", sql_out)
         self.assertIn("timestamp", sql_out)
@@ -213,7 +221,7 @@ class DataBaseHandlerTest(unittest.TestCase):
     @skipIfDraining()
     def test_dbh_write_friends_function_takes_input_and_writes_to_table(self):
         with open('config.yml', 'w') as f:
-            yaml.dump(self.mock_sqlite_cfg, f, default_flow_style=False)
+            yaml.dump(self.config_dict_sqlite, f, default_flow_style=False)
         seed = int(FileImport().read_seed_file().iloc[0])
         dbh = DataBaseHandler()
         c = Collector(Connection(), seed)
@@ -229,7 +237,7 @@ class DataBaseHandlerTest(unittest.TestCase):
             dbh.engine.close()
 
     def test_sql_connection_raises_error_if_credentials_are_wrong(self):
-        wrong_cfg = copy.deepcopy(self.mock_sql_cfg)
+        wrong_cfg = copy.deepcopy(self.config_dict_mysql)
         wrong_cfg["sql"]["passwd"] = "wrong"
         with open('config.yml', 'w') as f:
             yaml.dump(wrong_cfg, f, default_flow_style=False)
@@ -237,21 +245,21 @@ class DataBaseHandlerTest(unittest.TestCase):
         with self.assertRaises(OperationalError):
             DataBaseHandler()
 
-    def test_mysql_db_connects_and_creates_friends_database_with_correct_columns(self):
+    def test_mysql_db_connects_and_creates_friends_table_with_correct_columns(self):
         with open('config.yml', 'w') as f:
-            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
+            yaml.dump(self.config_dict_mysql, f, default_flow_style=False)
 
         dbh = DataBaseHandler()
         engine = dbh.engine
         s = "SELECT * FROM friends"
-        sql_out = list(pd.read_sql(sql=s, con=engine))
+        sql_out = pd.read_sql(sql=s, con=engine).columns
         self.assertIn("source", sql_out)
         self.assertIn("target", sql_out)
         self.assertIn("burned", sql_out)
         self.assertIn("timestamp", sql_out)
 
         s = "SELECT * FROM result"
-        sql_out = list(pd.read_sql(sql=s, con=engine))
+        sql_out = pd.read_sql(sql=s, con=engine).columns
         self.assertIn("source", sql_out)
         self.assertIn("target", sql_out)
         self.assertIn("timestamp", sql_out)
@@ -261,7 +269,7 @@ class DataBaseHandlerTest(unittest.TestCase):
     @skipIfDraining()
     def test_dbh_write_friends_function_also_works_with_mysql(self):
         with open('config.yml', 'w') as f:
-            yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
+            yaml.dump(self.config_dict_mysql, f, default_flow_style=False)
         seed = int(FileImport().read_seed_file().iloc[0])
         dbh = DataBaseHandler()
         c = Collector(Connection(), seed)
@@ -280,7 +288,7 @@ class DataBaseHandlerTest(unittest.TestCase):
 
     def test_dbh_user_details_table_is_not_created_if_user_details_config_empty(self):
         # First for mysql
-        no_user_details_cfg = copy.deepcopy(self.mock_sql_cfg)
+        no_user_details_cfg = copy.deepcopy(self.config_dict_mysql)
         no_user_details_cfg["twitter_user_details"] = dict(
             id=None,
             followers_count=None,
@@ -297,7 +305,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         engine.execute("DROP TABLE friends;")
 
         # Second for sqlite
-        cfg = copy.deepcopy(self.mock_sqlite_cfg)
+        cfg = copy.deepcopy(self.config_dict_sqlite)
         cfg["twitter_user_details"] = dict(
             id=None,
             followers_count=None,
@@ -315,7 +323,7 @@ class DataBaseHandlerTest(unittest.TestCase):
 
     def test_twitter_user_details_not_in_config_as_key(self):
         # First for mysql
-        no_key_cfg = copy.deepcopy(self.mock_sql_cfg)
+        no_key_cfg = copy.deepcopy(self.config_dict_mysql)
         no_key_cfg.pop('twitter_user_details', None)
         with open("config.yml", "w") as f:
             yaml.dump(no_key_cfg, f, default_flow_style=False)
@@ -327,7 +335,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         engine.connect().execute("DROP TABLE friends;")
 
         # Second for sqlite
-        cfg = copy.deepcopy(self.mock_sqlite_cfg)
+        cfg = copy.deepcopy(self.config_dict_sqlite)
         cfg.pop('twitter_user_details', None)
         with open("config.yml", "w") as f:
             yaml.dump(cfg, f, default_flow_style=False)
@@ -340,47 +348,47 @@ class DataBaseHandlerTest(unittest.TestCase):
             pd.read_sql(sql=s, con=conn)
         conn.close()
 
-        def test_dbh_user_details_is_not_created_if_user_details_config_empty(self):
-            # First for mysql
-            cfg = self.mock_sql_cfg.copy()
-            cfg["twitter_user_details"] = dict(
-                id=None,
-                followers_count=None,
-                lang=None,
-                time_zone=None
-            )
-            with open("config.yml", "w") as f:
-                yaml.dump(cfg, f, default_flow_style=False)
-            config = Config()
-            engine = create_engine(
-                f'mysql+pymysql://{config.dbuser}:{config.dbpwd}@{config.dbhost}/{config.dbname}')
-            DataBaseHandler()
+    def test_dbh_user_details_is_not_created_if_user_details_config_empty(self):
+        # First for mysql
+        cfg = self.config_dict_mysql.copy()
+        cfg["twitter_user_details"] = dict(
+            id=None,
+            followers_count=None,
+            lang=None,
+            time_zone=None
+        )
+        with open("config.yml", "w") as f:
+            yaml.dump(cfg, f, default_flow_style=False)
+        config = Config()
+        engine = create_engine(
+            f'mysql+pymysql://{config.dbuser}:{config.dbpwd}@{config.dbhost}/{config.dbname}')
+        DataBaseHandler()
 
-            with self.assertRaises(ProgrammingError):
-                s = "SELECT * FROM user_details"
-                pd.read_sql(sql=s, con=engine)
-            engine.connect().execute("DROP TABLE friends;")
+        with self.assertRaises(ProgrammingError):
+            s = "SELECT * FROM user_details"
+            pd.read_sql(sql=s, con=engine)
+        engine.connect().execute("DROP TABLE friends;")
 
-            # Second for sqlite
-            cfg = self.mock_sqlite_cfg.copy()
-            cfg["twitter_user_details"] = dict(
-                id=None,
-                followers_count=None,
-                lang=None,
-                time_zone=None
-            )
-            with open("config.yml", "w") as f:
-                yaml.dump(cfg, f, default_flow_style=False)
-            config = Config()
-            conn = lite.connect(config.dbname + ".db")
-            with self.assertRaises(DatabaseError):
-                s = "SELECT * FROM user_details"
-                pd.read_sql(sql=s, con=conn)
-            conn.close()
+        # Second for sqlite
+        cfg = self.config_dict_sqlite.copy()
+        cfg["twitter_user_details"] = dict(
+            id=None,
+            followers_count=None,
+            lang=None,
+            time_zone=None
+        )
+        with open("config.yml", "w") as f:
+            yaml.dump(cfg, f, default_flow_style=False)
+        config = Config()
+        conn = lite.connect(config.dbname + ".db")
+        with self.assertRaises(DatabaseError):
+            s = "SELECT * FROM user_details"
+            pd.read_sql(sql=s, con=conn)
+        conn.close()
 
     def test_user_details_table_is_created_and_contains_columns_indicated_in_config(self):
         # First for mysql
-        cfg = copy.deepcopy(self.mock_sql_cfg)
+        cfg = copy.deepcopy(self.config_dict_mysql)
         cfg["twitter_user_details"] = dict(
             id="INT(30) PRIMARY KEY",
             followers_count="INT(30)",
@@ -391,8 +399,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         dbh = DataBaseHandler()
         engine = dbh.engine
         s = "SELECT * FROM user_details"
-        sql_out = pd.read_sql(sql=s, con=engine)
-        cols = list(sql_out)
+        cols = pd.read_sql(sql=s, con=engine).columns
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
@@ -400,7 +407,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         engine.connect().execute("DROP TABLES friends, user_details;")
 
         # Second for sqlite
-        cfg = copy.deepcopy(self.mock_sqlite_cfg)
+        cfg = copy.deepcopy(self.config_dict_sqlite)
         cfg["twitter_user_details"] = dict(
             id="INT(30) PRIMARY KEY",
             followers_count="INT(30)",
@@ -412,60 +419,121 @@ class DataBaseHandlerTest(unittest.TestCase):
         conn = lite.connect(config.dbname + ".db")
         DataBaseHandler()
         s = "SELECT * FROM user_details"
-        sql_out = pd.read_sql(sql=s, con=conn)
-        cols = list(sql_out)
+        cols = pd.read_sql(sql=s, con=conn).columns
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
         self.assertIn("lang", cols)
         self.assertIn("timestamp", cols)
         conn.close()
 
+    def test_all_user_details_can_be_written_using_given_dtypes(self):
+        cfg = test_helpers.config_dict_user_details_dtypes_mysql
+        select_vars = list(cfg["twitter_user_details"].keys())
+        json_list = []
+        for filename in os.listdir(os.path.join("tests", "tweet_jsons")):
+            with open(os.path.join("tests", "tweet_jsons", filename), "r") as f:
+                json_list.append(json.load(f))
+
+        friends_details = Collector.make_friend_df(json_list,
+                                                   select=select_vars,
+                                                   provide_jsons=True)
+
+        dbh = DataBaseHandler(config_dict=cfg)
+        datetypes = helpers.friends_details_dtypes
+        select_items = cfg["twitter_user_details"].items()
+
+        try:
+            friends_details.to_sql('user_details', if_exists='append',
+                                   index=False, con=dbh.engine)
+        # Error Handling for duplicate IDs
+        except IntegrityError as e:
+                friends_details.drop_duplicates(subset="id", keep='last', inplace=True)
+                friends_details.to_sql('user_details', if_exists='append',
+                                       index=False, con=dbh.engine)
+        s = "SELECT * FROM user_details"
+        sql_friends_details = pd.read_sql(sql=s, con=dbh.engine)
+
+        for key, value in datetypes.items():
+            if value == bool:
+                friends_details[key] = friends_details[key].fillna(False).astype(value)
+
+        # Dropping timestamp column and make boolean vars comparable
+        # Remember that 'Null'.astype('bool') = True (thats why NAs first have to be filled)
+        sql_friends_details.drop(columns="timestamp", inplace=True)
+        for var, val in select_items:
+            # If orginally boolean, make both dtypes int8 so the test succeeds
+            if val == "SMALLINT":
+                friends_details[var] = friends_details[var].fillna(-1)
+                sql_friends_details[var] = sql_friends_details[var].astype('int8')
+                friends_details[var] = friends_details[var].astype('int8')
+
+        # Sorting dfs + indices so they have the same structure
+        sql_friends_details.sort_index(axis=1, inplace=True)
+        sql_friends_details.sort_values("id", inplace=True)
+        friends_details.sort_index(axis=1, inplace=True)
+        friends_details.sort_values("id", inplace=True)
+        friends_details.reset_index(drop=True, inplace=True)
+        assert_frame_equal(friends_details, sql_friends_details)
+
+    def test_make_temp_tbl_makes_a_temp_tbl_equal_to_type(self):
+        cfg = test_helpers.config_dict_user_details_dtypes_mysql
+        dbh = DataBaseHandler(config_dict=cfg)
+        temp_tbl_name = dbh.make_temp_tbl()
+
+        user_details_colnames = pd.read_sql("SELECT * FROM user_details;",
+                                            con=dbh.engine).columns
+        temp_tbl_colnames = pd.read_sql("SELECT * FROM " + temp_tbl_name + ";",
+                                        con=dbh.engine).columns
+
+        assert_index_equal(user_details_colnames, temp_tbl_colnames)
+        self.assertIsInstance(temp_tbl_name, str)
+
+        dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")
+
 
 class ConfigTest(unittest.TestCase):
-    config_dict = test_helpers.config_dict
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         if os.path.isfile("config.yml"):
             os.rename("config.yml", "config.yml.bak")
 
-    @classmethod
-    def tearDownClass(cls):
+    def tearDown(self):
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
 
-    def test_1_config_file_not_existing(self):
+    config_dict = test_helpers.config_dict_sqlite
+
+    def test_config_file_not_existing(self):
         # File not found
         with self.assertRaises(FileNotFoundError):
             Config()
 
-    def test_2_config_parameters_default_values_get_set_if_not_given(self):
-        shutil.copyfile("config_template.yml", "config.yml")
+    def test_config_parameters_default_values_get_set_if_not_given(self):
+        cfg_dict = copy.deepcopy(self.config_dict)
+        cfg_dict["sql"] = {key: None for (key, value) in self.config_dict["sql"].items()}
+        config = Config(config_dict=cfg_dict)
+
         # If the db_name is not given, does the Config() class assign a default?
-        self.assertEqual("new_database", Config().dbname)
-
+        self.assertEqual("new_database", config.dbname)
         # If the dbtype is not specified, does the Config() class assume sqlite?
-        self.assertEqual("sqlite", Config().dbtype)
+        self.assertEqual("sqlite", config.dbtype)
 
-    def test_3_correct_values_for_config_parameters_given(self):
+    def test_correct_values_for_config_parameters_given(self):
         # dbtype does not match "sqlite" or "SQL"
-        mock_cfg = copy.deepcopy(self.config_dict)
-        mock_cfg["sql"] = dict(
+        cfg_dict = copy.deepcopy(self.config_dict)
+        cfg_dict["sql"] = dict(
             dbtype='notadbtype',
-            host='',
+            host=None,
             user=2,
-            passwd='',
+            passwd=None,
             dbname="test_db"
         )
 
-        with open('config.yml', 'w') as f:
-            yaml.dump(mock_cfg, f, default_flow_style=False)
         with self.assertRaises(ValueError):
-            Config()
+            Config(config_dict=cfg_dict)
 
         # Error when dbhost not provided?
-        mock_cfg = copy.deepcopy(self.config_dict)
-        mock_cfg["sql"] = dict(
+        cfg_dict["sql"] = dict(
             dbtype='mysql',
             host='',
             user='123',
@@ -473,14 +541,11 @@ class ConfigTest(unittest.TestCase):
             dbname="test_db"
         )
 
-        with open('config.yml', 'w') as f:
-            yaml.dump(mock_cfg, f, default_flow_style=False)
         with self.assertRaises(ValueError):
-            Config()
+            Config(config_dict=cfg_dict)
 
         # Error when dbuser not provided?
-        mock_cfg = copy.deepcopy(self.config_dict)
-        mock_cfg["sql"] = dict(
+        cfg_dict["sql"] = dict(
             dbtype='mysql',
             host='host@host',
             user='',
@@ -488,14 +553,11 @@ class ConfigTest(unittest.TestCase):
             dbname="test_db"
         )
 
-        with open('config.yml', 'w') as f:
-            yaml.dump(mock_cfg, f, default_flow_style=False)
         with self.assertRaises(ValueError):
-            Config()
+            Config(config_dict=cfg_dict)
 
         # Error when dpwd not provided?
-        mock_cfg = copy.deepcopy(self.config_dict)
-        mock_cfg["sql"] = dict(
+        cfg_dict["sql"] = dict(
             dbtype='mysql',
             host='host@host',
             user='123',
@@ -503,28 +565,25 @@ class ConfigTest(unittest.TestCase):
             dbname="test_db"
         )
 
-        with open('config.yml', 'w') as f:
-            yaml.dump(mock_cfg, f, default_flow_style=False)
         with self.assertRaises(ValueError):
-            Config()
+            Config(config_dict=cfg_dict)
 
-    def test_4_config_file_gets_read_incl_all_fields(self):
+    def test_config_file_gets_read_incl_all_keys(self):
         if os.path.isfile("config.yml.bak"):
             shutil.copyfile("config.yml.bak", "config.yml")
-        config_dict = copy.deepcopy(self.config_dict)
-        self.assertEqual(Config().config, config_dict)
+        cfg_dict = copy.deepcopy(self.config_dict)
+        cfg_dict["sql"] = {key: None for (key, value) in self.config_dict["sql"].items()}
+        cfg_dict["twitter_user_details"] = {key: None
+                                            for (key, value)
+                                            in self.config_dict["twitter_user_details"].items()}
+        self.assertEqual(Config().config, cfg_dict)
 
-    def test_5_sql_key_not_in_config(self):
-        mock_cfg = copy.deepcopy(self.config_dict)
-        mock_cfg.pop("sql", None)
-        with open('config.yml', 'w') as f:
-            yaml.dump(mock_cfg, f, default_flow_style=False)
-        config = Config()
+    def test_sql_key_not_in_config(self):
+        cfg_dict = copy.deepcopy(self.config_dict)
+        cfg_dict.pop("sql", None)
+        config = Config(config_dict=cfg_dict)
         self.assertEqual("sqlite", config.config["sql"]["dbtype"])
         self.assertEqual("new_database", config.config["sql"]["dbname"])
-
-#    def test_7_config_assigns_correct_datatypes(self):
-#        mock_cfg = test_helpers.config_dict_twitter_details
 
 
 class CollectorTest(unittest.TestCase):
@@ -618,7 +677,9 @@ class CollectorTest(unittest.TestCase):
 
         self.assertEqual(len(friends_df_selected.columns), 3)
         self.assertIsInstance(friends_df['id'][0], np.int64)
-        self.assertIsInstance(friends_df['created_at'][0], str)
+
+        # Date columns equal pd Timestamps b/c pandas stores all dates as datetime64[ns] format.
+        self.assertIsInstance(friends_df['created_at'][0], pd.Timestamp)
         self.assertIsInstance(friends_df['followers_count'][0], np.int64)
 
     def test_next_token_works(self):
@@ -663,7 +724,7 @@ class CollectorTest(unittest.TestCase):
 
     def test_evade_key_errors_in_make_friend_df(self):
         json_list = []
-        for filename in [os.listdir(os.path.join("tests", "tweet_jsons"))[0]]:
+        for filename in os.listdir(os.path.join("tests", "tweet_jsons")):
             with open(os.path.join("tests", "tweet_jsons", filename), "r") as f:
                 json_list.append(json.load(f))
 
@@ -697,28 +758,39 @@ class CollectorTest(unittest.TestCase):
         self.assertNotEqual(token, self.connection.token)
 
 
+''' TODO: make this work (add nonetype_replace param to flatten_json)
+    def test_flatten_json_nonetype_param_works_as_expected(self):
+        testdict = {
+            "testy":[1, 2, 3, 4, 5],
+            "mc": None,
+            "testtest": {
+                "johnny": ["what", "a", "nice", "list", "of", "strings"],
+                "mary": None,
+                "robert": 1337
+            }
+        }
+        cols = ["testy", "mc", "mary", "robert", "testtest_johnny"]
+        expected_dict = {
+            'testy': '[1, 2, 3, 4, 5]',
+            'mc': -1,
+            'testtest_johnny': "['what', 'a', 'nice', 'list', 'of', 'strings']",
+            'testtest_mary': -1,
+            'testtest_robert': 1337
+        }
+        flat_dict = flatten_json(testdict, columns=cols, nonetype=-1)
+        print(flat_dict)
+        self.assertEqual(flat_dict, expected_dict)
+'''
+
+
 class CoordinatorTest(unittest.TestCase):
 
-    config_dict = test_helpers.config_dict
-    mock_sql_cfg = copy.deepcopy(config_dict)
-    mock_sql_cfg["sql"] = dict(
-        dbtype='mysql',
-        host='127.0.0.1',
-        user='sparsetwitter',
-        passwd=passwords.sparsetwittermysqlpw,
-        dbname="sparsetwitter"
-    )
+    config_dict_sql = test_helpers.config_dict_mysql
+    mock_sql_cfg = copy.deepcopy(config_dict_sql)
+    config_dict_sqlite = test_helpers.config_dict_sqlite
+    mock_sqlite_cfg = copy.deepcopy(config_dict_sqlite)
 
-    mock_sqlite_cfg = copy.deepcopy(config_dict)
-    mock_sqlite_cfg["sql"] = dict(
-        dbtype='sqlite',
-        host='',
-        user='',
-        passwd='',
-        dbname="test_db"
-    )
-
-    db_name = Config().dbname
+    db_name = Config(config_dict=config_dict_sql).dbname
 
     @classmethod
     def setUpClass(self):
@@ -731,7 +803,7 @@ class CoordinatorTest(unittest.TestCase):
         with open('config.yml', 'w') as f:
             yaml.dump(self.mock_sql_cfg, f, default_flow_style=False)
 
-        self.dbh = DataBaseHandler()
+        self.dbh = DataBaseHandler(config_dict=test_helpers.config_dict_mysql)
         self.seed_list = [2367431, 36476777]
 
     @classmethod
@@ -815,20 +887,21 @@ class CoordinatorTest(unittest.TestCase):
 
         friends_details = c.get_details(friendlist)
 
-        friends_details = Collector.make_friend_df(friends_details, select=[
-            'id', 'lang', 'followers_count', 'statuses_count', 'created_at'])
-
+        select_list = ['created_at', 'followers_count', 'id', 'lang', 'statuses_count']
+        friends_details = Collector.make_friend_df(friends_details, select=select_list)
         friends_details.to_sql('user_details', if_exists='append',
                                index=False, con=self.coordinator.dbh.engine)
 
         friends_details_lookup = self.coordinator.lookup_accounts_friend_details(
-            seed, self.coordinator.dbh.engine)
+            seed, self.coordinator.dbh.engine, select=", ".join(select_list) + ", timestamp")
 
         # self.coordinator.seed_queue.close()
         # self.coordinator.seed_queue.join_thread()
 
+        friends_details.reindex_axis(sorted(friends_details.columns), axis=1)
         friends_details.sort_values(by=['id'], inplace=True)
         friends_details.reset_index(drop=True, inplace=True)
+        friends_details_lookup.reindex_axis(sorted(friends_details_lookup.columns), axis=1)
         friends_details_lookup.sort_values('id', inplace=True)
         friends_details_lookup.reset_index(drop=True, inplace=True)
         friends_details_lookup.drop('timestamp', axis='columns', inplace=True)
