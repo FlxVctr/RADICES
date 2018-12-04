@@ -9,10 +9,10 @@ from collector import Coordinator
 from setup import Config
 
 
-def main_loop(coordinator, select=[], lang=None, test_fail=False):
+def main_loop(coordinator, select=[], lang=None, test_fail=False, restart=False):
 
     collectors = coordinator.start_collectors(select=select,
-                                              lang=lang, fail=test_fail)
+                                              lang=lang, fail=test_fail, restart=restart)
 
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
     stdout.flush()
@@ -59,6 +59,7 @@ if __name__ == "__main__":
         coordinator = Coordinator(seeds=args.seeds)
 
     k = 0
+    restart_counter = 0
 
     while True:
 
@@ -72,8 +73,13 @@ if __name__ == "__main__":
             stdout.flush()
 
         try:
-            main_loop(coordinator, select=user_details_list,
-                      lang=args.language, test_fail=args.fail)
+            if args.restart is True and restart_counter == 0:
+                main_loop(coordinator, select=user_details_list,
+                          lang=args.language, test_fail=args.fail, restart=True)
+                restart_counter += 1
+            else:
+                main_loop(coordinator, select=user_details_list,
+                          lang=args.language, test_fail=args.fail)
         except Exception:
             stdout.write("Encountered unexpected exception:\n")
             traceback.print_exc()
