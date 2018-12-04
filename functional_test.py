@@ -226,9 +226,12 @@ class FirstUseTest(unittest.TestCase):
 
         dbh = DataBaseHandler()
 
-        result = pd.read_sql("friends", dbh.engine)
+        result = pd.read_sql("SELECT COUNT(*) FROM friends WHERE source = 2343198944", dbh.engine)
 
-        self.assertLessEqual(len(result), 5000)
+        result = result['COUNT(*)'][0]
+
+        self.assertLessEqual(result, 5000)
+        self.assertGreater(result, 4000)
 
         dbh.engine.execute("DROP TABLE friends, user_details, result;")
 

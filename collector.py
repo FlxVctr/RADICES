@@ -254,12 +254,12 @@ class Collector(object):
 
     """
 
-    def __init__(self, connection, seed, friend_limit=5001):
+    def __init__(self, connection, seed, following_pages_limit=0):
         self.seed = seed
         self.connection = connection
 
         self.token_blacklist = {}
-        self.friend_limit = friend_limit
+        self.following_pages_limit = following_pages_limit
 
     class Decorators(object):
 
@@ -364,15 +364,19 @@ class Collector(object):
         remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
 
         cursor = -1
+        following_page = 0
         while True:
+            if self.following_pages_limit != 0 and following_page >= self.following_pages_limit:
+                break
             page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
-            if len(page[0]) > 0 and len(result) <= self.friend_limit:
+            if len(page[0]) > 0:
                 result += page[0]
             else:
                 break
             cursor = page[1][1]
 
             remaining_calls -= 1
+            following_page += 1
 
             if remaining_calls == 0:
                 remaining_calls = self.check_API_calls_and_update_if_necessary(
@@ -632,7 +636,8 @@ class Coordinator(object):
     and a queue of tokens.
     """
 
-    def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None):
+    def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None,
+                 following_pages_limit=0):
 
         self.seed_pool = FileImport().read_seed_file()
 
@@ -660,6 +665,8 @@ class Coordinator(object):
             self.token_queue.put(token)
 
         self.dbh = DataBaseHandler()
+
+        self.following_pages_limit = following_pages_limit
 
     # TODO: Könnte man schöner machen, wenn man select eine Liste mitgeben könnte
     # Die dann für den Query einfach gejoint wird mit ", ".join(select)
@@ -733,7 +740,8 @@ class Coordinator(object):
 
         if friends_details is None:
 
-            collector = Collector(connection, seed)
+            collector = Collector(connection, seed,
+                                  following_pages_limit=self.following_pages_limit)
 
             try:
                 friend_list = collector.get_friend_list()

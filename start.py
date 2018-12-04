@@ -42,6 +42,11 @@ if __name__ == "__main__":
                         action="store_true")
     parser.add_argument(
         '-f', '--fail', help="dev only: test unexpected exception", action="store_true")
+    parser.add_argument('-p', '--following_pages_limit', type=int,
+                        help='''Define limit for maximum number of recent followings to retrieve per \
+account to determine most followed friend.
+1 page has a maximum of 5000 folllowings.
+Lower values speed up collection. Default: 0 (unlimited)''', default=0)
 
     args = parser.parse_args()
 
@@ -55,11 +60,13 @@ if __name__ == "__main__":
     if args.restart:
         latest_seeds_df = pd.read_csv('latest_seeds.csv', header=None)[0]
         latest_seeds = list(latest_seeds_df.values)
-        coordinator = Coordinator(seed_list=latest_seeds)
+        coordinator = Coordinator(seed_list=latest_seeds,
+                                  following_pages_limit=args.following_pages_limit)
         print("Restarting with latest seeds:\n")
         print(latest_seeds_df)
     else:
-        coordinator = Coordinator(seeds=args.seeds)
+        coordinator = Coordinator(seeds=args.seeds,
+                                  following_pages_limit=args.following_pages_limit)
 
     k = 0
     restart_counter = 0
@@ -89,7 +96,8 @@ if __name__ == "__main__":
             stdout.write("Retrying in 5 seconds.")
             stdout.flush()
             latest_seeds = list(pd.read_csv('latest_seeds.csv', header=None)[0].values)
-            coordinator = Coordinator(seed_list=latest_seeds)
+            coordinator = Coordinator(seed_list=latest_seeds,
+                                      following_pages_limit=args.following_pages_limit)
             args.restart = True
             restart_counter = 0
             time.sleep(5)
