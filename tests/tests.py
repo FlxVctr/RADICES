@@ -1075,10 +1075,13 @@ class CoordinatorTest(unittest.TestCase):
 
         c = Coordinator(seed_list=[36476777, 83662933, 2367431])
 
-        workers = c.start_collectors(fail_hidden=True)
+        workers = c.start_collectors(fail_hidden=True, retries=2)
 
         for worker in workers:
             worker.join()
+            with self.assertRaises(TestException):
+                if worker.err is not None:
+                    raise worker.err
 
 
 class GeneralTests(unittest.TestCase):
