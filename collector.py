@@ -1,22 +1,26 @@
 import multiprocessing.dummy as mp
 import queue
 import time
-import uuid
 from exceptions import TestException
 from functools import wraps
 from sys import stdout
 
+import numpy as np
 import pandas as pd
 import tweepy
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from database_handler import DataBaseHandler
+from helpers import friends_details_dtypes
 from setup import FileImport
 
 # mp.set_start_method('spawn')
 
 
-def flatten_json(y: dict, columns: list, sep: str = "_"):
+# TODO: there might be a better way to drop columns that we don't want than flatten everything
+# and removing the columns thereafter.
+def flatten_json(y: dict, columns: list, sep: str = "_",
+                 nonetype: dict = {'date': None, 'num': None, 'str': None, 'bool': None}):
     '''
     Flattens nested dictionaries.
     adapted from: https://medium.com/@amirziai/flattening-json-objects-in-python-f5343c794b10
@@ -24,6 +28,7 @@ def flatten_json(y: dict, columns: list, sep: str = "_"):
         y (dict): Nested dictionary to be flattened.
         columns (list of str): Dictionary keys that should not be flattened.
         sep (str): Separator for new dictionary keys of nested structures.
+        nonetype (Value): specify the value that should be used if a key's value is None
     '''
 
     out = {}
@@ -38,9 +43,23 @@ def flatten_json(y: dict, columns: list, sep: str = "_"):
                 flatten(a, name + str(i) + sep)
                 i += 1
         elif type(x) is list and str(name[:-1]) in columns:
-            out[str(name[:-1])] = list(x)
+            out[str(name[:-1])] = str(x)  # Must be str so that nested lists are written to db
         elif type(x) is dict and str(name[:-1]) in columns:
-            out[str(name[:-1])] = dict(x)
+            out[str(name[:-1])] = str(x)  # Same here
+        elif type(x) is bool and str(name[:-1]) in columns:
+            out[str(name[:-1])] = int(x)  # Same here
+        elif x is None and str(name[:-1]) in columns:
+            if friends_details_dtypes[str(name[:-1])] == np.datetime64:
+                out[str(name[:-1])] = nonetype["date"]
+            elif friends_details_dtypes[str(name[:-1])] == np.int64:
+                out[str(name[:-1])] = nonetype["num"]
+            elif friends_details_dtypes[str(name[:-1])] == str:
+                out[str(name[:-1])] = nonetype["str"]
+            elif friends_details_dtypes[str(name[:-1])] == np.int8:
+                out[str(name[:-1])] = nonetype["bool"]
+            else:
+                raise NotImplementedError("twitter user_detail does not have a supported"
+                                          "corresponding data type")
         else:
             out[str(name[:-1])] = x
 
@@ -387,7 +406,11 @@ class Collector(object):
     @staticmethod
     def make_friend_df(friends_details, select=["id", "followers_count", "lang",
                                                       "created_at", "statuses_count"],
-                       provide_jsons: bool = False):
+                       provide_jsons: bool = False, replace_nonetype: bool = True,
+                       nonetype: dict = {'date': '1970-01-01',
+                                         'num': -1,
+                                         'str': '-1',
+                                         'bool': -1}):
         """Transforms list of user details to pandas.DataFrame
 
         Args:
@@ -398,6 +421,16 @@ class Collector(object):
                                      download the details first. Note that the jsons must have the
                                      same format as the _json attribute of a user node of the
                                      Twitter API.
+            replace_nonetype (boolean): Whether or not to replace values in the user_details that
+                                        are None. Setting this to False is experimental, since code
+                                        to avoid errors resulting from it has not yet been
+                                        implemented. By default, missing dates will be replaced by
+                                        1970/01/01, missing numericals by -1, missing strs by
+                                        '-1', and missing booleans by -1.
+                                        Use the 'nonetype' param to change the default.
+            nonetype (dict): Contains the defaults for nonetype replacement (see docs for
+                             'replace_nonetype' param).
+                             {'date': 'yyyy-mm-dd', 'num': int, 'str': 'str', 'bool': int}
 
         Returns:
             pandas.DataFrame with these columns or selected as by `select`:
@@ -406,8 +439,8 @@ class Collector(object):
                  'default_profile',
                  'default_profile_image',
                  'description',
-                 'entities.description.urls',
-                 'entities.url.urls',
+                 'entities_description_urls',
+                 'entities_url_urls',
                  'favourites_count',
                  'follow_request_sent',
                  'followers_count',
@@ -439,80 +472,80 @@ class Collector(object):
                  'profile_use_background_image',
                  'protected',
                  'screen_name',
-                 'status.contributors',
-                 'status.coordinates',
-                 'status.coordinates.coordinates',
-                 'status.coordinates.type',
-                 'status.created_at',
-                 'status.entities.hashtags',
-                 'status.entities.media',
-                 'status.entities.symbols',
-                 'status.entities.urls',
-                 'status.entities.user_mentions',
-                 'status.extended_entities.media',
-                 'status.favorite_count',
-                 'status.favorited',
-                 'status.geo',
-                 'status.geo.coordinates',
-                 'status.geo.type',
-                 'status.id',
-                 'status.id_str',
-                 'status.in_reply_to_screen_name',
-                 'status.in_reply_to_status_id',
-                 'status.in_reply_to_status_id_str',
-                 'status.in_reply_to_user_id',
-                 'status.in_reply_to_user_id_str',
-                 'status.is_quote_status',
-                 'status.lang',
-                 'status.place',
-                 'status.place.bounding_box.coordinates',
-                 'status.place.bounding_box.type',
-                 'status.place.contained_within',
-                 'status.place.country',
-                 'status.place.country_code',
-                 'status.place.full_name',
-                 'status.place.id',
-                 'status.place.name',
-                 'status.place.place_type',
-                 'status.place.url',
-                 'status.possibly_sensitive',
-                 'status.quoted_status_id',
-                 'status.quoted_status_id_str',
-                 'status.retweet_count',
-                 'status.retweeted',
-                 'status.retweeted_status.contributors',
-                 'status.retweeted_status.coordinates',
-                 'status.retweeted_status.created_at',
-                 'status.retweeted_status.entities.hashtags',
-                 'status.retweeted_status.entities.media',
-                 'status.retweeted_status.entities.symbols',
-                 'status.retweeted_status.entities.urls',
-                 'status.retweeted_status.entities.user_mentions',
-                 'status.retweeted_status.extended_entities.media',
-                 'status.retweeted_status.favorite_count',
-                 'status.retweeted_status.favorited',
-                 'status.retweeted_status.geo',
-                 'status.retweeted_status.id',
-                 'status.retweeted_status.id_str',
-                 'status.retweeted_status.in_reply_to_screen_name',
-                 'status.retweeted_status.in_reply_to_status_id',
-                 'status.retweeted_status.in_reply_to_status_id_str',
-                 'status.retweeted_status.in_reply_to_user_id',
-                 'status.retweeted_status.in_reply_to_user_id_str',
-                 'status.retweeted_status.is_quote_status',
-                 'status.retweeted_status.lang',
-                 'status.retweeted_status.place',
-                 'status.retweeted_status.possibly_sensitive',
-                 'status.retweeted_status.quoted_status_id',
-                 'status.retweeted_status.quoted_status_id_str',
-                 'status.retweeted_status.retweet_count',
-                 'status.retweeted_status.retweeted',
-                 'status.retweeted_status.source',
-                 'status.retweeted_status.text',
-                 'status.retweeted_status.truncated',
-                 'status.source',
-                 'status.text',
-                 'status.truncated',
+                 'status_contributors',
+                 'status_coordinates',
+                 'status_coordinates_coordinates',
+                 'status_coordinates_type',
+                 'status_created_at',
+                 'status_entities_hashtags',
+                 'status_entities_media',
+                 'status_entities_symbols',
+                 'status_entities_urls',
+                 'status_entities_user_mentions',
+                 'status_extended_entities_media',
+                 'status_favorite_count',
+                 'status_favorited',
+                 'status_geo',
+                 'status_geo_coordinates',
+                 'status_geo_type',
+                 'status_id',
+                 'status_id_str',
+                 'status_in_reply_to_screen_name',
+                 'status_in_reply_to_status_id',
+                 'status_in_reply_to_status_id_str',
+                 'status_in_reply_to_user_id',
+                 'status_in_reply_to_user_id_str',
+                 'status_is_quote_status',
+                 'status_lang',
+                 'status_place',
+                 'status_place_bounding_box_coordinates',
+                 'status_place_bounding_box_type',
+                 'status_place_contained_within',
+                 'status_place_country',
+                 'status_place_country_code',
+                 'status_place_full_name',
+                 'status_place_id',
+                 'status_place_name',
+                 'status_place_place_type',
+                 'status_place_url',
+                 'status_possibly_sensitive',
+                 'status_quoted_status_id',
+                 'status_quoted_status_id_str',
+                 'status_retweet_count',
+                 'status_retweeted',
+                 'status_retweeted_status_contributors',
+                 'status_retweeted_status_coordinates',
+                 'status_retweeted_status_created_at',
+                 'status_retweeted_status_entities_hashtags',
+                 'status_retweeted_status_entities_media',
+                 'status_retweeted_status_entities_symbols',
+                 'status_retweeted_status_entities_urls',
+                 'status_retweeted_status_entities_user_mentions',
+                 'status_retweeted_status_extended_entities_media',
+                 'status_retweeted_status_favorite_count',
+                 'status_retweeted_status_favorited',
+                 'status_retweeted_status_geo',
+                 'status_retweeted_status_id',
+                 'status_retweeted_status_id_str',
+                 'status_retweeted_status_in_reply_to_screen_name',
+                 'status_retweeted_status_in_reply_to_status_id',
+                 'status_retweeted_status_in_reply_to_status_id_str',
+                 'status_retweeted_status_in_reply_to_user_id',
+                 'status_retweeted_status_in_reply_to_user_id_str',
+                 'status_retweeted_status_is_quote_status',
+                 'status_retweeted_status_lang',
+                 'status_retweeted_status_place',
+                 'status_retweeted_status_possibly_sensitive',
+                 'status_retweeted_status_quoted_status_id',
+                 'status_retweeted_status_quoted_status_id_str',
+                 'status_retweeted_status_retweet_count',
+                 'status_retweeted_status_retweeted',
+                 'status_retweeted_status_source',
+                 'status_retweeted_status_text',
+                 'status_retweeted_status_truncated',
+                 'status_source',
+                 'status_text',
+                 'status_truncated',
                  'statuses_count',
                  'suspended',
                  'time_zone',
@@ -526,17 +559,40 @@ class Collector(object):
             json_list_raw = [friend._json for friend in friends_details]
         else:
             json_list_raw = friends_details
-
         json_list = []
+        dtypes = {key: value for (key, value) in friends_details_dtypes.items() if key in select}
         for j in json_list_raw:
-            flat = flatten_json(j, sep=".", columns=select)
-            new = {k: v for k, v in flat.items() if k in select}
-            json_list.append(new)
+            flat = flatten_json(j, sep="_", columns=select, nonetype=nonetype)
+            # In case that there are keys in the user_details json that are not in select
+            newflat = {key: value for (key, value) in flat.items() if key in select}
+            json_list.append(newflat)
 
         df = pd.io.json.json_normalize(json_list)
 
-        df.sort_index(axis=1, inplace=True)
+        for var in select:
+            if var not in df.columns:
+                if dtypes[var] == np.datetime64:
+                    df[var] = pd.to_datetime(nonetype["date"])
+                elif dtypes[var] == np.int64:
+                    df[var] = nonetype["num"]
+                elif dtypes[var] == str:
+                    df[var] = nonetype["str"]
+                elif dtypes[var] == np.int8:
+                    df[var] = nonetype["bool"]
+                else:
+                    df[var] = np.nan
+            else:
+                if dtypes[var] == np.datetime64:
+                    df[var] = df[var].fillna(pd.to_datetime(nonetype["date"]))
+                elif dtypes[var] == np.int64:
+                    df[var] = df[var].fillna(nonetype["num"])
+                elif dtypes[var] == str:
+                    df[var] = df[var].fillna(nonetype["str"])
+                elif dtypes[var] == np.int8:
+                    df[var] = df[var].fillna(nonetype["bool"])
+                df[var] = df[var].astype(dtypes[var])
 
+        df.sort_index(axis=1, inplace=True)
         return df
 
     def check_follows(self, source, target):
@@ -594,6 +650,8 @@ class Coordinator(object):
 
         self.dbh = DataBaseHandler()
 
+    # TODO: Könnte man schöner machen, wenn man select eine Liste mitgeben könnte
+    # Die dann für den Query einfach gejoint wird mit ", ".join(select)
     def lookup_accounts_friend_details(self,
                                        account_id, db_connection=None, select="*"):
         """Looks up and retrieves details from friends of `account_id` via database.
@@ -734,20 +792,13 @@ Accessing Twitter API.""")
                 friends_details.to_sql('user_details', if_exists='append',
                                        index=False, con=self.dbh.engine)
             except IntegrityError:  # duplicate id (primary key)
-                unique_id = uuid.uuid4()
-                temp_db_name = "temp_" + str(unique_id).replace('-', '_')
-                friends_details.to_sql(temp_db_name,
-                                       if_exists='fail',
-                                       index=False, con=self.dbh.engine)
-
-                query = "REPLACE INTO user_details SELECT *, CURRENT_TIMESTAMP FROM {};".format(
-                    temp_db_name)
-
+                temp_tbl_name = self.dbh.make_temp_tbl()
+                friends_details.to_sql(temp_tbl_name, if_exists="append", index=False,
+                                       con=self.dbh.engine)
+                query = "REPLACE INTO user_details SELECT * FROM {};".format(
+                        temp_tbl_name)
                 self.dbh.engine.execute(query)
-
-                drop_query = "DROP TABLE {}".format(temp_db_name)
-
-                self.dbh.engine.execute(drop_query)
+                self.dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")
 
         if lang is not None and len(friends_details) == 0:
 

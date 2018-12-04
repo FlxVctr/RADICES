@@ -1,145 +1,160 @@
-# In the following, please fill the fields as you need them.
+# In the following config file, please fill the fields as you need them.
 # Do not use quotes, just plain text: e.g.:
 # sql:
  # dbtype: sqlite
 # etc.
 
+# ================== Database Information =====================
 sql:
-    dbtype: sqlite   # either "sqlite" or "mysql"
+    dbtype:   # either "sqlite" or "mysql"
     host:     # if dbtype = mysql, provide host
     user:     # if dbtype = mysql, provide user
     passwd:   # if dbtype = mysql, provide password
-    dbname: test_db  # provide a name for the database.
+    dbname:   # provide a name for the database.
 
-# If you wish to save certain twitter user details, please indicate the SQL data
-# type you wish to save it as in the SQL database. If you do not wish to save
-# a certain detail, just leave it empty like so:
+
+# ================== Twitter User Details =====================
+# If you wish to save certain twitter user details, please just add the SQL data
+# type you wish to save it as in the SQL database (recommended types are indicated
+# in parantheses). If you do not wish to save a certain detail, just leave it empty
+# like so:
 # twitter_user_details:
-    # contributors_enabled: TINYINT
+    # contributors_enabled: SMALLINT
     # created at:
 # This will save the detail "contributors_enabled" as booelan / tinyint into the
 # database but it will not save "created_at" at all.
 
 # TODO: add descriptions for user_details
-# TODO: add support for db types
 
 twitter_user_details:
-    contributors_enabled:
-    created_at: CHAR(30)
-    default_profile:
-    default_profile_image:
-    description:
-    entities.description.urls:
-    entities.url.urls:
-    favourites_count:
-    follow_request_sent:
-    followers_count: INT(30)
-    following:
-    friends_count:
-    geo_enabled:
-    has_extended_profile:
-    id: BIGINT PRIMARY KEY
-    id_str:
-    is_translation_enabled:
-    is_translator:
-    lang: CHAR(30)
-    listed_count:
-    location:
-    name:
-    needs_phone_verification:
-    notifications:
-    profile_background_color:
-    profile_background_image_url:
-    profile_background_image_url_https:
-    profile_background_tile:
-    profile_banner_url:
-    profile_image_url:
-    profile_image_url_https:
-    profile_link_color:
-    profile_sidebar_border_color:
-    profile_sidebar_fill_color:
-    profile_text_color:
-    profile_use_background_image:
-    protected:
-    screen_name:
-    status.contributors:
-    status.coordinates:
-    status.coordinates.coordinates:
-    status.coordinates.type:
-    status.created_at:
-    status.entities.hashtags:
-    status.entities.media:
-    status.entities.symbols:
-    status.entities.urls:
-    status.entities.user_mentions:
-    status.extended_entities.media:
-    status.favorite_count:
-    status.favorited:
-    status.geo:
-    status.geo.coordinates:
-    status.geo.type:
-    status.id:
-    status.id_str:
-    status.in_reply_to_screen_name:
-    status.in_reply_to_status_id:
-    status.in_reply_to_status_id_str:
-    status.in_reply_to_user_id:
-    status.in_reply_to_user_id_str:
-    status.is_quote_status:
-    status.lang:
-    status.place:
-    status.place.bounding_box.coordinates:
-    status.place.bounding_box.type:
-    status.place.contained_within:
-    status.place.country:
-    status.place.country_code:
-    status.place.full_name:
-    status.place.id:
-    status.place.name:
-    status.place.place_type:
-    status.place.url:
-    status.possibly_sensitive:
-    status.quoted_status_id:
-    status.quoted_status_id_str:
-    status.retweet_count:
-    status.retweeted:
-    status.retweeted_status.contributors:
-    status.retweeted_status.coordinates:
-    status.retweeted_status.created_at:
-    status.retweeted_status.entities.hashtags:
-    status.retweeted_status.entities.media:
-    status.retweeted_status.entities.symbols:
-    status.retweeted_status.entities.urls:
-    status.retweeted_status.entities.user_mentions:
-    status.retweeted_status.extended_entities.media:
-    status.retweeted_status.favorite_count:
-    status.retweeted_status.favorited:
-    status.retweeted_status.geo:
-    status.retweeted_status.id:
-    status.retweeted_status.id_str:
-    status.retweeted_status.in_reply_to_screen_name:
-    status.retweeted_status.in_reply_to_status_id:
-    status.retweeted_status.in_reply_to_status_id_str:
-    status.retweeted_status.in_reply_to_user_id:
-    status.retweeted_status.in_reply_to_user_id_str:
-    status.retweeted_status.is_quote_status:
-    status.retweeted_status.lang:
-    status.retweeted_status.place:
-    status.retweeted_status.possibly_sensitive:
-    status.retweeted_status.quoted_status_id:
-    status.retweeted_status.quoted_status_id_str:
-    status.retweeted_status.retweet_count:
-    status.retweeted_status.retweeted:
-    status.retweeted_status.source:
-    status.retweeted_status.text:
-    status.retweeted_status.truncated:
-    status.source:
-    status.text:
-    status.truncated:
-    statuses_count: INT(30)
-    suspended:
-    time_zone:
-    translator_type:
-    url:
-    verified:
-    utc_offset:
+    contributors_enabled:  # SMALLINT
+    created_at:  # DATETIME
+    default_profile:  # SMALLINT
+    default_profile_image:  # SMALLINT
+    description:  # TEXT (contains a dict)
+    entities_description_urls:  # TEXT
+    entities_url_urls:  # TEXT (contains a dict)
+    favourites_count:  # BIGINT
+    follow_request_sent:  # SMALLINT
+    followers_count:  # BIGINT
+    following:  # SMALLINT
+    friends_count:  # BIGINT
+    geo_enabled:  # SMALLINT
+    has_extended_profile:  # SMALLINT
+    id:  # BIGINT PRIMARY KEY
+    id_str:  # VARCHAR(30)
+    is_translation_enabled:  # SMALLINT
+    is_translator:  # SMALLINT
+    lang:  # VARCHAR(10)
+    listed_count:  # BIGINT
+    location:  # TEXT
+    name:  # VARCHAR (50)
+    needs_phone_verification:  #SMALLINT
+    notifications:  # SMALLINT
+    profile_background_color:  # CHAR(6) (is a Hex Color Code)
+    profile_background_image_url:  # TEXT
+    profile_background_image_url_https:  # TEXT
+    profile_background_tile:  # SMALLINT
+    profile_banner_url:  # TEXT
+    profile_image_url:  # TEXT
+    profile_image_url_https:  # TEXT
+    profile_link_color:  # CHAR(6) (is a Hex Color Code)
+    profile_sidebar_border_color:  # CHAR(6) (is a Hex Color Code)
+    profile_sidebar_fill_color:  # CHAR(6) (is a Hex Color Code)
+    profile_text_color:  # CHAR(6) (is a Hex Color Code)
+    profile_use_background_image:  # SMALLINT
+    protected:  # SMALLINT
+    screen_name:  # VARCHAR(50)
+    status_contributors:  # TEXT (Rarely available)
+    status_coordinates:  # TEXT (contains a dict)
+    status_coordinates_coordinates:  # TEXT (Rarely available)
+    status_coordinates_type:  # TEXT (Rarely available)
+    status_created_at:  # DATETIME
+    status_entities_hashtags:  # TEXT (contains a dict)
+    status_entities_media:  # TEXT (contains a dict)
+    status_entities_symbols:  # TEXT (contains a dict) # DE FACTO ALWAYS EMPTY
+    status_entities_urls:  # TEXT (contains a dict)
+    status_entities_user_mentions:  # TEXT (contains a dict)
+    status_extended_entities_media:  # TEXT (contains a dict)
+    status_favorite_count:  # INT
+    status_favorited:  # SMALLINT
+    status_geo:  # TEXT (contains a dict)
+    status_geo_coordinates:  # TEXT (Rarely available)
+    status_geo_type:  # TEXT (Rarely available)
+    status_id:  # BIGINT
+    status_id_str: # VARCHAR(50)
+    status_in_reply_to_screen_name:  # VARCHAR(50)
+    status_in_reply_to_status_id:  # BIGINT
+    status_in_reply_to_status_id_str:  # VARCHAR(50)
+    status_in_reply_to_user_id:  # BIGINT
+    status_in_reply_to_user_id_str:  # VARCHAR(30)
+    status_is_quote_status:  # SMALLINT
+    status_lang:  # VARCHAR(10)
+    status_place:  # TEXT (contains a dict)
+    status_place_bounding_box_coordinates: # TEXT (Rarely available)
+    status_place_bounding_box_type:  # TEXT (Rarely available)
+    status_place_contained_within:  # TEXT (Rarely available)
+    status_place_country:  # TEXT (Rarely available)
+    status_place_country_code:  # TEXT (Rarely available)
+    status_place_full_name:  # TEXT (Rarely available)
+    status_place_id:  # TEXT (Rarely available)
+    status_place_name: # TEXT (Rarely available)
+    status_place_place_type:  # TEXT (Rarely available)
+    status_place_url:  # TEXT (Rarely available)
+    status_possibly_sensitive:  # SMALLINT
+    status_quoted_status_id:  # BIGINT
+    status_quoted_status_id_str:  # VARCHAR(50)
+    status_retweet_count:  # INT
+    status_retweeted:  # SMALLINT
+    status_retweeted_status_contributors:  # TEXT (Rarely available)
+    status_retweeted_status_coordinates:  # TEXT (contains a dict)
+    status_retweeted_status_created_at:  # DATETIME
+    status_retweeted_status_entities_hashtags:  # TEXT (contains a dict)
+    status_retweeted_status_entities_media:  # TEXT (contains a dict)
+    status_retweeted_status_entities_symbols:  # TEXT (Rarely available)
+    status_retweeted_status_entities_urls:  # TEXT (contains a dict)
+    status_retweeted_status_entities_user_mentions:  # TEXT (contains a dict)
+    status_retweeted_status_extended_entities_media: # TEXT (contains a dict)
+    status_retweeted_status_favorite_count:  # INT
+    status_retweeted_status_favorited:  # SMALLINT
+    status_retweeted_status_geo:  # TEXT (contains a dict)
+    status_retweeted_status_id:  # BIGINT
+    status_retweeted_status_id_str:  # VARCHAR(50)
+    status_retweeted_status_in_reply_to_screen_name:  # VARCHAR(30)
+    status_retweeted_status_in_reply_to_status_id:  # BIGINT
+    status_retweeted_status_in_reply_to_status_id_str:  # VARCHAR(50)
+    status_retweeted_status_in_reply_to_user_id:  # BIGINT
+    status_retweeted_status_in_reply_to_user_id_str:  # VARCHAR(30)
+    status_retweeted_status_is_quote_status:  # SMALLINT
+    status_retweeted_status_lang:  # VARCHAR(10)
+    status_retweeted_status_place:  # TEXT (contains a dict)
+    status_retweeted_status_possibly_sensitive:  # SMALLINT
+    status_retweeted_status_quoted_status_id:  # BIGINT
+    status_retweeted_status_quoted_status_id_str:  # VARCHAR(50)
+    status_retweeted_status_retweet_count:  # INT
+    status_retweeted_status_retweeted:  # SMALLINT
+    status_retweeted_status_source:  # TEXT
+    status_retweeted_status_text:  # TEXT
+    status_retweeted_status_truncated:  # SMALLINT
+    status_source:  # TEXT
+    status_text:  # TEXT
+    status_truncated:  # SMALLINT
+    statuses_count:  # BIGINT
+    suspended:  # SMALLINT
+    time_zone: # TEXT (Rarely available)
+    translator_type:  # VARCHAR(50)
+    url:  # TEXT
+    verified:  # BOOLEAN
+    utc_offset:  # TEXT (Rarely available)
+
+
+# ================== Notification Emails =====================
+
+
+email_to_notify: 'user@example.com'
+
+# mailgun details
+# (find them under the respective domain name here: https://mailgun.com/app/domains)
+mailgun_default_smtp_login: ''
+mailgun_api_base_url: ''
+mailgun_api_key: ''
