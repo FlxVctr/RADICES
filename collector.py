@@ -85,11 +85,14 @@ def retry_x_times(x):
                     pass
 
             i = 0
-            restart = False
+            if 'restart' in kwargs:
+                restart = kwargs['restart']
 
             for i in range(x - 1):
                 try:
-                    return (func(*args, **kwargs, restart=restart))
+                    if 'restart' in kwargs:
+                        kwargs['restart'] = restart
+                    return func(*args, **kwargs)
                 except Exception as e:
                     restart = True
                     waiting_time = 2**i
@@ -99,7 +102,7 @@ def retry_x_times(x):
                     time.sleep(waiting_time)
                 i += 1
 
-            return func(*args, **kwargs, restart=restart)
+            return func(*args, **kwargs)
 
         return func_wrapper
 
