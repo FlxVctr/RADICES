@@ -45,12 +45,16 @@ class FirstUseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         os.rename("seeds.csv", "seeds.csv.bak")
+        if os.path.exists("latest_seeds.csv"):
+            os.rename("latest_seeds.csv", "latest_seeds.csv.bak")
 
     @classmethod
     def tearDownClass(cls):
         if os.path.exists("seeds.csv"):
             os.remove("seeds.csv")
         os.rename("seeds.csv.bak", "seeds.csv")
+        if os.path.exists("latest_seeds.csv.bak"):
+            os.rename("latest_seeds.csv.bak", "latest_seeds.csv")
 
     def setUp(self):
         if os.path.isfile("config.yml"):
@@ -183,12 +187,24 @@ class FirstUseTest(unittest.TestCase):
 
         stdout, stderr = p.communicate()
 
-        self.assertIn("Retrying", str(stdout))
+        self.assertIn("Retrying", str(stdout))  # tries to restart itself
 
         latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
         seeds = set(pd.read_csv('seeds.csv', header=None)[0].values)
 
         self.assertEqual(latest_seeds, seeds)
+
+        q = Popen("python start.py -t --restart", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+                  shell=True)
+
+        stdout, stderr = q.communicate()
+
+        self.assertIn("Restarting with latest seeds:", stdout.decode('utf-8'),
+                      msg=f"{stdout.decode('utf-8')}\n{stderr.decode('utf-8')}")
+
+        latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
+
+        self.assertNotEqual(latest_seeds, seeds)
 
         DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
 

@@ -85,13 +85,18 @@ def retry_x_times(x):
                     pass
 
             i = 0
+            if 'restart' in kwargs:
+                restart = kwargs['restart']
 
             for i in range(x - 1):
                 try:
-                    return (func(*args, **kwargs))
-                except Exception:
+                    if 'restart' in kwargs:
+                        kwargs['restart'] = restart
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    restart = True
                     waiting_time = 2**i
-                    stdout.write(f"Encountered exception in {func.__name__}{args, kwargs}.\n")
+                    stdout.write(f"Encountered exception in {func.__name__}{args, kwargs}.\n{e}")
                     stdout.write(f"Retrying in {waiting_time}.\n")
                     stdout.flush()
                     time.sleep(waiting_time)
@@ -705,15 +710,17 @@ class Coordinator(object):
 
         friends_details = None
 
-        try:
+        if 'restart' in kwargs and kwargs['restart'] is True:
+            print("No db lookup after restart allowed, accessing Twitter API.")
+        else:
+            try:
+                friends_details = self.lookup_accounts_friend_details(
+                    seed, self.dbh.engine)
 
-            friends_details = self.lookup_accounts_friend_details(
-                seed, self.dbh.engine)
+            except ProgrammingError:
 
-        except ProgrammingError:
-
-            print("""Accessing db for friends_details failed. Maybe database does not exist yet.
-Accessing Twitter API.""")
+                print("""Accessing db for friends_details failed. Maybe database does not exist yet.
+                Accessing Twitter API.""")
 
         if friends_details is None:
 
@@ -882,7 +889,8 @@ Accessing Twitter API.""")
 
         return new_seed
 
-    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False):
+    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False,
+                         restart=False):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -911,7 +919,8 @@ Accessing Twitter API.""")
                                        kwargs={'seed': seed,
                                                'select': select,
                                                'lang': lang,
-                                               'fail': fail},
+                                               'fail': fail,
+                                               'restart': restart},
                                        name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
