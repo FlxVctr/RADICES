@@ -151,10 +151,10 @@ twitter_user_details:
 # ================== Notification Emails =====================
 
 
-email_to_notify: 'user@example.com'
+# email_to_notify: 'user@example.com'
 
 # mailgun details
 # (find them under the respective domain name here: https://mailgun.com/app/domains)
-mailgun_default_smtp_login: ''
-mailgun_api_base_url: ''
-mailgun_api_key: ''
+# mailgun_default_smtp_login: ''
+# mailgun_api_base_url: ''
+# mailgun_api_key: ''
