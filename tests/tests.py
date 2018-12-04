@@ -435,7 +435,7 @@ class DataBaseHandlerTest(unittest.TestCase):
             friends_details.to_sql('user_details', if_exists='append',
                                    index=False, con=dbh.engine)
         # Error Handling for duplicate IDs
-        except IntegrityError as e:
+        except IntegrityError:
                 friends_details.drop_duplicates(subset="id", keep='last', inplace=True)
                 friends_details.to_sql('user_details', if_exists='append',
                                        index=False, con=dbh.engine)
