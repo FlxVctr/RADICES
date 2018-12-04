@@ -88,7 +88,12 @@ def retry_x_times(x):
             if 'restart' in kwargs:
                 restart = kwargs['restart']
 
-            for i in range(x - 1):
+            if 'retries' in kwargs:
+                retries = kwargs['retries']
+            else:
+                retries = x
+
+            for i in range(retries - 1):
                 try:
                     if 'restart' in kwargs:
                         kwargs['restart'] = restart
@@ -688,7 +693,7 @@ class Coordinator(object):
 
             return friend_detail
 
-    @retry_x_times(9)
+    @retry_x_times(10)
     def work_through_seed_get_next_seed(self, seed, select=[], lang=None,
                                         connection=None, fail=False, **kwargs):
         """Takes a seed and determines the next seed and saves all details collected to db.
@@ -706,7 +711,7 @@ class Coordinator(object):
         if fail is True:
             raise TestException
 
-        if 'fail_hidden' in kwargs.keys() and kwargs['fail_hidden'] is True:
+        if 'fail_hidden' in kwargs and kwargs['fail_hidden'] is True:
             raise TestException
 
         if connection is None:
@@ -894,7 +899,7 @@ class Coordinator(object):
         return new_seed
 
     def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False,
-                         fail_hidden=False, restart=False):
+                         fail_hidden=False, restart=False, retries=10):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -925,7 +930,8 @@ class Coordinator(object):
                                                'lang': lang,
                                                'fail': fail,
                                                'fail_hidden': fail_hidden,
-                                               'restart': restart},
+                                               'restart': restart,
+                                               'retries': retries},
                                        name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
