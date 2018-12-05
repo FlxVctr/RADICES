@@ -365,9 +365,7 @@ class Collector(object):
 
         cursor = -1
         following_page = 0
-        while True:
-            if self.following_pages_limit != 0 and following_page >= self.following_pages_limit:
-                break
+        while self.following_pages_limit == 0 or following_page < self.following_pages_limit:
             page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
             if len(page[0]) > 0:
                 result += page[0]
