@@ -154,7 +154,7 @@ class FirstUseTest(unittest.TestCase):
             yaml.dump(mysql_cfg, f, default_flow_style=False)
 
         try:
-            response = str(check_output('python start.py -n 2 -l de -t',
+            response = str(check_output('python start.py -n 2 -l de -t -p 1',
                                         stderr=STDOUT, shell=True))
             print(response)
         except CalledProcessError as e:
@@ -182,7 +182,7 @@ class FirstUseTest(unittest.TestCase):
         with self.assertRaises(TestException):
             main_loop(Coordinator(), test_fail=True)
 
-        p = Popen("python start.py -n 2 -t -f", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+        p = Popen("python start.py -n 2 -t -f -p 1", stdout=PIPE, stderr=PIPE, stdin=PIPE,
                   shell=True)
 
         stdout, stderr = p.communicate()
@@ -194,7 +194,7 @@ class FirstUseTest(unittest.TestCase):
 
         self.assertEqual(latest_seeds, seeds)
 
-        q = Popen("python start.py -t --restart", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+        q = Popen("python start.py -t --restart -p 1", stdout=PIPE, stderr=PIPE, stdin=PIPE,
                   shell=True)
 
         stdout, stderr = q.communicate()
@@ -207,6 +207,33 @@ class FirstUseTest(unittest.TestCase):
         self.assertNotEqual(latest_seeds, seeds)
 
         DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
+
+    def test_collects_only_requested_number_of_pages_of_friends(self):
+
+        shutil.copyfile("seed_with_lots_of_friends.csv", "seeds.csv")
+
+        with open("config.yml", "w") as f:
+            yaml.dump(mysql_cfg, f, default_flow_style=False)
+
+        try:
+            response = str(check_output('python start.py -n 1 -t -p 1',
+                                        stderr=STDOUT, shell=True))
+            print(response)
+        except CalledProcessError as e:
+            response = str(e.output)
+            print(response)
+            raise e
+
+        dbh = DataBaseHandler()
+
+        result = pd.read_sql("SELECT COUNT(*) FROM friends WHERE source = 2343198944", dbh.engine)
+
+        result = result['COUNT(*)'][0]
+
+        self.assertLessEqual(result, 5000)
+        self.assertGreater(result, 4000)
+
+        dbh.engine.execute("DROP TABLE friends, user_details, result;")
 
 
 if __name__ == '__main__':
