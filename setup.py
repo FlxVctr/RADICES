@@ -1,6 +1,7 @@
 import json
 from json import JSONDecodeError
 import pandas as pd
+from requests import post
 import yaml
 
 
@@ -95,6 +96,21 @@ class Config():
                 raise FileNotFoundError('Could not find "' + self.config_path + '''".\n
                 Please run "python3 make_config.py" or provide a config.yml''')
 
+        if "notifications" not in self.config:
+            self.use_notifications = False
+        else:
+            self.notif_config = self.config["notifications"]
+            notif_config_items = [value for (key, value) in self.notif_config.items()]
+            single_items = list(set(notif_config_items))
+            if len(single_items) == 1 and single_items[0] is None:
+                self.use_notifications = False
+            elif None in single_items:
+                missing = [key for (key, value) in self.notif_config.items() if value is None]
+                raise ValueError(f"""You have not filled all required fields for the notifications
+                                 confguration! Fields missing are {missing}""")
+            else:
+                self.use_notifications = True
+
         if "sql" not in self.config:
             print("Config file " + config_file + """ does not contain key 'sql'!
                   Will use default sqlite configuration.""")
@@ -139,5 +155,36 @@ class Config():
             print('''Parameter "dbname" is missing. New database will have the name
                   "new_database".''')
             self.dbname = "new_database"
+
+    def send_mail(self, message_dict):
+        '''Sends an email via Mailgun. Configured via configreader.Config().
+        Args:
+            message_dict (dict):
+                {
+                "subject": "your_subject"
+                "text": "message"
+                }
+            config (dict):
+                {
+                "mailgun_api_base_url": TODO ENTER HERE
+                "mailgun_api_key": TODO ENTER HERE
+                "mailgun_default_smtp_login": TODO ENTER HERE
+                "email_to_notify": TODO ENTER HERE
+                }
+        Returns:
+            requests.post to Mailgun API.
+        '''
+
+        api_base_url = self.notif_config["mailgun_api_base_url"] + '/messages'
+        auth = ('api', self.notif_config["mailgun_api_key"])
+
+        data = {
+            "from": f"SparseTwitter <{self.notif_config['mailgun_default_smtp_login']}>",
+            "to": self.notif_config["email_to_notify"]
+        }
+
+        data.update(message_dict)
+
+        return post(api_base_url, auth=auth, data=data)
 
         # TODO: Add mailgun config
