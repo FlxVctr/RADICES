@@ -85,13 +85,23 @@ def retry_x_times(x):
                     pass
 
             i = 0
+            if 'restart' in kwargs:
+                restart = kwargs['restart']
 
-            for i in range(x - 1):
+            if 'retries' in kwargs:
+                retries = kwargs['retries']
+            else:
+                retries = x
+
+            for i in range(retries - 1):
                 try:
-                    return (func(*args, **kwargs))
-                except Exception:
+                    if 'restart' in kwargs:
+                        kwargs['restart'] = restart
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    restart = True
                     waiting_time = 2**i
-                    stdout.write(f"Encountered exception in {func.__name__}{args, kwargs}.\n")
+                    stdout.write(f"Encountered exception in {func.__name__}{args, kwargs}.\n{e}")
                     stdout.write(f"Retrying in {waiting_time}.\n")
                     stdout.flush()
                     time.sleep(waiting_time)
@@ -244,11 +254,12 @@ class Collector(object):
 
     """
 
-    def __init__(self, connection, seed):
+    def __init__(self, connection, seed, following_pages_limit=0):
         self.seed = seed
         self.connection = connection
 
         self.token_blacklist = {}
+        self.following_pages_limit = following_pages_limit
 
     class Decorators(object):
 
@@ -278,7 +289,7 @@ class Collector(object):
                             print(f'Token starting with {old_token[:4]} not tried yet. Trying.')
                             return func(*args, **kwargs)
                     except tweepy.RateLimitError:
-                        collector.token_blacklist[old_token] = time.time() + 60
+                        collector.token_blacklist[old_token] = time.time() + 150
                         print(f'Token starting with {old_token[:4]} hit rate limit.')
                         print("Retrying with next available token.")
                         print(f"Blacklisted until {collector.token_blacklist[old_token]}")
@@ -353,7 +364,8 @@ class Collector(object):
         remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
 
         cursor = -1
-        while True:
+        following_page = 0
+        while self.following_pages_limit == 0 or following_page < self.following_pages_limit:
             page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
             if len(page[0]) > 0:
                 result += page[0]
@@ -362,6 +374,7 @@ class Collector(object):
             cursor = page[1][1]
 
             remaining_calls -= 1
+            following_page += 1
 
             if remaining_calls == 0:
                 remaining_calls = self.check_API_calls_and_update_if_necessary(
@@ -621,7 +634,8 @@ class Coordinator(object):
     and a queue of tokens.
     """
 
-    def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None):
+    def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None,
+                 following_pages_limit=0):
 
         self.seed_pool = FileImport().read_seed_file()
 
@@ -649,6 +663,8 @@ class Coordinator(object):
             self.token_queue.put(token)
 
         self.dbh = DataBaseHandler()
+
+        self.following_pages_limit = following_pages_limit
 
     # TODO: Könnte man schöner machen, wenn man select eine Liste mitgeben könnte
     # Die dann für den Query einfach gejoint wird mit ", ".join(select)
@@ -700,24 +716,30 @@ class Coordinator(object):
         if fail is True:
             raise TestException
 
+        if 'fail_hidden' in kwargs and kwargs['fail_hidden'] is True:
+            raise TestException
+
         if connection is None:
             connection = Connection(token_queue=self.token_queue)
 
         friends_details = None
 
-        try:
+        if 'restart' in kwargs and kwargs['restart'] is True:
+            print("No db lookup after restart allowed, accessing Twitter API.")
+        else:
+            try:
+                friends_details = self.lookup_accounts_friend_details(
+                    seed, self.dbh.engine)
 
-            friends_details = self.lookup_accounts_friend_details(
-                seed, self.dbh.engine)
+            except ProgrammingError:
 
-        except ProgrammingError:
-
-            print("""Accessing db for friends_details failed. Maybe database does not exist yet.
-Accessing Twitter API.""")
+                print("""Accessing db for friends_details failed. Maybe database does not exist yet.
+                Accessing Twitter API.""")
 
         if friends_details is None:
 
-            collector = Collector(connection, seed)
+            collector = Collector(connection, seed,
+                                  following_pages_limit=self.following_pages_limit)
 
             try:
                 friend_list = collector.get_friend_list()
@@ -882,7 +904,8 @@ Accessing Twitter API.""")
 
         return new_seed
 
-    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False):
+    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False,
+                         fail_hidden=False, restart=False, retries=10):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -911,7 +934,10 @@ Accessing Twitter API.""")
                                        kwargs={'seed': seed,
                                                'select': select,
                                                'lang': lang,
-                                               'fail': fail},
+                                               'fail': fail,
+                                               'fail_hidden': fail_hidden,
+                                               'restart': restart,
+                                               'retries': retries},
                                        name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)

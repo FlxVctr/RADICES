@@ -47,12 +47,16 @@ class FirstUseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         os.rename("seeds.csv", "seeds.csv.bak")
+        if os.path.exists("latest_seeds.csv"):
+            os.rename("latest_seeds.csv", "latest_seeds.csv.bak")
 
     @classmethod
     def tearDownClass(cls):
         if os.path.exists("seeds.csv"):
             os.remove("seeds.csv")
         os.rename("seeds.csv.bak", "seeds.csv")
+        if os.path.exists("latest_seeds.csv.bak"):
+            os.rename("latest_seeds.csv.bak", "latest_seeds.csv")
 
     def setUp(self):
         if os.path.isfile("config.yml"):
@@ -152,7 +156,7 @@ class FirstUseTest(unittest.TestCase):
             yaml.dump(mysql_cfg, f, default_flow_style=False)
 
         try:
-            response = str(check_output('python start.py -n 2 -l de -t',
+            response = str(check_output('python start.py -n 2 -l de -t -p 1',
                                         stderr=STDOUT, shell=True))
             print(response)
         except CalledProcessError as e:
@@ -180,19 +184,58 @@ class FirstUseTest(unittest.TestCase):
         with self.assertRaises(TestException):
             main_loop(Coordinator(), test_fail=True)
 
-        p = Popen("python start.py -n 2 -t -f", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+        p = Popen("python start.py -n 2 -t -f -p 1", stdout=PIPE, stderr=PIPE, stdin=PIPE,
                   shell=True)
 
         stdout, stderr = p.communicate()
 
-        self.assertIn("Retrying", str(stdout))
+        self.assertIn("Retrying", str(stdout))  # tries to restart itself
 
         latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
         seeds = set(pd.read_csv('seeds.csv', header=None)[0].values)
 
         self.assertEqual(latest_seeds, seeds)
 
+        q = Popen("python start.py -t --restart -p 1", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+                  shell=True)
+
+        stdout, stderr = q.communicate()
+
+        self.assertIn("Restarting with latest seeds:", stdout.decode('utf-8'),
+                      msg=f"{stdout.decode('utf-8')}\n{stderr.decode('utf-8')}")
+
+        latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
+
+        self.assertNotEqual(latest_seeds, seeds)
+
         DataBaseHandler().engine.execute("DROP TABLE friends, user_details, result;")
+
+    def test_collects_only_requested_number_of_pages_of_friends(self):
+
+        shutil.copyfile("seed_with_lots_of_friends.csv", "seeds.csv")
+
+        with open("config.yml", "w") as f:
+            yaml.dump(mysql_cfg, f, default_flow_style=False)
+
+        try:
+            response = str(check_output('python start.py -n 1 -t -p 1',
+                                        stderr=STDOUT, shell=True))
+            print(response)
+        except CalledProcessError as e:
+            response = str(e.output)
+            print(response)
+            raise e
+
+        dbh = DataBaseHandler()
+
+        result = pd.read_sql("SELECT COUNT(*) FROM friends WHERE source = 2343198944", dbh.engine)
+
+        result = result['COUNT(*)'][0]
+
+        self.assertLessEqual(result, 5000)
+        self.assertGreater(result, 4000)
+
+        dbh.engine.execute("DROP TABLE friends, user_details, result;")
 
     def test_send_test_error(self):
         cfg = test_helpers.config_dict_sqlite

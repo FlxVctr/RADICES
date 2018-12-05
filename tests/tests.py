@@ -436,7 +436,7 @@ class DataBaseHandlerTest(unittest.TestCase):
             friends_details.to_sql('user_details', if_exists='append',
                                    index=False, con=dbh.engine)
         # Error Handling for duplicate IDs
-        except IntegrityError as e:
+        except IntegrityError:
                 friends_details.drop_duplicates(subset="id", keep='last', inplace=True)
                 friends_details.to_sql('user_details', if_exists='append',
                                        index=False, con=dbh.engine)
@@ -1113,17 +1113,29 @@ class CoordinatorTest(unittest.TestCase):
         # TODO: Improve this test. Right now it does not deadlock.
         # All tokens would have to be drained completely and then we'd have to wait 15 minutes.
 
+    def test_failing_work_through_seed(self):
+
+        c = Coordinator(seed_list=[36476777, 83662933, 2367431])
+
+        workers = c.start_collectors(fail_hidden=True, retries=2)
+
+        for worker in workers:
+            worker.join()
+            with self.assertRaises(TestException):
+                if worker.err is not None:
+                    raise worker.err
+
 
 class GeneralTests(unittest.TestCase):
 
     def test_retry_decorator(self):
 
-        self.first_run = True
+        self.first_run = 1
 
-        @retry_x_times(2)
+        @retry_x_times(4)
         def fail_once():
-            if self.first_run is True:
-                self.first_run = False
+            if self.first_run <= 3:
+                self.first_run += 1
                 raise TestException
             return 0
 
