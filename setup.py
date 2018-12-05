@@ -107,7 +107,7 @@ class Config():
             elif None in single_items:
                 missing = [key for (key, value) in self.notif_config.items() if value is None]
                 raise ValueError(f"""You have not filled all required fields for the notifications
-                                 confguration! Fields missing are {missing}""")
+                                 configuration! Fields missing are {missing}""")
             else:
                 self.use_notifications = True
 

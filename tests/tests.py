@@ -559,24 +559,26 @@ class ConfigTest(unittest.TestCase):
             Config(config_dict=cfg_dict)
 
     def test_config_file_gets_read_incl_all_keys(self):
-        if os.path.isfile("config.yml.bak"):
-            shutil.copyfile("config.yml.bak", "config.yml")
         cfg_dict = copy.deepcopy(self.config_dict)
         cfg_dict["sql"] = {key: None for (key, value) in self.config_dict["sql"].items()}
         cfg_dict["twitter_user_details"] = {key: None
                                             for (key, value)
                                             in self.config_dict["twitter_user_details"].items()}
-        self.assertEqual(Config().config, cfg_dict)
+        cfg_dict["notifications"] = {key: None
+                                     for (key, value)
+                                     in self.config_dict["notifications"].items()}
+        self.assertEqual(Config("config_template.yml").config, cfg_dict)
 
     def test_sql_key_not_in_config(self):
         cfg_dict = copy.deepcopy(self.config_dict)
         cfg_dict.pop("sql", None)
         config = Config(config_dict=cfg_dict)
+        
         self.assertEqual("sqlite", config.config["sql"]["dbtype"])
         self.assertEqual("new_database", config.config["sql"]["dbname"])
 
     def test_notif_config_is_created_depending_on_config(self):
-        cfg = test_helpers.config_dict_sqlite
+        cfg = copy.deepcopy(self.config_dict)
         cfg["notifications"] = {
             'email_to_notify': passwords.email_to_notify,
             'mailgun_default_smtp_login': passwords.mailgun_default_smtp_login,
@@ -590,7 +592,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(cfg["notifications"], config.notif_config)
         self.assertTrue(config.use_notifications)
 
-        cfg = test_helpers.config_dict_sqlite
+        cfg = copy.deepcopy(self.config_dict)
         cfg["notifications"] = {
             'email_to_notify': None,
             'mailgun_default_smtp_login': None,
@@ -601,7 +603,7 @@ class ConfigTest(unittest.TestCase):
 
         self.assertFalse(config.use_notifications)
 
-        cfg = test_helpers.config_dict_sqlite
+        cfg = copy.deepcopy(self.config_dict)
         cfg["notifications"] = {
             'email_to_notify': passwords.email_to_notify,
             'mailgun_default_smtp_login': None,
