@@ -2,7 +2,7 @@ import argparse
 import multiprocessing.dummy as mp
 import time
 import traceback
-from sys import stdout
+from sys import stderr, stdout
 
 import pandas as pd
 
@@ -93,6 +93,20 @@ Lower values speed up collection. Default: 0 (unlimited)''', default=0)
         except Exception:
             stdout.write("Encountered unexpected exception:\n")
             traceback.print_exc()
+            try:
+                if config.use_notifications is True:
+                    response = config.send_mail({
+                        "subject": "Unexpected Error",
+                        "text":
+                            f"Unexpected Error encountered.\n{traceback.format_exc()}"
+                    }
+                    )
+                    assert '200' in str(response)
+                    stdout.write(f"Sent notification to {config.notif_config['email_to_notify']}")
+                    stdout.flush()
+            except Exception:
+                stderr.write('Could not send error-mail: \n')
+                traceback.print_exc(file=stderr)
             stdout.write("Retrying in 5 seconds.")
             stdout.flush()
             latest_seeds = list(pd.read_csv('latest_seeds.csv', header=None)[0].values)
