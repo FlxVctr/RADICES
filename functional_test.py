@@ -187,7 +187,8 @@ class FirstUseTest(unittest.TestCase):
 
         stdout, stderr = p.communicate()
 
-        self.assertIn("Retrying", str(stdout))  # tries to restart itself
+        self.assertIn("Retrying", stdout.decode('utf-8'))  # tries to restart
+        self.assertIn("Sent notification to", stdout.decode('utf-8'))
 
         latest_seeds = set(pd.read_csv("latest_seeds.csv", header=None)[0].values)
         seeds = set(pd.read_csv('seeds.csv', header=None)[0].values)
