@@ -12,3 +12,5 @@ config_bu_perm.yml
 test_config.yml
 tests/tweet_jsons
 latest_seeds.csv
+seeds_de_ids.csv
+user_ids_de.csv
