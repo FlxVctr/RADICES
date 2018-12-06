@@ -4,10 +4,10 @@ import pandas as pd
 import passwords
 
 config_dict_notifications = {
-    "email_to_notify": None,
-    "mailgun_default_smtp_login": None,
-    "mailgun_api_base_url": None,
-    "mailgun_api_key": None
+    "email_to_notify": passwords.email_to_notify,
+    "mailgun_default_smtp_login": passwords.mailgun_default_smtp_login,
+    "mailgun_api_base_url": passwords.mailgun_api_base_url,
+    "mailgun_api_key": passwords.mailgun_api_key
 }
 
 config_dict_twitter_details = {
