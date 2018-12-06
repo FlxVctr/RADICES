@@ -4,7 +4,6 @@ import json
 import multiprocessing.dummy as mp
 import os
 import queue
-import shutil
 import sqlite3 as lite
 import sys
 import unittest
@@ -26,6 +25,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError
 # Needed so that developer do not have to append PYTHONPATH manually.
 sys.path.insert(0, os.getcwd())
 import helpers
+import passwords
 import test_helpers
 from collector import Collector, Connection, Coordinator, retry_x_times
 from database_handler import DataBaseHandler
@@ -558,21 +558,79 @@ class ConfigTest(unittest.TestCase):
             Config(config_dict=cfg_dict)
 
     def test_config_file_gets_read_incl_all_keys(self):
-        if os.path.isfile("config.yml.bak"):
-            shutil.copyfile("config.yml.bak", "config.yml")
         cfg_dict = copy.deepcopy(self.config_dict)
         cfg_dict["sql"] = {key: None for (key, value) in self.config_dict["sql"].items()}
         cfg_dict["twitter_user_details"] = {key: None
                                             for (key, value)
                                             in self.config_dict["twitter_user_details"].items()}
-        self.assertEqual(Config().config, cfg_dict)
+        cfg_dict["notifications"] = {key: None
+                                     for (key, value)
+                                     in self.config_dict["notifications"].items()}
+        self.assertEqual(Config("config_template.yml").config, cfg_dict)
 
     def test_sql_key_not_in_config(self):
         cfg_dict = copy.deepcopy(self.config_dict)
         cfg_dict.pop("sql", None)
         config = Config(config_dict=cfg_dict)
+
         self.assertEqual("sqlite", config.config["sql"]["dbtype"])
         self.assertEqual("new_database", config.config["sql"]["dbname"])
+
+    def test_notif_config_is_created_depending_on_config(self):
+        cfg = copy.deepcopy(self.config_dict)
+        cfg["notifications"] = {
+            'email_to_notify': passwords.email_to_notify,
+            'mailgun_default_smtp_login': passwords.mailgun_default_smtp_login,
+            'mailgun_api_base_url': passwords.mailgun_api_base_url,
+            'mailgun_api_key': passwords.mailgun_api_key
+        }
+        with open("config.yml", "w") as f:
+            yaml.dump(cfg, f)
+        config = Config()
+
+        self.assertEqual(cfg["notifications"], config.notif_config)
+        self.assertTrue(config.use_notifications)
+
+        cfg = copy.deepcopy(self.config_dict)
+        cfg["notifications"] = {
+            'email_to_notify': None,
+            'mailgun_default_smtp_login': None,
+            'mailgun_api_base_url': None,
+            'mailgun_api_key': None
+        }
+        config = Config(config_dict=cfg)
+
+        self.assertFalse(config.use_notifications)
+
+        cfg = copy.deepcopy(self.config_dict)
+        cfg["notifications"] = {
+            'email_to_notify': passwords.email_to_notify,
+            'mailgun_default_smtp_login': None,
+            'mailgun_api_base_url': None,
+            'mailgun_api_key': None
+        }
+        with open("config.yml", "w") as f:
+            yaml.dump(cfg, f)
+
+        with self.assertRaises(ValueError):
+            config = Config()
+
+    def test_send_test_error(self):
+        cfg = test_helpers.config_dict_sqlite
+        cfg["notifications"] = {
+            'email_to_notify': passwords.email_to_notify,
+            'mailgun_default_smtp_login': passwords.mailgun_default_smtp_login,
+            'mailgun_api_base_url': passwords.mailgun_api_base_url,
+            'mailgun_api_key': passwords.mailgun_api_key
+        }
+        config = Config(config_dict=cfg)
+        response = config.send_mail({
+            "subject": "Unexpected Error",
+            "text": "Unexpected Error, please check whatever might be wrong.\n FULL ERROR HERE"
+        }
+        )
+
+        self.assertIn('200', str(response))
 
 
 class CollectorTest(unittest.TestCase):
