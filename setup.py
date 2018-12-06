@@ -84,7 +84,7 @@ class Config():
     """
     config_template = "config_template.py"
 
-    def __init__(self, config_file="config.yml", config_dict: dict=None):
+    def __init__(self, config_file="config.yml", config_dict: dict = None):
         if config_dict is not None:
             self.config = config_dict
         else:
