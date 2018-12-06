@@ -10,12 +10,10 @@ import yaml
 from sqlalchemy.exc import InternalError
 from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
 
-import passwords
 import test_helpers
 from collector import Coordinator
 from database_handler import DataBaseHandler
 from exceptions import TestException
-from setup import Config
 from start import main_loop
 
 
@@ -236,21 +234,6 @@ class FirstUseTest(unittest.TestCase):
         self.assertGreater(result, 4000)
 
         dbh.engine.execute("DROP TABLE friends, user_details, result;")
-
-    def test_send_test_error(self):
-        cfg = test_helpers.config_dict_sqlite
-        cfg["notifications"] = {
-            'email_to_notify': passwords.email_to_notify,
-            'mailgun_default_smtp_login': passwords.mailgun_default_smtp_login,
-            'mailgun_api_base_url': passwords.mailgun_api_base_url,
-            'mailgun_api_key': passwords.mailgun_api_key
-        }
-        config = Config(config_dict=cfg)
-        config.send_mail({
-            "subject": "Unexpected Error",
-            "text": "Unexpected Error, please check whatever might be wrong.\n FULL ERROR HERE"
-        }
-        )
 
 
 if __name__ == '__main__':
