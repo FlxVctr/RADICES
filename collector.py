@@ -311,7 +311,15 @@ class Collector(object):
             remaining_calls (int)
         """
 
-        remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+        try:
+            remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+        except tweepy.error.TweepError as invalid_error:
+            if "'code': 89" in invalid_error.reason:
+                print(invalid_error)
+                self.connection.next_token()
+                remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+            else:
+                raise invalid_error
         print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
             endpoint, self.connection.token[:4]), remaining_calls)
         reset_time = self.connection.reset_time(endpoint=endpoint)
