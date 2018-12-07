@@ -1,3 +1,3 @@
 cp test_config.yml config.yml
-cp seeds_test.csv seeds.csv
-python start.py -n 150 -l de -p 1
+cp user_ids_de.csv seeds.csv
+python start.py -n 200 -l de -p 1
