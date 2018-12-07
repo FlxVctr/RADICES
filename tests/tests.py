@@ -22,7 +22,7 @@ from pandas.util.testing import assert_frame_equal, assert_index_equal
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError
 
-# Needed so that developer do not have to append PYTHONPATH manually.
+# Needed so that developers do not have to append PYTHONPATH manually.
 sys.path.insert(0, os.getcwd())
 import helpers
 import passwords
