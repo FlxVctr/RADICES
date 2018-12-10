@@ -804,6 +804,30 @@ class CollectorTest(unittest.TestCase):
                          (1, 2))
         self.assertNotEqual(token, self.connection.token)
 
+    def test_invalid_token(self):
+
+        connection = Connection()
+
+        tokens = []
+
+        while True:
+            try:
+                tokens.append(connection.token_queue.get(block=False))
+            except queue.Empty:
+                break
+
+        connection.token_queue.put(['invalid', 'invalid'])
+        connection.next_token()
+
+        collector = Collector(connection, seed=36476777)
+
+        try:
+            collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
+        except tweepy.error.TweepError:
+            self.fail()
+
+        self.assertIsInstance(collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids'), int)
+
 
 ''' TODO: make this work (add nonetype_replace param to flatten_json)
     def test_flatten_json_nonetype_param_works_as_expected(self):
