@@ -315,6 +315,8 @@ class Collector(object):
             remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
         except tweepy.error.TweepError as invalid_error:
             if "'code': 89" in invalid_error.reason:
+                print(f"Token starting with {self.connection.token[:5]} seems to have expired or\
+ it has been revoked.")
                 print(invalid_error)
                 self.connection.next_token()
                 remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
