@@ -1,21 +1,22 @@
 # functional test for network collector
 import argparse
-import pandas as pd
+import datetime
 import os
 import shutil
 import sys
 import unittest
 import warnings
+from exceptions import TestException
+from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
+
+import pandas as pd
 import yaml
 from sqlalchemy.exc import InternalError
-from subprocess import PIPE, STDOUT, CalledProcessError, Popen, check_output
 
 import test_helpers
 from collector import Coordinator
 from database_handler import DataBaseHandler
-from exceptions import TestException
 from start import main_loop
-
 
 parser = argparse.ArgumentParser(description='SparseTwitter FunctionalTestSuite')
 parser.add_argument('-w', '--show_resource_warnings',
@@ -36,6 +37,8 @@ def setUpModule():
         warnings.filterwarnings(action="ignore",
                                 message="unclosed",
                                 category=ResourceWarning)
+    if os.path.isfile("latest_seeds.csv"):
+        os.rename("latest_seeds.csv", f"{datetime.datetime.now().isoformat()}_latest_seeds.csv")
 
 
 class FirstUseTest(unittest.TestCase):

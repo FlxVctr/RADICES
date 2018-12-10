@@ -1,5 +1,7 @@
 import argparse
+import datetime
 import multiprocessing.dummy as mp
+import os
 import time
 import traceback
 from sys import stderr, stdout
@@ -32,6 +34,9 @@ def main_loop(coordinator, select=[], lang=None, test_fail=False, restart=False)
 
 
 if __name__ == "__main__":
+
+    if os.path.isfile("latest_seeds.csv"):
+        os.rename("latest_seeds.csv", f"{datetime.datetime.now().isoformat()}_latest_seeds.csv")
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)

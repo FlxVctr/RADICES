@@ -1,5 +1,6 @@
 import argparse
 import copy
+import datetime
 import json
 import multiprocessing.dummy as mp
 import os
@@ -61,6 +62,8 @@ def setUpModule():
         warnings.filterwarnings(action="ignore",
                                 message="unclosed",
                                 category=ResourceWarning)
+    if os.path.isfile("latest_seeds.csv"):
+        os.rename("latest_seeds.csv", f"{datetime.datetime.now().isoformat()}_latest_seeds.csv")
 
 
 class FileImportTest(unittest.TestCase):
