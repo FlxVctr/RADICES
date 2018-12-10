@@ -134,10 +134,10 @@ twitter_user_details:
     status_retweeted_status_retweet_count:  # INT
     status_retweeted_status_retweeted:  # SMALLINT
     status_retweeted_status_source:  # TEXT
-    status_retweeted_status_text:  # TEXT
+    status_retweeted_status_full_text:  # TEXT
     status_retweeted_status_truncated:  # SMALLINT
     status_source:  # TEXT
-    status_text:  # TEXT
+    status_full_text:  # TEXT
     status_truncated:  # SMALLINT
     statuses_count:  # BIGINT
     suspended:  # SMALLINT
