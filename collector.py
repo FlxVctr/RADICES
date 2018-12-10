@@ -419,7 +419,8 @@ class Collector(object):
                 remaining_calls = self.check_API_calls_and_update_if_necessary(
                     endpoint='/users/lookup')
 
-            user_details += self.connection.api.lookup_users(user_ids=friends[i:j])
+            user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
+                                                             tweet_mode='extended')
             i += 100
 
             remaining_calls -= 1
@@ -564,10 +565,10 @@ class Collector(object):
                  'status_retweeted_status_retweet_count',
                  'status_retweeted_status_retweeted',
                  'status_retweeted_status_source',
-                 'status_retweeted_status_text',
+                 'status_retweeted_status_full_text',
                  'status_retweeted_status_truncated',
                  'status_source',
-                 'status_text',
+                 'status_full_text',
                  'status_truncated',
                  'statuses_count',
                  'suspended',
