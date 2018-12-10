@@ -901,10 +901,13 @@ class Coordinator(object):
         update_query = """
                         UPDATE friends
                         SET burned=1
-                        WHERE source={source} AND target={target}
+                        WHERE source={source} AND target={target} AND burned = 0
                        """.format(source=seed, target=new_seed)
 
-        self.dbh.engine.execute(update_query)
+        update_result = self.dbh.engine.execute(update_query)
+
+        if update_result.rowcount != 1:
+            raise AssertionError("Connection was burned already or there were multiple entries.")
 
         print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
 
