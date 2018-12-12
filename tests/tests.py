@@ -854,10 +854,7 @@ class CollectorTest(unittest.TestCase):
 
         connection.token_queue.put(tokens[-1])
 
-        collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
-
-        self.assertIsInstance(connection.reset_time_dict['/friends/ids'], float)
-        self.assertGreater(connection.reset_time_dict['/friends/ids'], time.time())
+        connection.calls_dict['/friends/ids'] = 1
 
         collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids',
                                                           check_calls=False)

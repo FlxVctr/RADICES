@@ -1,5 +1,4 @@
 import multiprocessing.dummy as mp
-import queue
 import time
 from exceptions import TestException
 from functools import wraps
@@ -162,6 +161,9 @@ class Connection(object):
 
         (self.token, self.secret,
          self.reset_time_dict, self.calls_dict) = self.token_queue.get()
+
+        print((self.token, self.secret,
+               self.reset_time_dict, self.calls_dict))
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -361,7 +363,11 @@ class Collector(object):
                 print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
 {endpoint} in {int(self.connection.reset_time_dict[endpoint] - time.time())} seconds.")
 
-            self.connection.next_token()
+            while (endpoint in self.connection.reset_time_dict
+                   and self.connection.reset_time_dict[endpoint] >= time.time()
+                   and self.connection.calls_dict[endpoint] == 0):
+                self.connection.next_token()
+                time.sleep(1)
 
             return None
 
@@ -387,6 +393,7 @@ class Collector(object):
             while True:
                 try:
                     page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
+                    self.connection.calls_dict['/friends/ids'] = 1
                     break
                 except tweepy.RateLimitError:
                     self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids',
@@ -427,6 +434,7 @@ class Collector(object):
                 try:
                     user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
                                                                      tweet_mode='extended')
+                    self.connection.calls_dict['/users/lookup'] = 1
                     break
                 except tweepy.RateLimitError:
                     self.check_API_calls_and_update_if_necessary(endpoint='/users/lookup',
