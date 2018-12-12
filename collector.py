@@ -907,8 +907,8 @@ class Coordinator(object):
 
         update_result = self.dbh.engine.execute(update_query)
 
-        if update_result.rowcount != 1:
-            raise AssertionError("Connection was burned already or there were multiple entries.")
+        if update_result.rowcount == 0:
+            raise AssertionError("Connection was burned already.")
 
         print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
 
