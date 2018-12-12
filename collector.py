@@ -811,7 +811,8 @@ class Coordinator(object):
                 stdout.flush()
 
                 self.token_queue.put(
-                    (connection.token, connection.secret, connection.reset_time_dict))
+                    (connection.token, connection.secret,
+                     connection.reset_time_dict, connection.calls_dict))
 
                 self.seed_queue.put(new_seed)
 
