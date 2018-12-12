@@ -181,7 +181,9 @@ class Connection(object):
             else:
                 break
 
-        self.token, self.secret = new_token, new_secret
+        (self.token, self.secret,
+         self.reset_time_dict, self.calls_dict) = (new_token, new_secret,
+                                                   reset_time_dict, calls_dict)
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -342,8 +344,6 @@ class Collector(object):
             reset_time = self.connection.reset_time(endpoint=endpoint)
 
             self.connection.reset_time_dict[endpoint] = time.time() + reset_time
-            
-            print(self.connection.reset_time_dict[endpoint])
 
             while self.connection.calls_dict[endpoint] == 0:
                 stdout.write("Attempt with next available token.\n")
@@ -366,6 +366,8 @@ class Collector(object):
 
                 print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
                     endpoint, self.connection.token[:4]), self.connection.calls_dict[endpoint])
+                print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for\
+{endpoint} in {self.connection.reset_time_dict[endpoint] - time.time()} seconds.")
 
             return self.connection.calls_dict[endpoint]
 
@@ -376,6 +378,10 @@ class Collector(object):
                or endpoint not in self.connection.reset_time_dict:
                 reset_time = self.connection.reset_time(endpoint=endpoint)
                 self.connection.reset_time_dict[endpoint] = time.time() + reset_time
+                print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+                    endpoint, self.connection.token[:4]), self.connection.calls_dict[endpoint])
+                print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for\
+{endpoint} in {self.connection.reset_time_dict[endpoint] - time.time()} seconds.")
 
             self.connection.next_token()
 
