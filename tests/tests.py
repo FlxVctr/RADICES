@@ -1002,14 +1002,15 @@ class CoordinatorTest(unittest.TestCase):
         expected_new_seed = 813286
         expected_new_seed_2 = 783214  # after first got burned
         # there's no database, test getting seed via Twitter API
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
         # Felix's most followed 'friend' is BarackObama
         self.assertEqual(new_seed, expected_new_seed)
 
         # destroy Twitter connection and rely on database
         try:
             new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
-                                                                        connection="fail")
+                                                                        connection="fail",
+                                                                        retries=1)
             self.assertEqual(new_seed, expected_new_seed_2)
         except AttributeError:
             self.fail("could not retrieve friend details from database")
@@ -1034,14 +1035,14 @@ class CoordinatorTest(unittest.TestCase):
 
         # test whether burned connection will not be returned again
         burned_seed = new_seed
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
         self.assertNotEqual(new_seed, burned_seed)
 
     def test_work_through_seed_if_account_has_no_friends(self):
 
         seed = 770602317242523648
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1055,7 +1056,7 @@ class CoordinatorTest(unittest.TestCase):
             c = Collector(connection, seed)
             c.get_friend_list()
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1069,7 +1070,7 @@ class CoordinatorTest(unittest.TestCase):
             c = Collector(connection, seed)
             c.get_friend_list()
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, test_fail=True)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, test_fail=True, retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1077,7 +1078,7 @@ class CoordinatorTest(unittest.TestCase):
 
         seed = 1621528116
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de')
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1086,7 +1087,7 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertEqual(0, len(friends_details))
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de')
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
