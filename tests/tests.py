@@ -1096,7 +1096,7 @@ class CoordinatorTest(unittest.TestCase):
         seeds = set(self.seed_list)
         expected_new_seeds = {9334352, 813286}
 
-        processes = self.coordinator.start_collectors()
+        processes = self.coordinator.start_collectors(retries=1)
 
         self.assertEqual(len(processes), 2)
 
@@ -1125,7 +1125,7 @@ class CoordinatorTest(unittest.TestCase):
     def test_overlapping_friends(self):
 
         coordinator = Coordinator(seed_list=[36476777, 83662933, 2367431])
-        worker_bees = coordinator.start_collectors()
+        worker_bees = coordinator.start_collectors(retries=1)
 
         for bee in worker_bees:
             bee.join(timeout=1200)
@@ -1152,7 +1152,7 @@ class CoordinatorTest(unittest.TestCase):
         coordinator.token_queue.put(tokens[0])  # put only two back
         coordinator.token_queue.put(tokens[1])
 
-        worker_bees = coordinator.start_collectors()
+        worker_bees = coordinator.start_collectors(retries=1)
 
         for bee in worker_bees:
             bee.join(timeout=60)  # waiting time might be longer
