@@ -825,7 +825,7 @@ class CollectorTest(unittest.TestCase):
             except queue.Empty:
                 break
 
-        connection.token_queue.put(('invalid', 'invalid', {}))
+        connection.token_queue.put(('invalid', 'invalid', {}, {}))
         for token in tokens:
             connection.token_queue.put(token)
         connection.next_token()
