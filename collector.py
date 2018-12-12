@@ -160,30 +160,8 @@ class Connection(object):
 
         self.token_queue.put((self.token, self.secret, self.reset_time_dict, self.calls_dict))
 
-        while True:
-            old_token, old_secret = self.token, self.secret
-
-            new_token, new_secret, reset_time_dict, calls_dict = self.token_queue.get()
-
-            if (new_token, new_secret) == (old_token, old_secret):  # if same token
-                try:  # see if there's another token
-                    new_token, new_secret = self.token_queue.get(block=False)
-                    self.token_queue.put(
-                        (self.token, self.secret, self.reset_time_dict, self.calls_dict))
-                    break
-                except queue.Empty:  # if not
-                    self.token_queue.put(
-                        (self.token, self.secret, self.reset_time_dict, self.calls_dict))
-                    # put token back and wait
-                    stdout.write("Waiting for next token put in queue …\n")
-                    stdout.flush()
-                    time.sleep(10)
-            else:
-                break
-
         (self.token, self.secret,
-         self.reset_time_dict, self.calls_dict) = (new_token, new_secret,
-                                                   reset_time_dict, calls_dict)
+         self.reset_time_dict, self.calls_dict) = self.token_queue.get()
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -367,7 +345,7 @@ class Collector(object):
                 print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
                     endpoint, self.connection.token[:4]), self.connection.calls_dict[endpoint])
                 print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
-{endpoint} in {self.connection.reset_time_dict[endpoint] - time.time()} seconds.")
+{endpoint} in {int(self.connection.reset_time_dict[endpoint] - time.time())} seconds.")
 
             return self.connection.calls_dict[endpoint]
 
@@ -381,7 +359,7 @@ class Collector(object):
                 print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
                     endpoint, self.connection.token[:4]), self.connection.calls_dict[endpoint])
                 print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
-{endpoint} in {self.connection.reset_time_dict[endpoint] - time.time()} seconds.")
+{endpoint} in {int(self.connection.reset_time_dict[endpoint] - time.time())} seconds.")
 
             self.connection.next_token()
 
