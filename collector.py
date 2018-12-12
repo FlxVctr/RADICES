@@ -675,8 +675,8 @@ class Coordinator(object):
 
         self.token_queue = mp.Queue()
 
-        for token in self.tokens.values:
-            self.token_queue.put(token)
+        for token, secret in self.tokens.values:
+            self.token_queue.put((token, secret, {}))
 
         self.dbh = DataBaseHandler()
 
@@ -768,7 +768,8 @@ class Coordinator(object):
                     new_seed = self.seed_pool.sample(n=1)
                     new_seed = new_seed[0].values[0]
 
-                    self.token_queue.put((connection.token, connection.secret))
+                    self.token_queue.put((connection.token, connection.secret,
+                                          connection.reset_time_dict))
                     self.seed_queue.put(new_seed)
 
                     return new_seed
@@ -780,7 +781,8 @@ class Coordinator(object):
                     new_seed = self.seed_pool.sample(n=1)
                     new_seed = new_seed[0].values[0]
 
-                    self.token_queue.put((connection.token, connection.secret))
+                    self.token_queue.put(
+                        (connection.token, connection.secret, connection.reset_time_dict))
                     self.seed_queue.put(new_seed)
 
                     return new_seed
@@ -795,7 +797,8 @@ class Coordinator(object):
                 stdout.write("No friends or unburned connections left, selecting random seed.\n")
                 stdout.flush()
 
-                self.token_queue.put((connection.token, connection.secret))
+                self.token_queue.put(
+                    (connection.token, connection.secret, connection.reset_time_dict))
 
                 self.seed_queue.put(new_seed)
 
@@ -820,7 +823,8 @@ class Coordinator(object):
                             lang))
                     stdout.flush()
 
-                    self.token_queue.put((connection.token, connection.secret))
+                    self.token_queue.put(
+                        (connection.token, connection.secret, connection.reset_time_dict))
 
                     self.seed_queue.put(new_seed)
 
@@ -848,7 +852,8 @@ class Coordinator(object):
                     lang))
             stdout.flush()
 
-            self.token_queue.put((connection.token, connection.secret))
+            self.token_queue.put(
+                (connection.token, connection.secret, connection.reset_time_dict))
 
             self.seed_queue.put(new_seed)
 
@@ -917,7 +922,8 @@ class Coordinator(object):
 
         print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
 
-        self.token_queue.put((connection.token, connection.secret))
+        self.token_queue.put(
+            (connection.token, connection.secret, connection.reset_time_dict))
 
         self.seed_queue.put(new_seed)
 

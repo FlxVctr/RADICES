@@ -952,8 +952,16 @@ class CoordinatorTest(unittest.TestCase):
     def test_can_get_token_from_queue(self):
         coordinator = Coordinator()
 
-        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
-        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
+        tokentuple = coordinator.token_queue.get()
+        self.assertIsInstance(tokentuple, tuple)
+        self.assertIsInstance(tokentuple[0], str)
+        self.assertIsInstance(tokentuple[1], str)
+        self.assertIsInstance(tokentuple[2], dict)
+        tokentuple = coordinator.token_queue.get()
+        self.assertIsInstance(tokentuple, tuple)
+        self.assertIsInstance(tokentuple[0], str)
+        self.assertIsInstance(tokentuple[1], str)
+        self.assertIsInstance(tokentuple[2], dict)
 
     def test_db_can_lookup_friends(self):
 
