@@ -366,7 +366,7 @@ class Collector(object):
 
                 print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
                     endpoint, self.connection.token[:4]), self.connection.calls_dict[endpoint])
-                print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for\
+                print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
 {endpoint} in {self.connection.reset_time_dict[endpoint] - time.time()} seconds.")
 
             return self.connection.calls_dict[endpoint]
@@ -380,7 +380,7 @@ class Collector(object):
                 self.connection.reset_time_dict[endpoint] = time.time() + reset_time
                 print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
                     endpoint, self.connection.token[:4]), self.connection.calls_dict[endpoint])
-                print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for\
+                print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
 {endpoint} in {self.connection.reset_time_dict[endpoint] - time.time()} seconds.")
 
             self.connection.next_token()
@@ -438,8 +438,6 @@ class Collector(object):
 
         user_details = []
 
-        remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
-
         while i < len(friends):
 
             if i + 100 <= len(friends):
@@ -447,15 +445,14 @@ class Collector(object):
             else:
                 j = len(friends)
 
-            if remaining_calls == 0:
-                remaining_calls = self.check_API_calls_and_update_if_necessary(
-                    endpoint='/users/lookup')
+            try:
+                user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
+                                                                 tweet_mode='extended')
+            except tweepy.RateLimitError:
+                self.check_API_calls_and_update_if_necessary(endpoint='/users/lookup',
+                                                             check_calls=False)
 
-            user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
-                                                             tweet_mode='extended')
             i += 100
-
-            remaining_calls -= 1
 
         return user_details
 
