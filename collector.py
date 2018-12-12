@@ -162,9 +162,6 @@ class Connection(object):
         (self.token, self.secret,
          self.reset_time_dict, self.calls_dict) = self.token_queue.get()
 
-        print((self.token, self.secret,
-               self.reset_time_dict, self.calls_dict))
-
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
 
