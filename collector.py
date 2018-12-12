@@ -374,8 +374,8 @@ class Collector(object):
         else:
             self.connection.calls_dict[endpoint] = 0
 
-            if self.connection.reset_time_dict[endpoint] <= time.time()\
-               or endpoint not in self.connection.reset_time_dict:
+            if endpoint not in self.connection.reset_time_dict \
+               or self.connection.reset_time_dict[endpoint] <= time.time():
                 reset_time = self.connection.reset_time(endpoint=endpoint)
                 self.connection.reset_time_dict[endpoint] = time.time() + reset_time
                 print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
@@ -403,24 +403,24 @@ class Collector(object):
 
         result = []
 
-        remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
-
         cursor = -1
         following_page = 0
         while self.following_pages_limit == 0 or following_page < self.following_pages_limit:
-            page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
+            while True:
+                try:
+                    page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
+                    break
+                except tweepy.RateLimitError:
+                    self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids',
+                                                                 check_calls=False)
+
             if len(page[0]) > 0:
                 result += page[0]
             else:
                 break
             cursor = page[1][1]
 
-            remaining_calls -= 1
             following_page += 1
-
-            if remaining_calls == 0:
-                remaining_calls = self.check_API_calls_and_update_if_necessary(
-                    endpoint='/friends/ids')
 
         return result
 
@@ -445,12 +445,14 @@ class Collector(object):
             else:
                 j = len(friends)
 
-            try:
-                user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
-                                                                 tweet_mode='extended')
-            except tweepy.RateLimitError:
-                self.check_API_calls_and_update_if_necessary(endpoint='/users/lookup',
-                                                             check_calls=False)
+            while True:
+                try:
+                    user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
+                                                                     tweet_mode='extended')
+                    break
+                except tweepy.RateLimitError:
+                    self.check_API_calls_and_update_if_necessary(endpoint='/users/lookup',
+                                                                 check_calls=False)
 
             i += 100
 
