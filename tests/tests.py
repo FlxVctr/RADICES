@@ -651,6 +651,11 @@ class CollectorTest(unittest.TestCase):
 
         self.assertIn('401', str(exception.response))
 
+    def test_token_queue_has_reset_time(self):
+        connection = Connection()
+        token = connection.token_queue.get()
+        self.assertIsInstance(token[2], dict)
+
     def test_collector_can_connect_with_correct_credentials(self):
 
         try:
@@ -819,15 +824,17 @@ class CollectorTest(unittest.TestCase):
             except queue.Empty:
                 break
 
-        connection.token_queue.put(['invalid', 'invalid'])
+        connection.token_queue.put(('invalid', 'invalid', {}))
+        for token in tokens:
+            connection.token_queue.put(token)
         connection.next_token()
 
         collector = Collector(connection, seed=36476777)
 
         try:
             collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
-        except tweepy.error.TweepError:
-            self.fail()
+        except tweepy.error.TweepError as e:
+            self.fail(e)
 
         self.assertIsInstance(collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids'), int)
 

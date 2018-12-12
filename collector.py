@@ -144,12 +144,12 @@ class Connection(object):
 
             self.token_queue = mp.Queue()
 
-            for token in self.tokens.values:
-                self.token_queue.put(token)
+            for token, secret in self.tokens.values:
+                self.token_queue.put((token, secret, {}))
         else:
             self.token_queue = token_queue
 
-        self.token, self.secret = self.token_queue.get()
+        self.token, self.secret, self.reset_time_dict = self.token_queue.get()
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -158,20 +158,21 @@ class Connection(object):
 
     def next_token(self):
 
-        self.token_queue.put((self.token, self.secret))
+        self.token_queue.put((self.token, self.secret, self.reset_time_dict))
 
         while True:
             old_token, old_secret = self.token, self.secret
 
-            new_token, new_secret = self.token_queue.get()
+            new_token, new_secret, reset_time_dict = self.token_queue.get()
 
             if (new_token, new_secret) == (old_token, old_secret):  # if same token
                 try:  # see if there's another token
                     new_token, new_secret = self.token_queue.get(block=False)
-                    self.token_queue.put((self.token, self.secret))
+                    self.token_queue.put((self.token, self.secret, self.reset_time_dict))
                     break
                 except queue.Empty:  # if not
-                    self.token_queue.put((self.token, self.secret))  # put token back and wait
+                    self.token_queue.put((self.token, self.secret, self.reset_time_dict))
+                    # put token back and wait
                     stdout.write("Waiting for next token put in queue …\n")
                     stdout.flush()
                     time.sleep(10)
@@ -311,19 +312,23 @@ class Collector(object):
             remaining_calls (int)
         """
 
-        try:
-            remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
-        except tweepy.error.TweepError as invalid_error:
-            if "'code': 89" in invalid_error.reason:
-                print(f"Token starting with {self.connection.token[:5]} seems to have expired or\
- it has been revoked.")
-                print(invalid_error)
-                self.connection.next_token()
+        def try_remaining_calls_except_invalid_token():
+            try:
                 remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
-            else:
-                raise invalid_error
-        print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
-            endpoint, self.connection.token[:4]), remaining_calls)
+            except tweepy.error.TweepError as invalid_error:
+                if "'code': 89" in invalid_error.reason:
+                    print(f"Token starting with {self.connection.token[:5]} seems to have expired or\
+     it has been revoked.")
+                    print(invalid_error)
+                    self.connection.next_token()
+                    remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+                else:
+                    raise invalid_error
+            print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+                endpoint, self.connection.token[:4]), remaining_calls)
+            return remaining_calls
+
+        remaining_calls = try_remaining_calls_except_invalid_token()
         reset_time = self.connection.reset_time(endpoint=endpoint)
         token_dict = {}
         token = self.connection.token
@@ -346,7 +351,7 @@ class Collector(object):
                     time.sleep(10)
                     continue
             except KeyError:
-                remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+                remaining_calls = try_remaining_calls_except_invalid_token()
                 reset_time = self.connection.reset_time(endpoint=endpoint)
                 token_dict[token] = time.time() + reset_time
 
