@@ -7,6 +7,7 @@ import os
 import queue
 import sqlite3 as lite
 import sys
+import time
 import unittest
 import warnings
 from json import JSONDecodeError
@@ -21,10 +22,11 @@ from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
 from pandas.util.testing import assert_frame_equal, assert_index_equal
 from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 
 # Needed so that developers do not have to append PYTHONPATH manually.
 sys.path.insert(0, os.getcwd())
+
 import helpers
 import passwords
 import test_helpers
@@ -32,7 +34,6 @@ from collector import Collector, Connection, Coordinator, retry_x_times
 from database_handler import DataBaseHandler
 from exceptions import TestException
 from setup import Config, FileImport
-
 
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
@@ -439,9 +440,9 @@ class DataBaseHandlerTest(unittest.TestCase):
                                    index=False, con=dbh.engine)
         # Error Handling for duplicate IDs
         except IntegrityError:
-                friends_details.drop_duplicates(subset="id", keep='last', inplace=True)
-                friends_details.to_sql('user_details', if_exists='append',
-                                       index=False, con=dbh.engine)
+            friends_details.drop_duplicates(subset="id", keep='last', inplace=True)
+            friends_details.to_sql('user_details', if_exists='append',
+                                   index=False, con=dbh.engine)
         s = "SELECT * FROM user_details"
         sql_friends_details = pd.read_sql(sql=s, con=dbh.engine)
 
@@ -651,6 +652,11 @@ class CollectorTest(unittest.TestCase):
 
         self.assertIn('401', str(exception.response))
 
+    def test_token_queue_has_reset_time(self):
+        connection = Connection()
+        token = connection.token_queue.get()
+        self.assertIsInstance(token[2], dict)
+
     def test_collector_can_connect_with_correct_credentials(self):
 
         try:
@@ -819,17 +825,44 @@ class CollectorTest(unittest.TestCase):
             except queue.Empty:
                 break
 
-        connection.token_queue.put(['invalid', 'invalid'])
+        connection.token_queue.put(('invalid', 'invalid', {}, {}))
+        for token in tokens:
+            connection.token_queue.put(token)
         connection.next_token()
 
         collector = Collector(connection, seed=36476777)
 
         try:
             collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
-        except tweepy.error.TweepError:
-            self.fail()
+        except tweepy.error.TweepError as e:
+            self.fail(e)
 
-        self.assertIsInstance(collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids'), int)
+        self.assertIsInstance(collector.check_API_calls_and_update_if_necessary(
+            endpoint='/friends/ids'), int)
+
+    def test_check_API_updates_reset_time(self):
+        connection = Connection()
+        collector = Collector(connection, seed=36476777)
+
+        tokens = []
+
+        while True:
+            try:
+                tokens.append(connection.token_queue.get(block=False))
+            except queue.Empty:
+                break
+
+        connection.token_queue.put(tokens[-1])
+
+        connection.calls_dict['/friends/ids'] = 1
+
+        collector.check_API_calls_and_update_if_necessary(endpoint='/friends/ids',
+                                                          check_calls=False)
+
+        tokentuple = connection.token_queue.get()
+
+        self.assertEqual(tokentuple[3]['/friends/ids'], 0)
+        self.assertGreater(tokentuple[2]['/friends/ids'], time.time())
 
 
 ''' TODO: make this work (add nonetype_replace param to flatten_json)
@@ -945,8 +978,16 @@ class CoordinatorTest(unittest.TestCase):
     def test_can_get_token_from_queue(self):
         coordinator = Coordinator()
 
-        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
-        self.assertIsInstance(coordinator.token_queue.get(), np.ndarray)
+        tokentuple = coordinator.token_queue.get()
+        self.assertIsInstance(tokentuple, tuple)
+        self.assertIsInstance(tokentuple[0], str)
+        self.assertIsInstance(tokentuple[1], str)
+        self.assertIsInstance(tokentuple[2], dict)
+        tokentuple = coordinator.token_queue.get()
+        self.assertIsInstance(tokentuple, tuple)
+        self.assertIsInstance(tokentuple[0], str)
+        self.assertIsInstance(tokentuple[1], str)
+        self.assertIsInstance(tokentuple[2], dict)
 
     def test_db_can_lookup_friends(self):
 
@@ -995,14 +1036,15 @@ class CoordinatorTest(unittest.TestCase):
         expected_new_seed = 813286
         expected_new_seed_2 = 783214  # after first got burned
         # there's no database, test getting seed via Twitter API
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
         # Felix's most followed 'friend' is BarackObama
         self.assertEqual(new_seed, expected_new_seed)
 
         # destroy Twitter connection and rely on database
         try:
             new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
-                                                                        connection="fail")
+                                                                        connection="fail",
+                                                                        retries=1)
             self.assertEqual(new_seed, expected_new_seed_2)
         except AttributeError:
             self.fail("could not retrieve friend details from database")
@@ -1027,14 +1069,14 @@ class CoordinatorTest(unittest.TestCase):
 
         # test whether burned connection will not be returned again
         burned_seed = new_seed
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
         self.assertNotEqual(new_seed, burned_seed)
 
     def test_work_through_seed_if_account_has_no_friends(self):
 
         seed = 770602317242523648
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1048,7 +1090,7 @@ class CoordinatorTest(unittest.TestCase):
             c = Collector(connection, seed)
             c.get_friend_list()
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1062,7 +1104,8 @@ class CoordinatorTest(unittest.TestCase):
             c = Collector(connection, seed)
             c.get_friend_list()
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, test_fail=True)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, test_fail=True,
+                                                                    retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1070,7 +1113,7 @@ class CoordinatorTest(unittest.TestCase):
 
         seed = 1621528116
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de')
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1079,7 +1122,7 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertEqual(0, len(friends_details))
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de')
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1088,7 +1131,7 @@ class CoordinatorTest(unittest.TestCase):
         seeds = set(self.seed_list)
         expected_new_seeds = {9334352, 813286}
 
-        processes = self.coordinator.start_collectors()
+        processes = self.coordinator.start_collectors(retries=1)
 
         self.assertEqual(len(processes), 2)
 
@@ -1117,7 +1160,7 @@ class CoordinatorTest(unittest.TestCase):
     def test_overlapping_friends(self):
 
         coordinator = Coordinator(seed_list=[36476777, 83662933, 2367431])
-        worker_bees = coordinator.start_collectors()
+        worker_bees = coordinator.start_collectors(retries=1)
 
         for bee in worker_bees:
             bee.join(timeout=1200)
@@ -1144,7 +1187,7 @@ class CoordinatorTest(unittest.TestCase):
         coordinator.token_queue.put(tokens[0])  # put only two back
         coordinator.token_queue.put(tokens[1])
 
-        worker_bees = coordinator.start_collectors()
+        worker_bees = coordinator.start_collectors(retries=1)
 
         for bee in worker_bees:
             bee.join(timeout=60)  # waiting time might be longer

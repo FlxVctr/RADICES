@@ -1,5 +1,4 @@
 import multiprocessing.dummy as mp
-import queue
 import time
 from exceptions import TestException
 from functools import wraps
@@ -144,12 +143,12 @@ class Connection(object):
 
             self.token_queue = mp.Queue()
 
-            for token in self.tokens.values:
-                self.token_queue.put(token)
+            for token, secret in self.tokens.values:
+                self.token_queue.put((token, secret, {}, {}))
         else:
             self.token_queue = token_queue
 
-        self.token, self.secret = self.token_queue.get()
+        self.token, self.secret, self.reset_time_dict, self.calls_dict = self.token_queue.get()
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -158,27 +157,10 @@ class Connection(object):
 
     def next_token(self):
 
-        self.token_queue.put((self.token, self.secret))
+        self.token_queue.put((self.token, self.secret, self.reset_time_dict, self.calls_dict))
 
-        while True:
-            old_token, old_secret = self.token, self.secret
-
-            new_token, new_secret = self.token_queue.get()
-
-            if (new_token, new_secret) == (old_token, old_secret):  # if same token
-                try:  # see if there's another token
-                    new_token, new_secret = self.token_queue.get(block=False)
-                    self.token_queue.put((self.token, self.secret))
-                    break
-                except queue.Empty:  # if not
-                    self.token_queue.put((self.token, self.secret))  # put token back and wait
-                    stdout.write("Waiting for next token put in queue …\n")
-                    stdout.flush()
-                    time.sleep(10)
-            else:
-                break
-
-        self.token, self.secret = new_token, new_secret
+        (self.token, self.secret,
+         self.reset_time_dict, self.calls_dict) = self.token_queue.get()
 
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
@@ -299,61 +281,92 @@ class Collector(object):
             return wrapper
 
     @Decorators.retry_with_next_token_on_rate_limit_error
-    def check_API_calls_and_update_if_necessary(self, endpoint):
-        """Checks for an endpoint how many calls are left and updates token if necessary.
+    def check_API_calls_and_update_if_necessary(self, endpoint, check_calls=True):
+        """Checks for an endpoint how many calls are left (optional), gets the reset time
+        and updates token if necessary.
 
-        It iterates through available tokens until one has > 0 calls to `endpoint`. If\
-        none is available it waits the minimal reset time it has encountered to check again.
+        If called with check_calls = False,
+        it will assume that the actual token calls for the specified endpoint are depleted
+        and return None for remaining calls
 
         Args:
             endpoint (str): API endpoint, e.g. '/friends/ids'
+            check_calls (boolean): Default True
         Returns:
-            remaining_calls (int)
+            if check_calls=True:
+                remaining_calls (int)
+            else:
+                None
         """
 
-        try:
-            remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
-        except tweepy.error.TweepError as invalid_error:
-            if "'code': 89" in invalid_error.reason:
-                print(f"Token starting with {self.connection.token[:5]} seems to have expired or\
- it has been revoked.")
-                print(invalid_error)
-                self.connection.next_token()
-                remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
-            else:
-                raise invalid_error
-        print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
-            endpoint, self.connection.token[:4]), remaining_calls)
-        reset_time = self.connection.reset_time(endpoint=endpoint)
-        token_dict = {}
-        token = self.connection.token
-        token_dict[token] = time.time() + reset_time
-        attempts = 0
-
-        while remaining_calls == 0:
-            attempts += 1
-            stdout.write("Attempt with next available token.\n")
-
-            self.connection.next_token()
-
-            token = self.connection.token
-
+        def try_remaining_calls_except_invalid_token():
             try:
-                next_reset_at = token_dict[token]
-                if time.time() >= next_reset_at:
+                remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
+            except tweepy.error.TweepError as invalid_error:
+                if "'code': 89" in invalid_error.reason:
+                    print(f"Token starting with {self.connection.token[:5]} seems to have expired or\
+     it has been revoked.")
+                    print(invalid_error)
+                    self.connection.next_token()
                     remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
                 else:
-                    time.sleep(10)
-                    continue
-            except KeyError:
-                remaining_calls = self.connection.remaining_calls(endpoint=endpoint)
-                reset_time = self.connection.reset_time(endpoint=endpoint)
-                token_dict[token] = time.time() + reset_time
-
+                    raise invalid_error
             print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
                 endpoint, self.connection.token[:4]), remaining_calls)
+            return remaining_calls
 
-        return remaining_calls
+        if check_calls is True:
+            self.connection.calls_dict[endpoint] = try_remaining_calls_except_invalid_token()
+
+            reset_time = self.connection.reset_time(endpoint=endpoint)
+
+            self.connection.reset_time_dict[endpoint] = time.time() + reset_time
+
+            while self.connection.calls_dict[endpoint] == 0:
+                stdout.write("Attempt with next available token.\n")
+
+                self.connection.next_token()
+
+                try:
+                    next_reset_at = self.connection.reset_time_dict[endpoint]
+                    if time.time() >= next_reset_at:
+                        self.connection.calls_dict[endpoint] = \
+                            self.connection.remaining_calls(endpoint=endpoint)
+                    else:
+                        time.sleep(10)
+                        continue
+                except KeyError:
+                    self.connection.calls_dict[endpoint] = \
+                        try_remaining_calls_except_invalid_token()
+                    reset_time = self.connection.reset_time(endpoint=endpoint)
+                    self.connection.reset_time_dict[endpoint] = time.time() + reset_time
+
+                print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+                    endpoint, self.connection.token[:4]), self.connection.calls_dict[endpoint])
+                print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
+{endpoint} in {int(self.connection.reset_time_dict[endpoint] - time.time())} seconds.")
+
+            return self.connection.calls_dict[endpoint]
+
+        else:
+            self.connection.calls_dict[endpoint] = 0
+
+            if endpoint not in self.connection.reset_time_dict \
+               or self.connection.reset_time_dict[endpoint] <= time.time():
+                reset_time = self.connection.reset_time(endpoint=endpoint)
+                self.connection.reset_time_dict[endpoint] = time.time() + reset_time
+                print("REMAINING CALLS FOR {} WITH TOKEN STARTING WITH {}: ".format(
+                    endpoint, self.connection.token[:4]), self.connection.calls_dict[endpoint])
+                print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
+{endpoint} in {int(self.connection.reset_time_dict[endpoint] - time.time())} seconds.")
+
+            while (endpoint in self.connection.reset_time_dict
+                   and self.connection.reset_time_dict[endpoint] >= time.time()
+                   and self.connection.calls_dict[endpoint] == 0):
+                self.connection.next_token()
+                time.sleep(1)
+
+            return None
 
     def get_friend_list(self, twitter_id=None):
         """Gets the friend list of an account.
@@ -371,24 +384,25 @@ class Collector(object):
 
         result = []
 
-        remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
-
         cursor = -1
         following_page = 0
         while self.following_pages_limit == 0 or following_page < self.following_pages_limit:
-            page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
+            while True:
+                try:
+                    page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
+                    self.connection.calls_dict['/friends/ids'] = 1
+                    break
+                except tweepy.RateLimitError:
+                    self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids',
+                                                                 check_calls=False)
+
             if len(page[0]) > 0:
                 result += page[0]
             else:
                 break
             cursor = page[1][1]
 
-            remaining_calls -= 1
             following_page += 1
-
-            if remaining_calls == 0:
-                remaining_calls = self.check_API_calls_and_update_if_necessary(
-                    endpoint='/friends/ids')
 
         return result
 
@@ -406,8 +420,6 @@ class Collector(object):
 
         user_details = []
 
-        remaining_calls = self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids')
-
         while i < len(friends):
 
             if i + 100 <= len(friends):
@@ -415,15 +427,17 @@ class Collector(object):
             else:
                 j = len(friends)
 
-            if remaining_calls == 0:
-                remaining_calls = self.check_API_calls_and_update_if_necessary(
-                    endpoint='/users/lookup')
+            while True:
+                try:
+                    user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
+                                                                     tweet_mode='extended')
+                    self.connection.calls_dict['/users/lookup'] = 1
+                    break
+                except tweepy.RateLimitError:
+                    self.check_API_calls_and_update_if_necessary(endpoint='/users/lookup',
+                                                                 check_calls=False)
 
-            user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
-                                                             tweet_mode='extended')
             i += 100
-
-            remaining_calls -= 1
 
         return user_details
 
@@ -670,8 +684,8 @@ class Coordinator(object):
 
         self.token_queue = mp.Queue()
 
-        for token in self.tokens.values:
-            self.token_queue.put(token)
+        for token, secret in self.tokens.values:
+            self.token_queue.put((token, secret, {}, {}))
 
         self.dbh = DataBaseHandler()
 
@@ -763,7 +777,8 @@ class Coordinator(object):
                     new_seed = self.seed_pool.sample(n=1)
                     new_seed = new_seed[0].values[0]
 
-                    self.token_queue.put((connection.token, connection.secret))
+                    self.token_queue.put((connection.token, connection.secret,
+                                          connection.reset_time_dict, connection.calls_dict))
                     self.seed_queue.put(new_seed)
 
                     return new_seed
@@ -775,7 +790,9 @@ class Coordinator(object):
                     new_seed = self.seed_pool.sample(n=1)
                     new_seed = new_seed[0].values[0]
 
-                    self.token_queue.put((connection.token, connection.secret))
+                    self.token_queue.put(
+                        (connection.token, connection.secret,
+                         connection.reset_time_dict, connection.calls_dict))
                     self.seed_queue.put(new_seed)
 
                     return new_seed
@@ -790,7 +807,9 @@ class Coordinator(object):
                 stdout.write("No friends or unburned connections left, selecting random seed.\n")
                 stdout.flush()
 
-                self.token_queue.put((connection.token, connection.secret))
+                self.token_queue.put(
+                    (connection.token, connection.secret,
+                     connection.reset_time_dict, connection.calls_dict))
 
                 self.seed_queue.put(new_seed)
 
@@ -815,7 +834,9 @@ class Coordinator(object):
                             lang))
                     stdout.flush()
 
-                    self.token_queue.put((connection.token, connection.secret))
+                    self.token_queue.put(
+                        (connection.token, connection.secret,
+                         connection.reset_time_dict, connection.calls_dict))
 
                     self.seed_queue.put(new_seed)
 
@@ -843,7 +864,9 @@ class Coordinator(object):
                     lang))
             stdout.flush()
 
-            self.token_queue.put((connection.token, connection.secret))
+            self.token_queue.put(
+                (connection.token, connection.secret,
+                 connection.reset_time_dict, connection.calls_dict))
 
             self.seed_queue.put(new_seed)
 
@@ -912,7 +935,9 @@ class Coordinator(object):
 
         print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
 
-        self.token_queue.put((connection.token, connection.secret))
+        self.token_queue.put(
+            (connection.token, connection.secret,
+             connection.reset_time_dict, connection.calls_dict))
 
         self.seed_queue.put(new_seed)
 

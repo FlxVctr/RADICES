@@ -16,7 +16,7 @@ from setup import Config
 def main_loop(coordinator, select=[], lang=None, test_fail=False, restart=False):
 
     collectors = coordinator.start_collectors(select=select,
-                                              lang=lang, fail=test_fail, restart=restart)
+                                              lang=lang, fail=test_fail, restart=restart, retries=4)
 
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
     stdout.flush()
