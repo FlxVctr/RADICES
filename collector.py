@@ -966,7 +966,7 @@ class Coordinator(object):
         print("number of seeds: ", number_of_seeds)
 
         for i in range(number_of_seeds):
-            seed = self.seed_queue.get(timeout=1)
+            seed = self.seed_queue.get()
             seed_list += [seed]
             print("seed ", i, ": ", seed)
             processes.append(MyProcess(target=self.work_through_seed_get_next_seed,
@@ -985,5 +985,6 @@ class Coordinator(object):
 
         for p in processes:
             p.start()
+            print(f"Thread {p.name} started.")
 
         return processes
