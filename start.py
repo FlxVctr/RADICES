@@ -16,21 +16,24 @@ from setup import Config
 def main_loop(coordinator, select=[], lang=None, test_fail=False, restart=False):
 
     collectors = coordinator.start_collectors(select=select,
-                                              lang=lang, fail=test_fail, restart=restart, retries=4)
+                                              lang=lang, fail=test_fail, restart=restart,
+                                              retries=4)
 
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
     stdout.flush()
 
     i = 0
+    timeout = 3600
 
     for instance in collectors:
-        instance.join(timeout=3600)
+        instance.join(timeout=timeout)
         if instance.is_alive():
-            raise mp.TimeoutError
+            raise RuntimeError(f"Thread {instance.name} took longer than {timeout} seconds \
+to finish.")
         if instance.err is not None:
             raise instance.err
         i += 1
-        stdout.write("{} collector(s) finished\n".format(i))
+        stdout.write(f"Thread {instance.name} joined. {i} collector(s) finished\n")
         stdout.flush()
 
 
