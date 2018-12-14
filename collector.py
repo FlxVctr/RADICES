@@ -876,7 +876,7 @@ class Coordinator(object):
             #  lookup just in case we had them already
             friends_details_db = self.lookup_accounts_friend_details(
                 seed, self.dbh.engine)
-            if len(friends_details_db) > 0:
+            if friends_details_db is not None and len(friends_details_db) > 0:
                 friends_details = friends_details_db
 
         max_follower_count = friends_details['followers_count'].max()
