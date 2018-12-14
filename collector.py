@@ -914,14 +914,32 @@ class Coordinator(object):
              connection.reset_time_dict, connection.calls_dict))
 
         if follows == 0:
-            result = pd.DataFrame({'source': [seed], 'target': [new_seed]})
-            result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+
+            insert_query = f"""
+                INSERT INTO result (source, target)
+                VALUES ({seed}, {new_seed})
+                ON DUPLICATE KEY UPDATE source = source
+            """
+
+            self.dbh.engine.execute(insert_query)
+
             print('\nno follow back: added ({seed})-->({new_seed})'.format(
                 seed=seed, new_seed=new_seed
             ))
+
         if follows == 1:
-            result = pd.DataFrame({'source': [seed, new_seed], 'target': [new_seed, seed]})
-            result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+
+            insert_query = f"""
+                INSERT INTO result (source, target)
+                VALUES (
+                        ({seed}, {new_seed})
+                        ({new_seed}, {seed})
+                       )
+                ON DUPLICATE KEY UPDATE source = source
+            """
+
+            self.dbh.engine.execute(insert_query)
+
             print('\nfollow back: added ({seed})<-->({new_seed})'.format(
                 seed=seed, new_seed=new_seed
             ))
