@@ -1093,6 +1093,8 @@ class CoordinatorTest(unittest.TestCase):
                                msg="User with id {} is not protected anymore.".format(seed)):
             connection = Connection()
             c = Collector(connection, seed)
+            if c.connection.token[:8] == "36476777":
+                c.connection.next_token()
             c.get_friend_list()
 
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
@@ -1171,6 +1173,16 @@ class CoordinatorTest(unittest.TestCase):
             bee.join(timeout=1200)
             if bee.err is not None:
                 raise bee.err
+
+    def test_2_girls_1_cup(self):
+
+        director = Coordinator(seed_list=[36476777, 36476777])
+        cup = director.start_collectors(retries=1)
+
+        for girl in cup:
+            girl.join(timeout=1200)
+            if girl.err is not None:
+                raise girl.err
 
         # TODO: find a way to test with an assertion whether this works correctly
 

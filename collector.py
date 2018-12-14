@@ -881,89 +881,95 @@ class Coordinator(object):
             if friends_details_db is not None and len(friends_details_db) > 0:
                 friends_details = friends_details_db
 
-        max_follower_count = friends_details['followers_count'].max()
+        double_burned = True
 
-        new_seed = friends_details[
-            friends_details['followers_count'] == max_follower_count]['id'].values[0]
+        while double_burned is True:
+            max_follower_count = friends_details['followers_count'].max()
 
-        check_exists_query = """
-                                SELECT EXISTS(
-                                    SELECT * FROM friends
-                                    WHERE source={source}
-                                    )
-                             """.format(source=new_seed)
-        node_exists_as_source = self.dbh.engine.execute(check_exists_query).scalar()
+            new_seed = friends_details[
+                friends_details['followers_count'] == max_follower_count]['id'].values[0]
 
-        if node_exists_as_source == 1:
-            check_follow_query = """
+            check_exists_query = """
                                     SELECT EXISTS(
                                         SELECT * FROM friends
-                                        WHERE source={source} and target={target}
+                                        WHERE source={source}
                                         )
-                                 """.format(source=new_seed, target=seed)
+                                 """.format(source=new_seed)
+            node_exists_as_source = self.dbh.engine.execute(check_exists_query).scalar()
 
-            follows = self.dbh.engine.execute(check_follow_query).scalar()
+            if node_exists_as_source == 1:
+                check_follow_query = """
+                                        SELECT EXISTS(
+                                            SELECT * FROM friends
+                                            WHERE source={source} and target={target}
+                                            )
+                                     """.format(source=new_seed, target=seed)
 
-        elif node_exists_as_source == 0:
-            # check on Twitter
+                follows = self.dbh.engine.execute(check_follow_query).scalar()
 
-            # FIXTHIS: dirty workaround because of wacky test
-            if connection == "fail":
-                connection = Connection()
+            elif node_exists_as_source == 0:
+                # check on Twitter
 
-            try:
-                collector
-            except NameError:
-                collector = Collector(connection, seed)
+                # FIXTHIS: dirty workaround because of wacky test
+                if connection == "fail":
+                    connection = Connection()
 
-            follows = int(collector.check_follows(source=new_seed, target=seed))
+                try:
+                    collector
+                except NameError:
+                    collector = Collector(connection, seed)
+
+                follows = int(collector.check_follows(source=new_seed, target=seed))
+
+            if follows == 0:
+
+                insert_query = f"""
+                    INSERT INTO result (source, target)
+                    VALUES ({seed}, {new_seed})
+                    ON DUPLICATE KEY UPDATE source = source
+                """
+
+                self.dbh.engine.execute(insert_query)
+
+                print('\nno follow back: added ({seed})-->({new_seed})'.format(
+                    seed=seed, new_seed=new_seed
+                ))
+
+            if follows == 1:
+
+                insert_query = f"""
+                    INSERT INTO result (source, target)
+                    VALUES
+                        ({seed}, {new_seed}),
+                        ({new_seed}, {seed})
+                    ON DUPLICATE KEY UPDATE source = source
+                """
+
+                self.dbh.engine.execute(insert_query)
+
+                print('\nfollow back: added ({seed})<-->({new_seed})'.format(
+                    seed=seed, new_seed=new_seed
+                ))
+
+            update_query = """
+                            UPDATE friends
+                            SET burned=1
+                            WHERE source={source} AND target={target} AND burned = 0
+                           """.format(source=seed, target=new_seed)
+
+            update_result = self.dbh.engine.execute(update_query)
+
+            if update_result.rowcount == 0:
+                print(f"Connection ({seed})-->({new_seed}) was burned already.")
+                friends_details = self.lookup_accounts_friend_details(
+                    seed, self.dbh.engine)
+            else:
+                print(f"burned ({seed})-->({new_seed})")
+                double_burned = False
 
         self.token_queue.put(
             (connection.token, connection.secret,
              connection.reset_time_dict, connection.calls_dict))
-
-        if follows == 0:
-
-            insert_query = f"""
-                INSERT INTO result (source, target)
-                VALUES ({seed}, {new_seed})
-                ON DUPLICATE KEY UPDATE source = source
-            """
-
-            self.dbh.engine.execute(insert_query)
-
-            print('\nno follow back: added ({seed})-->({new_seed})'.format(
-                seed=seed, new_seed=new_seed
-            ))
-
-        if follows == 1:
-
-            insert_query = f"""
-                INSERT INTO result (source, target)
-                VALUES
-                    ({seed}, {new_seed}),
-                    ({new_seed}, {seed})
-                ON DUPLICATE KEY UPDATE source = source
-            """
-
-            self.dbh.engine.execute(insert_query)
-
-            print('\nfollow back: added ({seed})<-->({new_seed})'.format(
-                seed=seed, new_seed=new_seed
-            ))
-
-        update_query = """
-                        UPDATE friends
-                        SET burned=1
-                        WHERE source={source} AND target={target} AND burned = 0
-                       """.format(source=seed, target=new_seed)
-
-        update_result = self.dbh.engine.execute(update_query)
-
-        if update_result.rowcount == 0:
-            raise AssertionError("Connection was burned already.")
-
-        print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
 
         self.seed_queue.put(new_seed)
 
