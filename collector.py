@@ -908,6 +908,10 @@ class Coordinator(object):
                 collector = Collector(connection, seed)
 
             follows = int(collector.check_follows(source=new_seed, target=seed))
+            
+        self.token_queue.put(
+            (connection.token, connection.secret,
+             connection.reset_time_dict, connection.calls_dict))
 
         if follows == 0:
             result = pd.DataFrame({'source': [seed], 'target': [new_seed]})
@@ -934,10 +938,6 @@ class Coordinator(object):
             raise AssertionError("Connection was burned already.")
 
         print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
-
-        self.token_queue.put(
-            (connection.token, connection.secret,
-             connection.reset_time_dict, connection.calls_dict))
 
         self.seed_queue.put(new_seed)
 
