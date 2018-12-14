@@ -717,6 +717,8 @@ class Coordinator(object):
         else:
             friends = friends['target'].values
             friends = tuple(friends)
+            if len(friends) == 1:
+                friends = str(friends).replace(',', '')
 
             query = f"SELECT {select} from user_details WHERE id IN {friends}"
             friend_detail = pd.read_sql(query, db_connection)
