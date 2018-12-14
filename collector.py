@@ -936,10 +936,9 @@ class Coordinator(object):
 
             insert_query = f"""
                 INSERT INTO result (source, target)
-                VALUES (
-                        ({seed}, {new_seed})
-                        ({new_seed}, {seed})
-                       )
+                VALUES
+                    ({seed}, {new_seed}),
+                    ({new_seed}, {seed})
                 ON DUPLICATE KEY UPDATE source = source
             """
 
