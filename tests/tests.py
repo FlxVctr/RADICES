@@ -1072,6 +1072,11 @@ class CoordinatorTest(unittest.TestCase):
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
         self.assertNotEqual(new_seed, burned_seed)
 
+        # test whether burned connection will not be returned again after restart
+        burned_seed = new_seed
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1, restart=True)
+        self.assertNotEqual(new_seed, expected_new_seed)
+
     def test_work_through_seed_if_account_has_no_friends(self):
 
         seed = 770602317242523648

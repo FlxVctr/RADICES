@@ -908,7 +908,7 @@ class Coordinator(object):
                 collector = Collector(connection, seed)
 
             follows = int(collector.check_follows(source=new_seed, target=seed))
-            
+
         self.token_queue.put(
             (connection.token, connection.secret,
              connection.reset_time_dict, connection.calls_dict))
