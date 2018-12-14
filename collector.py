@@ -872,6 +872,11 @@ class Coordinator(object):
 
             return new_seed
 
+        if 'restart' in kwargs and kwargs['restart'] is True:
+            #  lookup just in case we had them already
+            friends_details = self.lookup_accounts_friend_details(
+                seed, self.dbh.engine)
+
         max_follower_count = friends_details['followers_count'].max()
 
         new_seed = friends_details[
@@ -909,15 +914,36 @@ class Coordinator(object):
 
             follows = int(collector.check_follows(source=new_seed, target=seed))
 
+        self.token_queue.put(
+            (connection.token, connection.secret,
+             connection.reset_time_dict, connection.calls_dict))
+
         if follows == 0:
-            result = pd.DataFrame({'source': [seed], 'target': [new_seed]})
-            result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+
+            insert_query = f"""
+                INSERT INTO result (source, target)
+                VALUES ({seed}, {new_seed})
+                ON DUPLICATE KEY UPDATE source = source
+            """
+
+            self.dbh.engine.execute(insert_query)
+
             print('\nno follow back: added ({seed})-->({new_seed})'.format(
                 seed=seed, new_seed=new_seed
             ))
+
         if follows == 1:
-            result = pd.DataFrame({'source': [seed, new_seed], 'target': [new_seed, seed]})
-            result.to_sql('result', if_exists='append', index=False, con=self.dbh.engine)
+
+            insert_query = f"""
+                INSERT INTO result (source, target)
+                VALUES
+                    ({seed}, {new_seed}),
+                    ({new_seed}, {seed})
+                ON DUPLICATE KEY UPDATE source = source
+            """
+
+            self.dbh.engine.execute(insert_query)
+
             print('\nfollow back: added ({seed})<-->({new_seed})'.format(
                 seed=seed, new_seed=new_seed
             ))
@@ -934,10 +960,6 @@ class Coordinator(object):
             raise AssertionError("Connection was burned already.")
 
         print("burned ({seed})-->({new_seed})".format(seed=seed, new_seed=new_seed))
-
-        self.token_queue.put(
-            (connection.token, connection.secret,
-             connection.reset_time_dict, connection.calls_dict))
 
         self.seed_queue.put(new_seed)
 

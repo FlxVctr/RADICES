@@ -1,15 +1,17 @@
 import sqlite3 as lite
-import pandas as pd
 import uuid
 from sqlite3 import Error
-from setup import Config
+
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
+from setup import Config
+
 
 class DataBaseHandler():
-    def __init__(self, config_path: str="config.yml", config_dict: dict=None,
-                 create_all: bool=True):
+    def __init__(self, config_path: str = "config.yml", config_dict: dict = None,
+                 create_all: bool = True):
         """Initializes class by either connecting to an existing database
         or by creating a new database. Database settings depend on config.yml
 
@@ -94,14 +96,18 @@ class DataBaseHandler():
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
                                                     burned TINYINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    INDEX(source), INDEX(timestamp)
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                                    ON UPDATE CURRENT_TIMESTAMP,
+                                                    UNIQUE INDEX fedge (source, target),
+                                                    INDEX(timestamp)
                                                     );"""
                     create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    INDEX(source), INDEX(timestamp)
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                                    ON UPDATE CURRENT_TIMESTAMP,
+                                                    UNIQUE INDEX redge (source, target),
+                                                    INDEX(timestamp)
                                                   );"""
                     self.engine.execute(create_friends_table_sql)
                     self.engine.execute(create_results_table_sql)
@@ -109,7 +115,7 @@ class DataBaseHandler():
                         create_user_details_sql = """
                             CREATE TABLE IF NOT EXISTS user_details
                             (""" + ", ".join(user_details_list) + """, timestamp TIMESTAMP
-                            DEFAULT CURRENT_TIMESTAMP,
+                            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                             INDEX(timestamp));"""
                         self.engine.execute(create_user_details_sql)
                     else:
@@ -118,7 +124,7 @@ class DataBaseHandler():
                 except OperationalError as e:
                     raise e
 
-    def make_temp_tbl(self, type: str="user_details"):
+    def make_temp_tbl(self, type: str = "user_details"):
         """Creates a new temporary table with a random name consisting of a temp_ prefix
            and a uid. The structure of the table depends on the chosen type param. The
            table's structure will be a copy of an existing table, for example, a temporary
@@ -133,7 +139,11 @@ class DataBaseHandler():
         """
         uid = uuid.uuid4()
         temp_tbl_name = "temp_" + str(uid).replace('-', '_')
-        create_temp_tbl_sql = f"CREATE TABLE {temp_tbl_name} LIKE {type};"
+
+        if self.config.dbtype.lower() == "mysql":
+            create_temp_tbl_sql = f"CREATE TABLE {temp_tbl_name} LIKE {type};"
+        elif self.config.dbtype.lower() == "sqlite":
+            create_temp_tbl_sql = f"CREATE TABLE {temp_tbl_name} AS SELECT * FROM {type} WHERE 0"
         self.engine.execute(create_temp_tbl_sql)
         return temp_tbl_name
 
@@ -148,8 +158,27 @@ class DataBaseHandler():
         Returns:
             Nothing
         """
+        temp_tbl_name = self.make_temp_tbl(type="friends")
 
         friends_df = pd.DataFrame({'target': friendlist})
         friends_df['source'] = seed
         friends_df['burned'] = 0
-        friends_df.to_sql(name="friends", con=self.engine, if_exists="append", index=False)
+        friends_df.to_sql(name=temp_tbl_name, con=self.engine, if_exists="replace", index=False)
+
+        if self.config.dbtype.lower() == "mysql":
+            insert_query = f"""
+                INSERT INTO friends (source, target, burned)
+                SELECT source, target, burned
+                FROM {temp_tbl_name}
+                ON DUPLICATE KEY UPDATE
+                    source = {temp_tbl_name}.source
+            """
+        elif self.config.dbtype.lower() == "sqlite":
+            insert_query = f"""
+                INSERT OR IGNORE INTO friends (source, target, burned)
+                SELECT source, target, burned
+                FROM {temp_tbl_name}
+            """
+
+        self.engine.execute(insert_query)
+        self.engine.execute(f"DROP TABLE {temp_tbl_name}")

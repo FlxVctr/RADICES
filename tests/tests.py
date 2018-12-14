@@ -285,7 +285,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         s = "SELECT target FROM friends WHERE source LIKE '" + str(seed) + "'"
         friendlist_in_database = pd.read_sql(sql=s, con=engine)["target"].tolist()
         friendlist_in_database = list(map(int, friendlist_in_database))
-        self.assertEqual(friendlist_in_database, friendlist)
+        self.assertEqual(sorted(friendlist_in_database), sorted(friendlist))
 
         # This is to clean up.
         engine.execute("DROP TABLE friends;")
@@ -1071,6 +1071,11 @@ class CoordinatorTest(unittest.TestCase):
         burned_seed = new_seed
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
         self.assertNotEqual(new_seed, burned_seed)
+
+        # test whether burned connection will not be returned again after restart
+        burned_seed = new_seed
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=2, restart=True)
+        self.assertNotEqual(new_seed, expected_new_seed)
 
     def test_work_through_seed_if_account_has_no_friends(self):
 
