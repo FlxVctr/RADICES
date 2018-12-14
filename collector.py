@@ -872,6 +872,11 @@ class Coordinator(object):
 
             return new_seed
 
+        if 'restart' in kwargs and kwargs['restart'] is True:
+            #  lookup just in case we had them already
+            friends_details = self.lookup_accounts_friend_details(
+                seed, self.dbh.engine)
+
         max_follower_count = friends_details['followers_count'].max()
 
         new_seed = friends_details[
