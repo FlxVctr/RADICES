@@ -285,7 +285,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         s = "SELECT target FROM friends WHERE source LIKE '" + str(seed) + "'"
         friendlist_in_database = pd.read_sql(sql=s, con=engine)["target"].tolist()
         friendlist_in_database = list(map(int, friendlist_in_database))
-        self.assertEqual(friendlist_in_database, friendlist)
+        self.assertEqual(sorted(friendlist_in_database), sorted(friendlist))
 
         # This is to clean up.
         engine.execute("DROP TABLE friends;")

@@ -49,15 +49,13 @@ class DataBaseHandler():
                                                     target BIGINT NOT NULL,
                                                     burned TINYINT NOT NULL,
                                                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                                                    ON UPDATE CURRENT_TIMESTAMP
                                                   );"""
                     create_friends_index_sql_1 = "CREATE INDEX iFSource ON friends(source);"
                     create_friends_index_sql_2 = "CREATE INDEX iFTimestamp ON friends(timestamp);"
                     create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
-                                                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP ON
-                                                    UPDATE CURRENT_TIMESTAMP
+                                                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
                                                   );"""
                     create_results_index_sql_1 = "CREATE INDEX iRSource ON result(source);"
                     create_results_index_sql_2 = "CREATE INDEX iRTimestamp ON result(timestamp);"
@@ -72,8 +70,7 @@ class DataBaseHandler():
                         create_user_details_sql = """
                             CREATE TABLE IF NOT EXISTS user_details
                             (""" + ", ".join(user_details_list) + """,
-                             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                             ON UPDATE CURRENT_TIMESTAMP);"""
+                             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"""
                         create_ud_index = "CREATE INDEX iUTimestamp ON user_details(timestamp)"
                         c.execute(create_user_details_sql)
                         c.execute(create_ud_index)
@@ -142,7 +139,11 @@ class DataBaseHandler():
         """
         uid = uuid.uuid4()
         temp_tbl_name = "temp_" + str(uid).replace('-', '_')
-        create_temp_tbl_sql = f"CREATE TABLE {temp_tbl_name} LIKE {type};"
+
+        if self.config.dbtype.lower() == "mysql":
+            create_temp_tbl_sql = f"CREATE TABLE {temp_tbl_name} LIKE {type};"
+        elif self.config.dbtype.lower() == "sqlite":
+            create_temp_tbl_sql = f"CREATE TABLE {temp_tbl_name} AS SELECT * FROM {type} WHERE 0"
         self.engine.execute(create_temp_tbl_sql)
         return temp_tbl_name
 
@@ -164,13 +165,20 @@ class DataBaseHandler():
         friends_df['burned'] = 0
         friends_df.to_sql(name=temp_tbl_name, con=self.engine, if_exists="replace", index=False)
 
-        insert_query = f"""
-            INSERT INTO friends (source, target, burned)
-            SELECT source, target, burned
-            FROM {temp_tbl_name}
-            ON DUPLICATE KEY UPDATE
-                source = {temp_tbl_name}.source
-        """
+        if self.config.dbtype.lower() == "mysql":
+            insert_query = f"""
+                INSERT INTO friends (source, target, burned)
+                SELECT source, target, burned
+                FROM {temp_tbl_name}
+                ON DUPLICATE KEY UPDATE
+                    source = {temp_tbl_name}.source
+            """
+        elif self.config.dbtype.lower() == "sqlite":
+            insert_query = f"""
+                INSERT OR IGNORE INTO friends (source, target, burned)
+                SELECT source, target, burned
+                FROM {temp_tbl_name}
+            """
 
         self.engine.execute(insert_query)
         self.engine.execute(f"DROP TABLE {temp_tbl_name}")
