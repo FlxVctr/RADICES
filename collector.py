@@ -963,6 +963,21 @@ class Coordinator(object):
                 print(f"Connection ({seed})-->({new_seed}) was burned already.")
                 friends_details = self.lookup_accounts_friend_details(
                     seed, self.dbh.engine)
+
+                if friends_details is None:
+                    stdout.write(f"No friends or unburned connections left for {seed}, \
+selecting random seed.")
+                    stdout.flush()
+                    new_seed = self.seed_pool.sample(n=1)
+                    new_seed = new_seed[0].values[0]
+                    self.token_queue.put(
+                        (connection.token, connection.secret,
+                         connection.reset_time_dict, connection.calls_dict))
+
+                    self.seed_queue.put(new_seed)
+
+                    return new_seed
+
             else:
                 print(f"burned ({seed})-->({new_seed})")
                 double_burned = False
