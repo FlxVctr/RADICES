@@ -96,16 +96,14 @@ class DataBaseHandler():
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
                                                     burned TINYINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                                    ON UPDATE CURRENT_TIMESTAMP,
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                                     UNIQUE INDEX fedge (source, target),
                                                     INDEX(timestamp)
                                                     );"""
                     create_results_table_sql = """CREATE TABLE IF NOT EXISTS result (
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                                    ON UPDATE CURRENT_TIMESTAMP,
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                                     UNIQUE INDEX redge (source, target),
                                                     INDEX(timestamp)
                                                   );"""
@@ -115,7 +113,7 @@ class DataBaseHandler():
                         create_user_details_sql = """
                             CREATE TABLE IF NOT EXISTS user_details
                             (""" + ", ".join(user_details_list) + """, timestamp TIMESTAMP
-                            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                            DEFAULT CURRENT_TIMESTAMP,
                             INDEX(timestamp));"""
                         self.engine.execute(create_user_details_sql)
                     else:
