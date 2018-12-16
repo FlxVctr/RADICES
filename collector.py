@@ -722,9 +722,6 @@ class Coordinator(object):
 
             query = f"SELECT {select} from user_details WHERE id IN {friends}"
             friend_detail = pd.read_sql(query, db_connection)
-            
-            if len(friend_detail) == 0:
-                return None
 
             return friend_detail
 
