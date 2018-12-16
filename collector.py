@@ -964,7 +964,7 @@ class Coordinator(object):
                 friends_details = self.lookup_accounts_friend_details(
                     seed, self.dbh.engine)
 
-                if friends_details is None:
+                if friends_details is None or len(friends_details) == 0:
                     stdout.write(f"No friends or unburned connections left for {seed}, \
 selecting random seed.")
                     stdout.flush()
