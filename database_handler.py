@@ -96,7 +96,8 @@ class DataBaseHandler():
                                                     source BIGINT NOT NULL,
                                                     target BIGINT NOT NULL,
                                                     burned TINYINT NOT NULL,
-                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                                    ON UPDATE CURRENT_TIMESTAMP,
                                                     UNIQUE INDEX fedge (source, target),
                                                     INDEX(timestamp)
                                                     );"""
