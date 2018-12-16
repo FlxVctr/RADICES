@@ -919,7 +919,12 @@ class Coordinator(object):
                 except NameError:
                     collector = Collector(connection, seed)
 
-                follows = int(collector.check_follows(source=new_seed, target=seed))
+                try:
+                    follows = int(collector.check_follows(source=new_seed, target=seed))
+                except tweepy.TweepError as twerror:
+                    if "'code': 163" in twerror.reason:
+                        print("user {new_seed} not available anymore")
+                        follows = 0
 
             if follows == 0:
 
