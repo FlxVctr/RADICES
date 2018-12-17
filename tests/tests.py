@@ -1236,6 +1236,20 @@ class CoordinatorTest(unittest.TestCase):
 
         main_loop(coordinator, lang='de')
 
+        timestamp_test = pd.read_sql(
+            f"SELECT UNIX_TIMESTAMP(timestamp) < {time.time()} \
+            FROM result WHERE source = 36476777",
+            con=self.dbh.engine).values[0][0]
+
+        self.assertEqual(timestamp_test, 1)
+
+        timestamp_test = pd.read_sql(
+            f"SELECT UNIX_TIMESTAMP(timestamp) > {time.time() - 60} \
+            FROM result WHERE source = 36476777",
+            con=self.dbh.engine).values[0][0]
+
+        self.assertEqual(timestamp_test, 1)
+
         result = pd.read_sql(sql="SELECT * from result", con=self.dbh.engine)
 
         latest_seeds_df = pd.read_csv('latest_seeds.csv', header=None)[0]
@@ -1248,20 +1262,6 @@ class CoordinatorTest(unittest.TestCase):
         result_after_restart = pd.read_sql(sql="SELECT * from result", con=self.dbh.engine)
 
         pd.testing.assert_frame_equal(result, result_after_restart)
-
-    def test_timestamps_in_db(self):
-
-        start_time = time.time()
-
-        result = pd.read_sql(f"SELECT CURRENT_TIMESTAMP < {start_time}",
-                             con=self.dbh.engine).values[0][0]
-
-        self.assertEqual(result, 0)
-
-        result = pd.read_sql(f"SELECT CURRENT_TIMESTAMP > {start_time}",
-                             con=self.dbh.engine).values[0][0]
-
-        self.assertEqual(result, 1)
 
 
 class GeneralTests(unittest.TestCase):

@@ -21,7 +21,7 @@ def main_loop(coordinator, select=[], lang=None, test_fail=False, restart=False)
         update_query = f"""
                         UPDATE friends
                         SET burned=0
-                        WHERE timestamp > {latest_start_time}
+                        WHERE UNIX_TIMESTAMP(timestamp) > {latest_start_time}
                        """
         coordinator.dbh.engine.execute(update_query)
 
