@@ -14,6 +14,22 @@ from setup import Config
 
 def main_loop(coordinator, select=[], lang=None, test_fail=False, restart=False):
 
+    if restart is True:
+        latest_start_time = pd.read_sql_table('timetable', coordinator.dbh.engine)
+        latest_start_time = latest_start_time['latest_start_time'][0]
+
+        update_query = f"""
+                        UPDATE friends
+                        SET burned=0
+                        WHERE timestamp > {latest_start_time}
+                       """
+        coordinator.dbh.engine.execute(update_query)
+
+    start_time = time.time()
+
+    pd.DataFrame({'latest_start_time': [start_time]}).to_sql('timetable', coordinator.dbh.engine,
+                                                             if_exists='replace')
+
     collectors = coordinator.start_collectors(select=select,
                                               lang=lang, fail=test_fail, restart=restart,
                                               retries=4)
