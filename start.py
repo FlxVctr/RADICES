@@ -1,6 +1,5 @@
 import argparse
 import datetime
-import multiprocessing.dummy as mp
 import os
 import time
 import traceback

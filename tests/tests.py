@@ -34,6 +34,7 @@ from collector import Collector, Connection, Coordinator, retry_x_times
 from database_handler import DataBaseHandler
 from exceptions import TestException
 from setup import Config, FileImport
+from start import main_loop
 
 parser = argparse.ArgumentParser(description='SparseTwitter TestSuite')
 parser.add_argument('-s', '--skip_draining_tests',
@@ -1227,6 +1228,26 @@ class CoordinatorTest(unittest.TestCase):
             with self.assertRaises(TestException):
                 if worker.err is not None:
                     raise worker.err
+
+    def test_main_loop_resets_db_after_restart(self):
+
+        coordinator = Coordinator(seed_list=[36476777],
+                                  following_pages_limit=1)
+
+        main_loop(coordinator, lang='de')
+
+        result = pd.read_sql(sql="SELECT * from result", con=self.dbh.engine)
+
+        latest_seeds_df = pd.read_csv('latest_seeds.csv', header=None)[0]
+        latest_seeds = list(latest_seeds_df.values)
+        coordinator = Coordinator(seed_list=latest_seeds,
+                                  following_pages_limit=1)
+
+        main_loop(coordinator, lang='de', restart=True)
+
+        result_after_restart = pd.read_sql(sql="SELECT * from result", con=self.dbh.engine)
+
+        pd.testing.assert_frame_equal(result, result_after_restart)
 
 
 class GeneralTests(unittest.TestCase):
