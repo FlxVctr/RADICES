@@ -1249,6 +1249,20 @@ class CoordinatorTest(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result, result_after_restart)
 
+    def test_timestamps_in_db(self):
+
+        start_time = time.time()
+
+        result = pd.read_sql(f"SELECT CURRENT_TIMESTAMP < {start_time}",
+                             con=self.dbh.engine).values[0][0]
+
+        self.assertEqual(result, 0)
+
+        result = pd.read_sql(f"SELECT CURRENT_TIMESTAMP > {start_time}",
+                             con=self.dbh.engine).values[0][0]
+
+        self.assertEqual(result, 1)
+
 
 class GeneralTests(unittest.TestCase):
 
