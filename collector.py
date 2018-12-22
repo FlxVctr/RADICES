@@ -429,8 +429,15 @@ class Collector(object):
 
             while True:
                 try:
-                    user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
-                                                                     tweet_mode='extended')
+                    try:
+                        user_details += self.connection.api.lookup_users(user_ids=friends[i:j],
+                                                                         tweet_mode='extended')
+                    except tweepy.error.TweepError as e:
+                        if "No user matches for specified terms." in e.reason:
+                            stdout.write(f"No user matches for {friends[i:j]}")
+                            stdout.flush()
+                        else:
+                            raise e
                     self.connection.calls_dict['/users/lookup'] = 1
                     break
                 except tweepy.RateLimitError:
