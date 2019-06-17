@@ -66,6 +66,8 @@ def flatten_json(y: dict, columns: list, sep: str = "_",
     return out
 
 
+# Decorator function for re-executing x times (with exponentially developing
+# waiting times)
 def retry_x_times(x):
     def retry_decorator(func):
 
@@ -449,7 +451,7 @@ class Collector(object):
         return user_details
 
     @staticmethod
-    def make_friend_df(friends_details, select=["id", "followers_count", "lang",
+    def friend_df(friends_details, select=["id", "followers_count", "lang",
                                                       "created_at", "statuses_count"],
                        provide_jsons: bool = False, replace_nonetype: bool = True,
                        nonetype: dict = {'date': '1970-01-01',
@@ -669,8 +671,10 @@ class Coordinator(object):
     def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None,
                  following_pages_limit=0):
 
+        # Get seeds from seeds.csv
         self.seed_pool = FileImport().read_seed_file()
 
+        # Create seed_list if none is given by sampling from the seed_pool
         if seed_list is None:
 
             self.number_of_seeds = seeds
@@ -687,19 +691,22 @@ class Coordinator(object):
         for seed in self.seeds:
             self.seed_queue.put(seed)
 
+        # Get authorized user tokens for app from tokens.csv
         self.tokens = FileImport().read_token_file(token_file_name)
 
+        # and put them in a queue
         self.token_queue = mp.Queue()
 
         for token, secret in self.tokens.values:
             self.token_queue.put((token, secret, {}, {}))
 
+        # Initialize DataBaseHandler for DB communication
         self.dbh = DataBaseHandler()
 
         self.following_pages_limit = following_pages_limit
 
-    # TODO: Könnte man schöner machen, wenn man select eine Liste mitgeben könnte
-    # Die dann für den Query einfach gejoint wird mit ", ".join(select)
+    # TODO: Can be made more beautiful if one hand over a list to the select argument
+    # which in turn will be joined for the query with ", ".join(select)
     def lookup_accounts_friend_details(self,
                                        account_id, db_connection=None, select="*"):
         """Looks up and retrieves details from friends of `account_id` via database.
@@ -716,7 +723,7 @@ class Coordinator(object):
         if db_connection is None:
             db_connection = self.dbh.engine
 
-        query = "SELECT target from friends WHERE source = {} AND burned = 0".format(account_id)
+        query = f"SELECT target from friends WHERE source = {account_id} AND burned = 0"
         friends = pd.read_sql(query, db_connection)
 
         if len(friends) == 0:
@@ -747,6 +754,7 @@ class Coordinator(object):
             seed (int)
         """
 
+        # TODO: What is this @FlxVctr? Testing reasons?
         if fail is True:
             raise TestException
 
@@ -829,7 +837,7 @@ class Coordinator(object):
             friends_details = collector.get_details(friend_list)
             select = list(set(select + ["id", "followers_count",
                                         "lang", "created_at", "statuses_count"]))
-            friends_details = Collector.make_friend_df(friends_details, select)
+            friends_details = Collector.friend_df(friends_details, select)
 
             if lang is not None:
                 friends_details = friends_details[friends_details['lang'] == lang]
@@ -854,8 +862,10 @@ class Coordinator(object):
             try:
                 friends_details.to_sql('user_details', if_exists='append',
                                        index=False, con=self.dbh.engine)
+
+            # TODO: @FlxVctr - dbh doesn't have a temp_tbl method.
             except IntegrityError:  # duplicate id (primary key)
-                temp_tbl_name = self.dbh.make_temp_tbl()
+                temp_tbl_name = self.dbh.temp_tbl()
                 friends_details.to_sql(temp_tbl_name, if_exists="append", index=False,
                                        con=self.dbh.engine)
                 query = "REPLACE INTO user_details SELECT * FROM {};".format(

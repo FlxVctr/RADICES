@@ -26,6 +26,7 @@ class DataBaseHandler():
             Nothing
         """
 
+        # Prepare user_details configured in config.yml for user_details table creation
         self.config = Config(config_path, config_dict)
         user_details_list = []
         if "twitter_user_details" in self.config.config:
@@ -36,6 +37,8 @@ class DataBaseHandler():
             print("""Key "twitter_user_details" could not be found in config.yml. Will not create
                   a user_details table.""")
 
+        # Table creation for SQLITE database type.
+        # Note and TODO: the collector does not support sqlite (yet)
         if self.config.dbtype.lower() == "sqlite":
             try:
                 self.engine = lite.connect(self.config.dbname + ".db")
@@ -81,6 +84,7 @@ class DataBaseHandler():
                 except Error as e:
                     print(e)
 
+        # Table creation for mysql database type
         elif self.config.dbtype.lower() == "mysql":
             try:
                 self.engine = create_engine(

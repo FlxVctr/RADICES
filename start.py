@@ -54,9 +54,11 @@ to finish.")
 
 if __name__ == "__main__":
 
+    # Backup latest_seeds.csv if exists
     if os.path.isfile("latest_seeds.csv"):
         copyfile("latest_seeds.csv", f"{datetime.datetime.now().isoformat()}_latest_seeds.csv")
 
+    # Get arguments from commandline
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
     parser.add_argument('-l', '--language', help="specify language code of users to gather")
