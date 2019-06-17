@@ -3,7 +3,7 @@ import subprocess
 import sys
 import os
 
-
+# creates a new empty config file and opens it
 def make_config():
     copyfile('config_template.yml', 'config.yml')
 

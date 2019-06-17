@@ -149,6 +149,7 @@ twitter_user_details:
 
 
 # ================== Notification Emails =====================
+# If you wish to receive notifications whenever WHAT TODO:
 
 notifications:
     email_to_notify:
@@ -156,4 +157,4 @@ notifications:
     # (find them under the respective domain name here: https://mailgun.com/app/domains)
     mailgun_default_smtp_login:
     mailgun_api_base_url:
-    mailgun_api_key: 
+    mailgun_api_key:
