@@ -3,12 +3,13 @@ import pandas as pd
 
 import passwords
 
-config_dict_notifications = {
-    "email_to_notify": passwords.email_to_notify,
-    "mailgun_default_smtp_login": passwords.mailgun_default_smtp_login,
-    "mailgun_api_base_url": passwords.mailgun_api_base_url,
-    "mailgun_api_key": passwords.mailgun_api_key
-}
+# Not implemented
+# config_dict_notifications = {
+#    "email_to_notify": passwords.email_to_notify,
+#    "mailgun_default_smtp_login": passwords.mailgun_default_smtp_login,
+#    "mailgun_api_base_url": passwords.mailgun_api_base_url,
+#    "mailgun_api_key": passwords.mailgun_api_key
+# }
 
 config_dict_twitter_details = {
     "twitter_user_details": {
@@ -142,8 +143,8 @@ config_dict_sqlite = {
         "passwd": None,
         "dbname": "test_db"
     },
-    "twitter_user_details": config_dict_twitter_details["twitter_user_details"],
-    "notifications": config_dict_notifications
+    "twitter_user_details": config_dict_twitter_details["twitter_user_details"]  # ,
+    # "notifications": config_dict_notifications
 }
 
 config_dict_mysql = {
@@ -154,8 +155,8 @@ config_dict_mysql = {
         "passwd": passwords.sparsetwittermysqlpw,
         "dbname": "sparsetwitter"
     },
-    "twitter_user_details": config_dict_twitter_details["twitter_user_details"],
-    "notifications": config_dict_notifications
+    "twitter_user_details": config_dict_twitter_details["twitter_user_details"]  # ,
+    # "notifications": config_dict_notifications
 }
 
 # TODO: FELDER OHNE VORKOMMEN RAUS?
@@ -287,8 +288,8 @@ config_dict_user_details_dtypes_sqlite = {
         "url": "TEXT",
         "verified": "SMALLINT",
         "utc_offset": "TEXT"   # TODO: SEE IF THIS IS NEEDED
-    },
-    "notifications": config_dict_notifications
+    }  # ,
+    # "notifications": config_dict_notifications
 }
 
 config_dict_user_details_dtypes_mysql = {
@@ -299,8 +300,8 @@ config_dict_user_details_dtypes_mysql = {
         "passwd": passwords.sparsetwittermysqlpw,
         "dbname": "sparsetwitter"
     },
-    "twitter_user_details": config_dict_user_details_dtypes_sqlite["twitter_user_details"],
-    "notifications": config_dict_notifications
+    "twitter_user_details": config_dict_user_details_dtypes_sqlite["twitter_user_details"]  # ,
+    # "notifications": config_dict_notifications
 }
 
 friends_details_pddf_dtypes = {

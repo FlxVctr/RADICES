@@ -452,12 +452,12 @@ class Collector(object):
 
     @staticmethod
     def friend_df(friends_details, select=["id", "followers_count", "lang",
-                                                      "created_at", "statuses_count"],
-                       provide_jsons: bool = False, replace_nonetype: bool = True,
-                       nonetype: dict = {'date': '1970-01-01',
-                                         'num': -1,
-                                         'str': '-1',
-                                         'bool': -1}):
+                                           "created_at", "statuses_count"],
+                  provide_jsons: bool = False, replace_nonetype: bool = True,
+                  nonetype: dict = {'date': '1970-01-01',
+                                    'num': -1,
+                                    'str': '-1',
+                                    'bool': -1}):
         """Transforms list of user details to pandas.DataFrame
 
         Args:
@@ -678,7 +678,6 @@ class Coordinator(object):
         if seed_list is None:
 
             self.number_of_seeds = seeds
-
             self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
 
             self.seeds = self.seeds[0].values
