@@ -6,7 +6,7 @@
 
 # ================== Database Information =====================
 sql:
-    dbtype:   # either "sqlite" or "mysql"
+    dbtype:   mysql
     host:     # if dbtype = mysql, provide host
     user:     # if dbtype = mysql, provide user
     passwd:   # if dbtype = mysql, provide password
@@ -24,11 +24,9 @@ sql:
 # This will save the detail "contributors_enabled" as booelan / tinyint into the
 # database but it will not save "created_at" at all.
 
-# TODO: add descriptions for user_details
-
 twitter_user_details:
     contributors_enabled:  # SMALLINT
-    created_at:  # DATETIME
+    created_at:  DATETIME
     default_profile:  # SMALLINT
     default_profile_image:  # SMALLINT
     description:  # TEXT (contains a dict)
@@ -36,12 +34,12 @@ twitter_user_details:
     entities_url_urls:  # TEXT (contains a dict)
     favourites_count:  # BIGINT
     follow_request_sent:  # SMALLINT
-    followers_count:  # BIGINT
+    followers_count:  BIGINT
     following:  # SMALLINT
     friends_count:  # BIGINT
     geo_enabled:  # SMALLINT
     has_extended_profile:  # SMALLINT
-    id:  # BIGINT PRIMARY KEY
+    id:  BIGINT PRIMARY KEY
     id_str:  # VARCHAR(30)
     is_translation_enabled:  # SMALLINT
     is_translator:  # SMALLINT
@@ -139,7 +137,7 @@ twitter_user_details:
     status_source:  # TEXT
     status_full_text:  # TEXT
     status_truncated:  # SMALLINT
-    statuses_count:  # BIGINT
+    statuses_count:  BIGINT
     suspended:  # SMALLINT
     time_zone: # TEXT (Rarely available)
     translator_type:  # VARCHAR(50)
@@ -156,4 +154,4 @@ notifications:
     # (find them under the respective domain name here: https://mailgun.com/app/domains)
     mailgun_default_smtp_login:
     mailgun_api_base_url:
-    mailgun_api_key: 
+    mailgun_api_key:
