@@ -1,6 +1,6 @@
 # functional test for network collector
 import argparse
-import datetime
+from datetime import datetime
 import os
 import shutil
 import sys
@@ -38,7 +38,7 @@ def setUpModule():
                                 message="unclosed",
                                 category=ResourceWarning)
     if os.path.isfile("latest_seeds.csv"):
-        os.rename("latest_seeds.csv", f"{datetime.datetime.now().isoformat()}_latest_seeds.csv")
+        os.rename("latest_seeds.csv", "{}_latest_seeds.csv".format(datetime.now().isoformat().replace(":", "-")))
 
 
 class FirstUseTest(unittest.TestCase):
