@@ -38,7 +38,8 @@ def setUpModule():
                                 message="unclosed",
                                 category=ResourceWarning)
     if os.path.isfile("latest_seeds.csv"):
-        os.rename("latest_seeds.csv", "{}_latest_seeds.csv".format(datetime.now().isoformat().replace(":", "-")))
+        os.rename("latest_seeds.csv",
+                  "{}_latest_seeds.csv".format(datetime.now().isoformat().replace(":", "-")))
 
 
 class FirstUseTest(unittest.TestCase):
