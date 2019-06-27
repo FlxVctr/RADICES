@@ -1,5 +1,5 @@
 import argparse
-import datetime
+from datetime import datetime
 import os
 import time
 import traceback
@@ -56,7 +56,8 @@ if __name__ == "__main__":
 
     # Backup latest_seeds.csv if exists
     if os.path.isfile("latest_seeds.csv"):
-        copyfile("latest_seeds.csv", f"{datetime.datetime.now().isoformat()}_latest_seeds.csv")
+        copyfile("latest_seeds.csv",
+                 "{}_latest_seeds.csv".format(datetime.now().isoformat().replace(":", "-")))
 
     # Get arguments from commandline
     parser = argparse.ArgumentParser()
