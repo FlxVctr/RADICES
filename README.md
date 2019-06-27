@@ -1,23 +1,69 @@
 # SparseTwitter
+
+Comprehensive Description of Project / Project Goal / Functioning of Code
 Project to create a sparsified sample network of (German)Twitter Users
 
 
-## Setup dev environment
+## Prepare
+Before using the app, some basic preparations have to be made.
 
-Install [pipenv](https://pipenv.readthedocs.io/en/latest/) and run:
+### Config.yml
+Open `config_template.yml` and enter the information about your mysql database. Do not change the dbtype argument since at the moment, only mySQL databases are supported.
+Note: The password field is required! If not password is given (even is none is needed for the database), the app will raise an Exception. This means that the database user specified in config.yml has always to log in with a password, even when the mySQL server runs on localhost.
+
+### Seeds
+The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter ID per line. Feel free to use `seeds_template.csv` and replace the existing seeds which represent the Twitter accounts of Thomas Mueller (German soccer player) and Sascha Lobo (German blogger). For the algorithm to create a good sample, many seeds should be given (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds.
+
+### Tokens
+This app is based on a [Twitter Developer](https://developer.twitter.com/) app. To use it you have to first create a Twitter app.
+Once you did that, your Consumer API Key and Secret have to be pasted into `empty_keys.json`. Then, rename it to `keys.json`.
+You are now ready to have users authorize your app so that it will get more API calls. To do so, run
+```
+python twauth.py
+```
+This will open a link to Twitter that requires you (or someone else) to log in with their Twitter account. Once logged in, a 6-digit authorisation key will be shown on the screen. This key has to be entered into the console window where `twauth.py` is still running. When they code was entered, it will be added to the `tokens.csv` file (which is created, if it does not exist). For the software to run, the app has to be authorised by at least one Twitter user.
+
+### Pipenv
+We recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest/) to create a virtual environment with all the required packages.
+After installing pipenv, navigate to the project directory and run:
 
 ```
 pipenv install
 ```
-This installs the packages specified in the Pipfile into your virtual environment.
+This creates a virtual environment and installs the packages specified in the Pipfile.
 
 Run
 ```
 pipenv shell
 ```
-to start a shell in the virtual env.
+to start a shell in the virtual environment.
 
+### Provide mySQL Information
+```diff
+- Note: Currently, only mySQL Databases are supported.
+```
+A mySQL database and relevant information have to be specified in order for the program to work.
+
+
+## Start
+Run
+```
+python start.py -n 2 -p 1
+```
+where n defines the number of seeds to be drawn from the seed pool and p the number of pages to look at when identifying the next node.
 ## Testing
+
+### Local mysql database
+Some of the tests try to connect to a local mySQL database using the user "sparsetwitter@localhost". For these tests to run properly it is required that a mySQL server actually runs on the device and that a user 'sparsetwitter'@'localhost' with relevant permissions exists.
+
+Please refer to the [mySQL documentation](https://dev.mysql.com/doc/mysql-installation-excerpt/5.5/en/installing.html) on how to install mySQL on your system. If your mySQL server is up and running, the following command will create the user 'sparsetwitter' and will give it full permissions (replace "<your password>" with a password):
+
+```
+CREATE USER 'sparsetwitter'@'localhost' IDENTIFIED BY '<your password>'; GRANT ALL ON *.* TO 'sparsetwitter'@'localhost' WITH GRANT OPTION;
+```
+
+For the test to run, you also have to enter the password of the sparsetwitter mySQL user into the `passwords_template.py`. Then, rename it into `passwords.py`
+
 
 Before the testing can begin, you will need several files (filled):
 
