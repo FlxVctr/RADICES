@@ -65,6 +65,7 @@ CREATE USER 'sparsetwitter'@'localhost' IDENTIFIED BY '<your password>'; GRANT A
 For the test to run, you also have to enter the password of the sparsetwitter mySQL user into the `passwords_template.py`. Then, rename it into `passwords.py`
 
 
+# Old
 Before the testing can begin, you will need several files (filled):
 
 -   passwords.py: stores the password for your mySQL database. Just insert your password into the passwords_template.py and rename it to passwords.py.
