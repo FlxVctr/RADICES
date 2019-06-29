@@ -9,7 +9,7 @@ Before using the app, some basic preparations have to be made.
 
 ### Config.yml
 Open `config_template.yml` and enter the information about your mysql database. Do not change the dbtype argument since at the moment, only mySQL databases are supported.
-Note: The password field is required! If not password is given (even is none is needed for the database), the app will raise an Exception. This means that the database user specified in config.yml has always to log in with a password, even when the mySQL server runs on localhost.
+Note: The password field is required! If no password is given (even is none is needed for the database), the app will raise an Exception. This means that the database user specified in config.yml has always to log in with a password, even when the mySQL server runs on localhost.
 
 ### Seeds
 The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter ID per line. Feel free to use `seeds_template.csv` and replace the existing seeds which represent the Twitter accounts of Thomas Mueller (German soccer player) and Sascha Lobo (German blogger). For the algorithm to create a good sample, many seeds should be given (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds.
@@ -24,7 +24,7 @@ python twauth.py
 This will open a link to Twitter that requires you (or someone else) to log in with their Twitter account. Once logged in, a 6-digit authorisation key will be shown on the screen. This key has to be entered into the console window where `twauth.py` is still running. When they code was entered, it will be added to the `tokens.csv` file (which is created, if it does not exist). For the software to run, the app has to be authorised by at least one Twitter user.
 
 ### Pipenv
-We recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest/) to create a virtual environment with all the required packages.
+We highly recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest/) to create a virtual environment with all the required packages in the respective versions.
 After installing pipenv, navigate to the project directory and run:
 
 ```
@@ -51,7 +51,16 @@ Run
 python start.py -n 2 -p 1
 ```
 where n defines the number of seeds to be drawn from the seed pool and p the number of pages to look at when identifying the next node.
+
+```diff
+- If the program freezes after saying "Starting x Collectors", it is likely that either your keys.json or your tokens.csv contains wrong information. We work on a solution that is more user-friendly!
+- If you get an error saying "lookup_users() got an unexpected keyword argument", you likely have the wrong version of tweepy installed. Either update your tweepy package or use pipenv to create a virtual environment and install all the packages you need.
+```
+
 ## Testing
+
+### passwords.py
+Before testing, please re-enter the password of the sparsetwitter mySQL user into the `passwords_template.py`. Then, rename it into `passwords.py`. If you would like to make use (and test) mailgun notifications, please also enter the relevant information as well.
 
 ### Local mysql database
 Some of the tests try to connect to a local mySQL database using the user "sparsetwitter@localhost". For these tests to run properly it is required that a mySQL server actually runs on the device and that a user 'sparsetwitter'@'localhost' with relevant permissions exists.
@@ -62,7 +71,22 @@ Please refer to the [mySQL documentation](https://dev.mysql.com/doc/mysql-instal
 CREATE USER 'sparsetwitter'@'localhost' IDENTIFIED BY '<your password>'; GRANT ALL ON *.* TO 'sparsetwitter'@'localhost' WITH GRANT OPTION;
 ```
 
-For the test to run, you also have to enter the password of the sparsetwitter mySQL user into the `passwords_template.py`. Then, rename it into `passwords.py`
+### Tests that will fail
+For the functional tests, the test `FirstUseTest.test_restarts_after_exception` will fail if you did not provide (or did not provide valid) Mailgun credentials.
+
+### Running the tests
+To run the tests, just type
+
+```
+python functional_test.py
+```
+
+and / or
+```
+python tests/tests.py
+```
+
+
 
 
 # Old

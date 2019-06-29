@@ -359,9 +359,9 @@ class Collector(object):
                 print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
 {endpoint} in {int(self.connection.reset_time_dict[endpoint] - time.time())} seconds.")
 
-            while (endpoint in self.connection.reset_time_dict
-                   and self.connection.reset_time_dict[endpoint] >= time.time()
-                   and self.connection.calls_dict[endpoint] == 0):
+            while (endpoint in self.connection.reset_time_dict and
+                   self.connection.reset_time_dict[endpoint] >= time.time() and
+                   self.connection.calls_dict[endpoint] == 0):
                 self.connection.next_token()
                 time.sleep(1)
 
