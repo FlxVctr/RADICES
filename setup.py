@@ -171,10 +171,10 @@ class Config():
                 }
             config (dict):
                 {
-                "mailgun_api_base_url": TODO ENTER HERE
-                "mailgun_api_key": TODO ENTER HERE
-                "mailgun_default_smtp_login": TODO ENTER HERE
-                "email_to_notify": TODO ENTER HERE
+                "mailgun_api_base_url": "link to mailgun_api_base_url"
+                "mailgun_api_key": "your mailgun_api_key"
+                "mailgun_default_smtp_login": "your mailgun_default_smtp_login"
+                "email_to_notify": "the email_to_notify"
                 }
         Returns:
             requests.post to Mailgun API.
