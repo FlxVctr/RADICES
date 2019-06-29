@@ -142,8 +142,8 @@ config_dict_sqlite = {
         "passwd": None,
         "dbname": "test_db"
     },
-    "twitter_user_details": config_dict_twitter_details["twitter_user_details"]  # ,
-    # "notifications": config_dict_notifications
+    "twitter_user_details": config_dict_twitter_details["twitter_user_details"],
+    "notifications": config_dict_notifications
 }
 
 config_dict_mysql = {
@@ -154,8 +154,8 @@ config_dict_mysql = {
         "passwd": passwords.sparsetwittermysqlpw,
         "dbname": "sparsetwitter"
     },
-    "twitter_user_details": config_dict_twitter_details["twitter_user_details"]  # ,
-    # "notifications": config_dict_notifications
+    "twitter_user_details": config_dict_twitter_details["twitter_user_details"],
+    "notifications": config_dict_notifications
 }
 
 # TODO: FELDER OHNE VORKOMMEN RAUS?

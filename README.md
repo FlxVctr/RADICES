@@ -4,6 +4,15 @@ Comprehensive Description of Project / Project Goal / Functioning of Code
 Project to create a sparsified sample network of (German)Twitter Users
 
 
+## How it works
+ -Get Twitter App
+ -Have users authorise your app (recommended: at least 3)
+ -Fill out config.yml
+ -Indicate seeds
+ -Set up environment with pipenv
+ -Start Programme
+ -(then testing)
+
 ## Prepare
 Before using the app, some basic preparations have to be made.
 
@@ -37,13 +46,6 @@ Run
 pipenv shell
 ```
 to start a shell in the virtual environment.
-
-### Provide mySQL Information
-```diff
-- Note: Currently, only mySQL Databases are supported.
-```
-A mySQL database and relevant information have to be specified in order for the program to work.
-
 
 ## Start
 Run

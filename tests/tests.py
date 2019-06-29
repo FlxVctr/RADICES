@@ -1,6 +1,5 @@
 import argparse
 import copy
-import datetime
 import json
 import multiprocessing.dummy as mp
 import os
@@ -17,6 +16,7 @@ import numpy as np
 import pandas as pd
 import tweepy
 import yaml
+from datetime import datetime
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
@@ -65,7 +65,8 @@ def setUpModule():
                                 message="unclosed",
                                 category=ResourceWarning)
     if os.path.isfile("latest_seeds.csv"):
-        os.rename("latest_seeds.csv", f"{datetime.datetime.now().isoformat()}_latest_seeds.csv")
+        os.rename("latest_seeds.csv",
+                  "{}_latest_seeds.csv".format(datetime.now().isoformat().replace(":", "-")))
 
 
 class FileImportTest(unittest.TestCase):
@@ -719,7 +720,7 @@ class CollectorTest(unittest.TestCase):
 
         self.assertGreaterEqual(len(friends_details), 100)
 
-        friends_df = Collector.make_friend_df(friends_details)
+        friends_df = collector.make_friend_df(friends_details)
 
         self.assertIsInstance(friends_df, pd.DataFrame)
         self.assertEqual(len(friends_df), len(friends_details))
@@ -948,7 +949,7 @@ class CoordinatorTest(unittest.TestCase):
             pass
 
     def test_coordinator_selects_n_random_seeds(self):
-        coordinator = Coordinator(seeds=10)
+        coordinator = Coordinator(seeds=2)
         self.assertEqual(len(coordinator.seeds), 10)
         try:
             coordinator.seed_queue.close()
