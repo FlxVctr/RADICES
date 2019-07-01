@@ -54,10 +54,11 @@ python start.py -n 2 -p 1
 ```
 where n defines the number of seeds to be drawn from the seed pool and p the number of pages to look at when identifying the next node.
 
-```diff
+Note:
+
 - If the program freezes after saying "Starting x Collectors", it is likely that either your keys.json or your tokens.csv contains wrong information. We work on a solution that is more user-friendly!
 - If you get an error saying "lookup_users() got an unexpected keyword argument", you likely have the wrong version of tweepy installed. Either update your tweepy package or use pipenv to create a virtual environment and install all the packages you need.
-```
+
 
 ## Testing
 
