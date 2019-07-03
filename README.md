@@ -3,15 +3,18 @@
 Comprehensive Description of Project / Project Goal / Functioning of Code
 Project to create a sparsified sample network of (German)Twitter Users
 
+## Disclaimer
+By submitting a pull request to this repository, you agree to license your contribution under the MIT license (as this project is).
 
 ## How it works
- -Get Twitter App
- -Have users authorise your app (recommended: at least 3)
- -Fill out config.yml
- -Indicate seeds
- -Set up environment with pipenv
- -Start Programme
- -(then testing)
+1. Create a Twitter Developer app (read more here) #TODO
+2. Have users authorise your app (the more the better - at least one) (see Step X) TODO
+3. Set up a mysql Database locally or online. (See here for reference) (TODO)
+4. Fill out config.yml according to your requirements (See here) TODO
+5. Fill out the seeds_template with your starting seeds or use the given ones (See here) TODO
+6. Set up your virtual environment with pipenv (LINK TODO)
+7. Start software, be happy
+8. (Develop the app further - see tests)
 
 ## Prepare
 Before using the app, some basic preparations have to be made.
