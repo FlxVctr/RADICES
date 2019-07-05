@@ -34,7 +34,7 @@ You can also indicate which Twitter user account details you want to collect. Th
 If you have a mailgun account, you can also add your details at the bottom of the `config.yml`. If you do so, you will receive an email when the software encounters an error.
 
 ### Indicate starting seeds for the walkers
-The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter ID per line. Feel free to use `seeds_template.csv` or replace the existing seeds which are ~200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
+The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter ID per line. Feel free to use `seeds_template.csv` (and rename it to `seeds.csv`) or replace the existing seeds which are ~200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
 
 Note that the `seeds.csv` at least have to contain that many account IDs as walkers should run in parallel. We suggest using at least 100 seeds, the more the better (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds and there will be no need to give a comprehensive seed list
 
@@ -68,6 +68,10 @@ Note:
 
 ## Testing
 
+For development purposes. Note that you still need a functional (i.e. filled out) `keys.json` and tokens indicated in `tokens.csv` to work with.
+Moreover, for some tests to run through, test tweet json files are needed. They have to be stored in `tests/tweet_jsons/` and can be downloaded
+TODO
+
 ### passwords.py
 Before testing, please re-enter the password of the sparsetwitter mySQL user into the `passwords_template.py`. Then, rename it into `passwords.py`. If you would like to make use (and test) mailgun notifications, please also enter the relevant information as well.
 
@@ -95,20 +99,5 @@ and / or
 python tests/tests.py
 ```
 
-
-
-
-# Old
-Before the testing can begin, you will need several files (filled):
-
--   passwords.py: stores the password for your mySQL database. Just insert your password into the passwords_template.py and rename it to passwords.py.
-
--   keys.json: Stores your app key and secret ("Consumer key, Consumer Secret", [get your own Twitter app](https://developer.twitter.com/)). Use empty_keys.json as a template.
-
--   tokens.csv: Stores the user access tokens who have authorized your app. The more you have, the more requests you'll be able to query to the Twitter API. You can create a tokens csv by executing twauth.py (only works if keys.json exists and contains app key and secret).
-
--   a number of tests/tweet_jsons/user_x.json files for testing. You can create the directory and files by running make_test_tweet_jsons.py.
-
-<span style="color:red">/TODO: MORE DETAILED EXPLANATION OF THE SINGLE FILES</span>
-
-After you created all these files, you should be ready to go for the testing. The unit and functional tests modules are located in `/tests`. Note that you will have to start the tests from the project root (i.e., using `python tests/tests.py` since it appends the PYTHONPATH by the current working directory.
+# TODO
+- Testing (add paragraph about make_test_tweet_jsons)
