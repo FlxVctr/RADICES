@@ -95,6 +95,7 @@ CREATE USER 'sparsetwitter'@'localhost' IDENTIFIED BY '<your password>'; GRANT A
 
 ### Tests that will fail
 For the functional tests, the test `FirstUseTest.test_restarts_after_exception` will fail if you did not provide (or did not provide valid) Mailgun credentials.
+FOr the unittests, two are known to fail at the moment, and nine will produce an error. We are currently working on this and it will be fixed in a later version.
 
 ### Running the tests
 To run the tests, just type
