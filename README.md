@@ -13,9 +13,9 @@ By submitting a pull request to this repository, you agree to license your contr
 
 ## How it works
 1. [Create a Twitter Developer app](https://developer.twitter.com/en/docs/basics/getting-started)
-2. Have users authorise your app (the more the better - at least one) [(see here)](#Authorise-App-&-Get-Tokens)
+2. Have users authorise your app (the more the better - at least one) [(see here)](#authorise-app--get-tokens)
 3. [Set up a mysql Database locally or online](https://dev.mysql.com/doc/mysql-getting-started/en/).
-4. Fill out config.yml according to your requirements [(see here)](#Configuration-(config.yml))
+4. Fill out config.yml according to your requirements [(see here)](#configuration-configyml)
 5. Fill out the seeds_template with your starting seeds or use the given ones [(see here)](#Indicate-starting-seeds-for-the-walkers)
 6. Set up your virtual environment with [pipenv](https://pipenv.readthedocs.io/en/latest/) [(see here)](#Create-Virtual-Environment-with-Pipenv)
 7. [Start software](#Start), be happy
