@@ -19,7 +19,7 @@ By submitting a pull request to this repository, you agree to license your contr
 5. Fill out the seeds_template with your starting seeds or use the given ones [(see here)](#Indicate-starting-seeds-for-the-walkers)
 6. Set up your virtual environment with [pipenv](https://pipenv.readthedocs.io/en/latest/) [(see here)](#Create-Virtual-Environment-with-Pipenv)
 7. [Start software](#Start), be happy
-8. (Develop the app further - see tests)
+8. (Develop the app further - [run tests](#Testing))
 
 ### Authorise App & Get Tokens
 This app is based on a [Twitter Developer](https://developer.twitter.com/) app. To use it you have to first create a Twitter app.
