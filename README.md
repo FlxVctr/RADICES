@@ -1,19 +1,24 @@
 # SparseTwitter
 
-Comprehensive Description of Project / Project Goal / Functioning of Code
-Project to create a sparsified sample network of (German)Twitter Users
+This is the project repository relating to \[redacted\].
+
+In short: This software creates a sample of a language-based Twittersphere as described in \[Link to paper\]. If you have trouble understanding this brief documentation, you might want to refer to the original paper.
+
+If you have still trouble understanding, please feel free to open an issue or comment.
+
+Moreover, if you find any bugs, you are invited to report them under \[Link to issues\].
 
 ## Disclaimer
 By submitting a pull request to this repository, you agree to license your contribution under the MIT license (as this project is).
 
 ## How it works
-1. Create a Twitter Developer app (read more here) #TODO
-2. Have users authorise your app (the more the better - at least one) (see Step X) TODO
-3. Set up a mysql Database locally or online. (See here for reference) (TODO)
-4. Fill out config.yml according to your requirements (See here) TODO
-5. Fill out the seeds_template with your starting seeds or use the given ones (See here) TODO
-6. Set up your virtual environment with pipenv (LINK TODO)
-7. Start software, be happy
+1. [Create a Twitter Developer app](https://developer.twitter.com/en/docs/basics/getting-started)
+2. Have users authorise your app (the more the better - at least one) [(see here)](#Authorise-App-&-Get-Tokens)
+3. [Set up a mysql Database locally or online](https://dev.mysql.com/doc/mysql-getting-started/en/).
+4. Fill out config.yml according to your requirements [(see here)](#Configuration-(config.yml))
+5. Fill out the seeds_template with your starting seeds or use the given ones [(see here)](#Indicate-starting-seeds-for-the-walkers)
+6. Set up your virtual environment with [pipenv](https://pipenv.readthedocs.io/en/latest/) [(see here)](#Create-Virtual-Environment-with-Pipenv)
+7. [Start software](#Start), be happy
 8. (Develop the app further - see tests)
 
 ### Authorise App & Get Tokens
@@ -38,7 +43,7 @@ The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when 
 
 Note that the `seeds.csv` at least have to contain that many account IDs as walkers should run in parallel. We suggest using at least 100 seeds, the more the better (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds and there will be no need to give a comprehensive seed list
 
-### Pipenv (TODO CONTINUE HERE)
+### Create Virtual Environment with Pipenv
 We highly recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest/) to create a virtual environment with all the required packages in the respective versions.
 After installing pipenv, navigate to the project directory and run:
 
@@ -54,23 +59,27 @@ pipenv shell
 to start a shell in the virtual environment.
 
 ## Start
-Run
+Run (while you are in the pipenv virtual environment)
 ```
-python start.py -n 2 -p 1
+python start.py -n 2 -l de -p 1
 ```
-where n defines the number of seeds to be drawn from the seed pool and p the number of pages to look at when identifying the next node.
+where -n takes the number of seeds to be drawn from the seed pool, -l the Twitter user interface language that is of your interest, and -p the number of pages to look at when identifying the next node.
 
 Note:
-
 - If the program freezes after saying "Starting x Collectors", it is likely that either your keys.json or your tokens.csv contains wrong information. We work on a solution that is more user-friendly!
 - If you get an error saying "lookup_users() got an unexpected keyword argument", you likely have the wrong version of tweepy installed. Either update your tweepy package or use pipenv to create a virtual environment and install all the packages you need.
+- If at some point an error is encountered: There is a -r (restart with latest seeds) option - this will be documented in a later version.
 
 
 ## Testing
 
 For development purposes. Note that you still need a functional (i.e. filled out) `keys.json` and tokens indicated in `tokens.csv` to work with.
-Moreover, for some tests to run through, test tweet json files are needed. They have to be stored in `tests/tweet_jsons/` and can be downloaded
-TODO
+Moreover, for some tests to run through, some user details json files are needed. They have to be stored in `tests/tweet_jsons/` and can be downloaded by running
+```
+python make_test_tweet_jsons.py -s 1670174994
+```
+where -s stands for the seed to use and can be replaced by any Twitter seed of your choice.
+Note: the name `tweet_jsons` is misleading, since the json files actually contain information about specific users (friends of the given seed). This will be changed in a later version.
 
 ### passwords.py
 Before testing, please re-enter the password of the sparsetwitter mySQL user into the `passwords_template.py`. Then, rename it into `passwords.py`. If you would like to make use (and test) mailgun notifications, please also enter the relevant information as well.
@@ -98,6 +107,3 @@ and / or
 ```
 python tests/tests.py
 ```
-
-# TODO
-- Testing (add paragraph about make_test_tweet_jsons)
