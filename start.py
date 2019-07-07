@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     # Get arguments from commandline
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=2)
+    parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
     parser.add_argument('-l', '--language', help="specify language code of users to gather")
     parser.add_argument('-r', '--restart',
                         help="restart with latest seeds in latest_seeds.csv", action="store_true")
