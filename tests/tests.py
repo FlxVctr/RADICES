@@ -720,7 +720,7 @@ class CollectorTest(unittest.TestCase):
 
         self.assertGreaterEqual(len(friends_details), 100)
 
-        friends_df = collector.make_friend_df(friends_details)
+        friends_df = Collector.make_friend_df(friends_details)
 
         self.assertIsInstance(friends_df, pd.DataFrame)
         self.assertEqual(len(friends_df), len(friends_details))
