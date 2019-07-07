@@ -118,14 +118,17 @@ class Config():
         # Check for necessary database information. If no information is provided,
         # stop
         if "sql" not in self.config:
-            raise Exception("Config file " + config_file + """ does not contain key 'sql'!
-                  Please fill out config.yml""")
+            print("Config file " + config_file + """ does not contain key 'sql'!
+                  Will use default sqlite configuration.""")
+            self.config["sql"] = dict(dbtype="sqlite",
+                                      dbname="new_database")
         self.sql_config = self.config["sql"]
 
         # No db type given in Config
         if self.sql_config["dbtype"] is None:
-            raise Exception("Config file " + config_file + """ does not contain key 'sql'!
-                  Please fill out config.yml""")
+                        print('''Parameter dbtype not set in the "config.yml". Will create
+                             an sqlite database.''')
+            self.dbtype = "sqlite"
         else:
             self.dbtype = self.sql_config["dbtype"].strip()
 
