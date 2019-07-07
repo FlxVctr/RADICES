@@ -23,28 +23,28 @@ By submitting a pull request to this repository, you agree to license your contr
 
 ### Authorise App & Get Tokens
 This app is based on a [Twitter Developer](https://developer.twitter.com/) app. To use it you have to first create a Twitter app.
-Once you did that, your Consumer API Key and Secret have to be pasted into `empty_keys.json`. Then, rename it to `keys.json`.
+Once you did that, your Consumer API Key and Secret have to be pasted into a `keys.json`, for which you can copy `empty_keys.json` (do not delete or change this file if you want to use the developer tests).
 You are now ready to have users authorize your app so that it will get more API calls. To do so, run
 ```
 python twauth.py
 ```
-This will open a link to Twitter that requires you (or someone else) to log in with their Twitter account. Once logged in, a 6-digit authorisation key will be shown on the screen. This key has to be entered into the console window where `twauth.py` is still running. After the code was entered, a new token will be added to the `tokens.csv` file (which is created, if it does not exist). For this software to run, the app has to be authorised by at least one Twitter user.
+This will open a link to Twitter that requires you (or someone else) to log in with their Twitter account. Once logged in, a 6-digit authorisation key will be shown on the screen. This key has to be entered into the console window where `twauth.py` is still running. After the code was entered, a new token will be added to the `tokens.csv` file. For this software to run, the app has to be authorised by at least one Twitter user.
 
 ### Configuration (config.yml)
-After setting up your mysql database, open `config_template.yml` and enter the database information. Do not change the dbtype argument since at the moment, only mySQL databases are supported.
+After setting up your mysql database, copy `config_template.yml` to a file named `config.yml` and enter the database information. Do not change the dbtype argument since at the moment, only mySQL databases are supported.
 Note that the password field is required (this also means that your database has to be password-protected). If no password is given (even is none is needed for the database), the app will raise an Exception.
 
-You can also indicate which Twitter user account details you want to collect. Those will be stored in a database table called `user_details`. By default, the software collects account id, follower count, account creation time and account tweets count. If you wish to collect more user details, just enter the mysql type after the colon (":") of the respective user detail in the list. The suggested type is already indicated in the comment in the respective line. Note, however, that collecting huge amounts of data has not been tested with all the user details being collected, so we do not guarantee the code to work with them. Moreover, due to Twitter API changes, some of the user details may become private properties, thus not collectable any more through the API.
+You can also indicate which Twitter user account details you want to collect. Those will be stored in a database table called `user_details`. By default, the software has to collect account id, follower count, account creation time and account tweets count at the moment and you have to activate those by uncommenting in the config. If you wish to collect more user details, just enter the mysql type after the colon (":") of the respective user detail in the list. The suggested type is already indicated in the comment in the respective line. Note, however, that collecting huge amounts of data has not been tested with all the user details being collected, so we do not guarantee the code to work with them. Moreover, due to Twitter API changes, some of the user details may become private properties, thus not collectable any more through the API.
 
 If you have a mailgun account, you can also add your details at the bottom of the `config.yml`. If you do so, you will receive an email when the software encounters an error.
 
 ### Indicate starting seeds for the walkers
-The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter ID per line. Feel free to use `seeds_template.csv` (and rename it to `seeds.csv`) or replace the existing seeds which are ~200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
+The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter account ID per line. Feel free to use `seeds_template.csv` (and rename it to `seeds.csv`) to replace the existing seeds which are ~200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
 
 Note that the `seeds.csv` at least have to contain that many account IDs as walkers should run in parallel. We suggest using at least 100 seeds, the more the better (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds and there will be no need to give a comprehensive seed list
 
 ### Create Virtual Environment with Pipenv
-We highly recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest/) to create a virtual environment with all the required packages in the respective versions.
+We highly recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest) (including the installation of pyenv) to create a virtual environment with all the required packages in the respective versions.
 After installing pipenv, navigate to the project directory and run:
 
 ```
@@ -59,6 +59,9 @@ pipenv shell
 to start a shell in the virtual environment.
 
 ## Start
+
+NOTE: the language specification is not working at the moment due to changes in the Twitter API. We are working on a solution. Until then you can only collect global networks by removing the `-l de` argument.
+
 Run (while you are in the pipenv virtual environment)
 ```
 python start.py -n 2 -l de -p 1
