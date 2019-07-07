@@ -126,8 +126,8 @@ class Config():
 
         # No db type given in Config
         if self.sql_config["dbtype"] is None:
-                        print('''Parameter dbtype not set in the "config.yml". Will create
-                             an sqlite database.''')
+            print('''Parameter dbtype not set in the "config.yml". Will create
+                  an sqlite database.''')
             self.dbtype = "sqlite"
         else:
             self.dbtype = self.sql_config["dbtype"].strip()
