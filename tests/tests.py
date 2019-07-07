@@ -903,7 +903,8 @@ class CoordinatorTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        os.rename("seeds.csv", "seeds.csv.bak")
+        if os.path.isfile("seeds.csv"):
+            os.rename("seeds.csv", "seeds.csv.bak")
         os.rename("seeds_test.csv", "seeds.csv")
 
         if os.path.isfile("config.yml"):
@@ -918,7 +919,8 @@ class CoordinatorTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         os.rename("seeds.csv", "seeds_test.csv")
-        os.rename("seeds.csv.bak", "seeds.csv")
+        if os.path.isfile("seeds.csv.bak"):
+            os.rename("seeds.csv.bak", "seeds.csv")
 
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")
@@ -949,7 +951,7 @@ class CoordinatorTest(unittest.TestCase):
             pass
 
     def test_coordinator_selects_n_random_seeds(self):
-        coordinator = Coordinator(seeds=2)
+        coordinator = Coordinator(seeds=10)
         self.assertEqual(len(coordinator.seeds), 10)
         try:
             coordinator.seed_queue.close()
