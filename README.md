@@ -8,18 +8,30 @@ If you have still trouble understanding, please feel free to open an issue or co
 
 Moreover, if you find any bugs, you are invited to report them under \[Link to issues\].
 
-## Disclaimer
-By submitting a pull request to this repository, you agree to license your contribution under the MIT license (as this project is).
-
 ## How it works
 1. [Create a Twitter Developer app](https://developer.twitter.com/en/docs/basics/getting-started)
-2. Have users authorise your app (the more the better - at least one) [(see here)](#authorise-app--get-tokens)
-3. [Set up a mysql Database locally or online](https://dev.mysql.com/doc/mysql-getting-started/en/).
-4. Fill out config.yml according to your requirements [(see here)](#configuration-configyml)
-5. Fill out the seeds_template with your starting seeds or use the given ones [(see here)](#Indicate-starting-seeds-for-the-walkers)
-6. Set up your virtual environment with [pipenv](https://pipenv.readthedocs.io/en/latest/) [(see here)](#Create-Virtual-Environment-with-Pipenv)
+2. Set up your virtual environment with [pipenv](https://pipenv.readthedocs.io/en/latest/) [(see here)](#Create-Virtual-Environment-with-Pipenv)
+3. Have users authorise your app (the more the better - at least one) [(see here)](#authorise-app--get-tokens)
+4. [Set up a mysql Database locally or online](https://dev.mysql.com/doc/mysql-getting-started/en/).
+5. Fill out config.yml according to your requirements [(see here)](#configuration-configyml)
+6. Fill out the seeds_template with your starting seeds or use the given ones [(see here)](#Indicate-starting-seeds-for-the-walkers)
 7. [Start software](#Start), be happy
 8. (Develop the app further - [run tests](#Testing))
+
+### Create Virtual Environment with Pipenv
+We highly recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest) (including the installation of pyenv) to create a virtual environment with all the required packages in the respective versions.
+After installing pipenv, navigate to the project directory and run:
+
+```
+pipenv install
+```
+This creates a virtual environment and installs the packages specified in the Pipfile.
+
+Run
+```
+pipenv shell
+```
+to start a shell in the virtual environment.
 
 ### Authorise App & Get Tokens
 This app is based on a [Twitter Developer](https://developer.twitter.com/) app. To use it you have to first create a Twitter app.
@@ -42,21 +54,6 @@ If you have a mailgun account, you can also add your details at the bottom of th
 The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter account ID per line. Feel free to use `seeds_template.csv` (and rename it to `seeds.csv`) to replace the existing seeds which are ~200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
 
 Note that the `seeds.csv` at least have to contain that many account IDs as walkers should run in parallel. We suggest using at least 100 seeds, the more the better (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds and there will be no need to give a comprehensive seed list
-
-### Create Virtual Environment with Pipenv
-We highly recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest) (including the installation of pyenv) to create a virtual environment with all the required packages in the respective versions.
-After installing pipenv, navigate to the project directory and run:
-
-```
-pipenv install
-```
-This creates a virtual environment and installs the packages specified in the Pipfile.
-
-Run
-```
-pipenv shell
-```
-to start a shell in the virtual environment.
 
 ## Start
 
@@ -110,5 +107,9 @@ python functional_test.py
 and / or
 
 ```
-python tests/tests.py
+python tests/tests.py -s
 ```
+The -s parameter is for skipping API call-draining tests. Note that even if -s is set, the tests can take very long to run if only few API tokens are given in the tokens.csv. The whole software relies on a sufficiently high number of tokens. We used 15.
+
+## Disclaimer
+By submitting a pull request to this repository, you agree to license your contribution under the MIT license (as this project is).
