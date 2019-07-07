@@ -15,4 +15,3 @@ tests/tweet_jsons
 seeds_de_ids.csv
 user_ids_de.csv
 results/
-Pipfile.lock.bk
