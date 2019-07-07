@@ -836,7 +836,7 @@ class Coordinator(object):
             friends_details = collector.get_details(friend_list)
             select = list(set(select + ["id", "followers_count",
                                         "lang", "created_at", "statuses_count"]))
-            friends_details = Collector.friend_df(friends_details, select)
+            friends_details = Collector.make_friend_df(friends_details, select)
 
             if lang is not None:
                 friends_details = friends_details[friends_details['lang'] == lang]

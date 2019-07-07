@@ -571,7 +571,7 @@ class ConfigTest(unittest.TestCase):
         cfg_dict["notifications"] = {key: None
                                      for (key, value)
                                      in self.config_dict["notifications"].items()}
-        self.assertEqual(Config("config_template.yml").config, cfg_dict)
+        self.assertEqual(Config("tests/config_test_empty.yml").config, cfg_dict)
 
     def test_sql_key_not_in_config(self):
         cfg_dict = copy.deepcopy(self.config_dict)
