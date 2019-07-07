@@ -571,7 +571,7 @@ class ConfigTest(unittest.TestCase):
         cfg_dict["notifications"] = {key: None
                                      for (key, value)
                                      in self.config_dict["notifications"].items()}
-        self.assertEqual(Config("config_template.yml").config, cfg_dict)
+        self.assertEqual(Config("tests/config_test_empty.yml").config, cfg_dict)
 
     def test_sql_key_not_in_config(self):
         cfg_dict = copy.deepcopy(self.config_dict)
@@ -1116,7 +1116,8 @@ class CoordinatorTest(unittest.TestCase):
                                                                     retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
-
+    
+    @unittest.skip("Relies on language.")
     def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
 
         seed = 1621528116
@@ -1198,7 +1199,8 @@ class CoordinatorTest(unittest.TestCase):
             with self.assertRaises(TestException):
                 if worker.err is not None:
                     raise worker.err
-
+    
+    @unittest.skip("Relies on language.")
     def test_main_loop_resets_db_after_restart(self):
 
         coordinator = Coordinator(seed_list=[36476777],

@@ -451,13 +451,13 @@ class Collector(object):
         return user_details
 
     @staticmethod
-    def friend_df(friends_details, select=["id", "followers_count", "lang",
-                                           "created_at", "statuses_count"],
-                  provide_jsons: bool = False, replace_nonetype: bool = True,
-                  nonetype: dict = {'date': '1970-01-01',
-                                    'num': -1,
-                                    'str': '-1',
-                                    'bool': -1}):
+    def make_friend_df(friends_details, select=["id", "followers_count", "lang",
+                                                "created_at", "statuses_count"],
+                       provide_jsons: bool = False, replace_nonetype: bool = True,
+                       nonetype: dict = {'date': '1970-01-01',
+                                         'num': -1,
+                                         'str': '-1',
+                                         'bool': -1}):
         """Transforms list of user details to pandas.DataFrame
 
         Args:
@@ -753,7 +753,7 @@ class Coordinator(object):
             seed (int)
         """
 
-        # TODO: What is this @FlxVctr? Testing reasons?
+        # For testing raise of errors while multithreading
         if fail is True:
             raise TestException
 
@@ -836,7 +836,7 @@ class Coordinator(object):
             friends_details = collector.get_details(friend_list)
             select = list(set(select + ["id", "followers_count",
                                         "lang", "created_at", "statuses_count"]))
-            friends_details = Collector.friend_df(friends_details, select)
+            friends_details = Collector.make_friend_df(friends_details, select)
 
             if lang is not None:
                 friends_details = friends_details[friends_details['lang'] == lang]
@@ -862,9 +862,8 @@ class Coordinator(object):
                 friends_details.to_sql('user_details', if_exists='append',
                                        index=False, con=self.dbh.engine)
 
-            # TODO: @FlxVctr - dbh doesn't have a temp_tbl method.
             except IntegrityError:  # duplicate id (primary key)
-                temp_tbl_name = self.dbh.temp_tbl()
+                temp_tbl_name = self.dbh.make_temp_tbl()
                 friends_details.to_sql(temp_tbl_name, if_exists="append", index=False,
                                        con=self.dbh.engine)
                 query = "REPLACE INTO user_details SELECT * FROM {};".format(
