@@ -1,6 +1,5 @@
 import argparse
 import copy
-import datetime
 import json
 import multiprocessing.dummy as mp
 import os
@@ -17,6 +16,7 @@ import numpy as np
 import pandas as pd
 import tweepy
 import yaml
+from datetime import datetime
 from pandas.api.types import is_string_dtype
 from pandas.errors import EmptyDataError
 from pandas.io.sql import DatabaseError
@@ -65,7 +65,8 @@ def setUpModule():
                                 message="unclosed",
                                 category=ResourceWarning)
     if os.path.isfile("latest_seeds.csv"):
-        os.rename("latest_seeds.csv", f"{datetime.datetime.now().isoformat()}_latest_seeds.csv")
+        os.rename("latest_seeds.csv",
+                  "{}_latest_seeds.csv".format(datetime.now().isoformat().replace(":", "-")))
 
 
 class FileImportTest(unittest.TestCase):
@@ -902,7 +903,8 @@ class CoordinatorTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        os.rename("seeds.csv", "seeds.csv.bak")
+        if os.path.isfile("seeds.csv"):
+            os.rename("seeds.csv", "seeds.csv.bak")
         os.rename("seeds_test.csv", "seeds.csv")
 
         if os.path.isfile("config.yml"):
@@ -917,7 +919,8 @@ class CoordinatorTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         os.rename("seeds.csv", "seeds_test.csv")
-        os.rename("seeds.csv.bak", "seeds.csv")
+        if os.path.isfile("seeds.csv.bak"):
+            os.rename("seeds.csv.bak", "seeds.csv")
 
         if os.path.isfile("config.yml.bak"):
             os.replace("config.yml.bak", "config.yml")

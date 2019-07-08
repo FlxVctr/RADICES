@@ -10,11 +10,11 @@ parser.add_argument('-s', '--seed',
                          be downloaded.''',
                     required=False,
                     type=int,
-                    default=83662933)
+                    default=1670174994)
 
 # Setup the Collector
 seed = parser.parse_args().seed  # Swap seeds with another Twitter User ID if you like
-if seed == 83662933:
+if seed == 1670174994:
     print("No seed given. Using default seed " + str(seed) + ".")
 else:
     print("Downloading and saving friends' details of user " + str(seed) + ".")

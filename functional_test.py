@@ -158,7 +158,7 @@ class FirstUseTest(unittest.TestCase):
             yaml.dump(mysql_cfg, f, default_flow_style=False)
 
         try:
-            response = str(check_output('python start.py -n 2 -l de -t -p 1',
+            response = str(check_output('python start.py -n 2 -t -p 1',
                                         stderr=STDOUT, shell=True))
             print(response)
         except CalledProcessError as e:

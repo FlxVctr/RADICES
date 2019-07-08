@@ -1,30 +1,25 @@
 # SparseTwitter
 
-Comprehensive Description of Project / Project Goal / Functioning of Code
-Project to create a sparsified sample network of (German)Twitter Users
+This is the project repository relating to \[redacted\].
 
+In short: This software creates a sample of a language-based Twittersphere as described in \[Link to paper\]. If you have trouble understanding this brief documentation, you might want to refer to the original paper.
 
-## Prepare
-Before using the app, some basic preparations have to be made.
+If you have still trouble understanding, please feel free to open an issue or comment.
 
-### Config.yml
-Open `config_template.yml` and enter the information about your mysql database. Do not change the dbtype argument since at the moment, only mySQL databases are supported.
-Note: The password field is required! If not password is given (even is none is needed for the database), the app will raise an Exception. This means that the database user specified in config.yml has always to log in with a password, even when the mySQL server runs on localhost.
+Moreover, if you find any bugs, you are invited to report them under \[Link to issues\].
 
-### Seeds
-The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter ID per line. Feel free to use `seeds_template.csv` and replace the existing seeds which represent the Twitter accounts of Thomas Mueller (German soccer player) and Sascha Lobo (German blogger). For the algorithm to create a good sample, many seeds should be given (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds.
+## How it works
+1. [Create a Twitter Developer app](https://developer.twitter.com/en/docs/basics/getting-started)
+2. Set up your virtual environment with [pipenv](https://pipenv.readthedocs.io/en/latest/) [(see here)](#Create-Virtual-Environment-with-Pipenv)
+3. Have users authorise your app (the more the better - at least one) [(see here)](#authorise-app--get-tokens)
+4. [Set up a mysql Database locally or online](https://dev.mysql.com/doc/mysql-getting-started/en/).
+5. Fill out config.yml according to your requirements [(see here)](#configuration-configyml)
+6. Fill out the seeds_template with your starting seeds or use the given ones [(see here)](#Indicate-starting-seeds-for-the-walkers)
+7. [Start software](#Start), be happy
+8. (Develop the app further - [run tests](#Testing))
 
-### Tokens
-This app is based on a [Twitter Developer](https://developer.twitter.com/) app. To use it you have to first create a Twitter app.
-Once you did that, your Consumer API Key and Secret have to be pasted into `empty_keys.json`. Then, rename it to `keys.json`.
-You are now ready to have users authorize your app so that it will get more API calls. To do so, run
-```
-python twauth.py
-```
-This will open a link to Twitter that requires you (or someone else) to log in with their Twitter account. Once logged in, a 6-digit authorisation key will be shown on the screen. This key has to be entered into the console window where `twauth.py` is still running. When they code was entered, it will be added to the `tokens.csv` file (which is created, if it does not exist). For the software to run, the app has to be authorised by at least one Twitter user.
-
-### Pipenv
-We recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest/) to create a virtual environment with all the required packages.
+### Create Virtual Environment with Pipenv
+We highly recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest) (including the installation of pyenv) to create a virtual environment with all the required packages in the respective versions.
 After installing pipenv, navigate to the project directory and run:
 
 ```
@@ -38,20 +33,56 @@ pipenv shell
 ```
 to start a shell in the virtual environment.
 
-### Provide mySQL Information
-```diff
-- Note: Currently, only mySQL Databases are supported.
+### Authorise App & Get Tokens
+This app is based on a [Twitter Developer](https://developer.twitter.com/) app. To use it you have to first create a Twitter app.
+Once you did that, your Consumer API Key and Secret have to be pasted into a `keys.json`, for which you can copy `empty_keys.json` (do not delete or change this file if you want to use the developer tests).
+You are now ready to have users authorize your app so that it will get more API calls. To do so, run
 ```
-A mySQL database and relevant information have to be specified in order for the program to work.
+python twauth.py
+```
+This will open a link to Twitter that requires you (or someone else) to log in with their Twitter account. Once logged in, a 6-digit authorisation key will be shown on the screen. This key has to be entered into the console window where `twauth.py` is still running. After the code was entered, a new token will be added to the `tokens.csv` file. For this software to run, the app has to be authorised by at least one Twitter user.
 
+### Configuration (config.yml)
+After setting up your mysql database, copy `config_template.yml` to a file named `config.yml` and enter the database information. Do not change the dbtype argument since at the moment, only mySQL databases are supported.
+Note that the password field is required (this also means that your database has to be password-protected). If no password is given (even is none is needed for the database), the app will raise an Exception.
+
+You can also indicate which Twitter user account details you want to collect. Those will be stored in a database table called `user_details`. By default, the software has to collect account id, follower count, account creation time and account tweets count at the moment and you have to activate those by uncommenting in the config. If you wish to collect more user details, just enter the mysql type after the colon (":") of the respective user detail in the list. The suggested type is already indicated in the comment in the respective line. Note, however, that collecting huge amounts of data has not been tested with all the user details being collected, so we do not guarantee the code to work with them. Moreover, due to Twitter API changes, some of the user details may become private properties, thus not collectable any more through the API.
+
+If you have a mailgun account, you can also add your details at the bottom of the `config.yml`. If you do so, you will receive an email when the software encounters an error.
+
+### Indicate starting seeds for the walkers
+The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter account ID per line. Feel free to use `seeds_template.csv` (and rename it to `seeds.csv`) to replace the existing seeds which are ~200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
+
+Note that the `seeds.csv` at least have to contain that many account IDs as walkers should run in parallel. We suggest using at least 100 seeds, the more the better (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds and there will be no need to give a comprehensive seed list
 
 ## Start
-Run
+
+NOTE: the language specification is not working at the moment due to changes in the Twitter API. We are working on a solution. Until then you can only collect global networks by removing the `-l de` argument.
+
+Run (while you are in the pipenv virtual environment)
 ```
-python start.py -n 2 -p 1
+python start.py -n 2 -l de -p 1
 ```
-where n defines the number of seeds to be drawn from the seed pool and p the number of pages to look at when identifying the next node.
+where -n takes the number of seeds to be drawn from the seed pool, -l the Twitter user interface language that is of your interest, and -p the number of pages to look at when identifying the next node.
+
+Note:
+- If the program freezes after saying "Starting x Collectors", it is likely that either your keys.json or your tokens.csv contains wrong information. We work on a solution that is more user-friendly!
+- If you get an error saying "lookup_users() got an unexpected keyword argument", you likely have the wrong version of tweepy installed. Either update your tweepy package or use pipenv to create a virtual environment and install all the packages you need.
+- If at some point an error is encountered: There is a -r (restart with latest seeds) option - this will be documented in a later version.
+
+
 ## Testing
+
+For development purposes. Note that you still need a functional (i.e. filled out) `keys.json` and tokens indicated in `tokens.csv` to work with.
+Moreover, for some tests to run through, some user details json files are needed. They have to be stored in `tests/tweet_jsons/` and can be downloaded by running
+```
+python make_test_tweet_jsons.py -s 1670174994
+```
+where -s stands for the seed to use and can be replaced by any Twitter seed of your choice.
+Note: the name `tweet_jsons` is misleading, since the json files actually contain information about specific users (friends of the given seed). This will be changed in a later version.
+
+### passwords.py
+Before testing, please re-enter the password of the sparsetwitter mySQL user into the `passwords_template.py`. Then, rename it into `passwords.py`. If you would like to make use (and test) mailgun notifications, please also enter the relevant information as well.
 
 ### Local mysql database
 Some of the tests try to connect to a local mySQL database using the user "sparsetwitter@localhost". For these tests to run properly it is required that a mySQL server actually runs on the device and that a user 'sparsetwitter'@'localhost' with relevant permissions exists.
@@ -62,20 +93,22 @@ Please refer to the [mySQL documentation](https://dev.mysql.com/doc/mysql-instal
 CREATE USER 'sparsetwitter'@'localhost' IDENTIFIED BY '<your password>'; GRANT ALL ON *.* TO 'sparsetwitter'@'localhost' WITH GRANT OPTION;
 ```
 
-For the test to run, you also have to enter the password of the sparsetwitter mySQL user into the `passwords_template.py`. Then, rename it into `passwords.py`
+### Tests that will fail
+For the functional tests, the test `FirstUseTest.test_restarts_after_exception` will fail if you did not provide (or did not provide valid) Mailgun credentials. Also one unit-test will fail in this case.
 
+### Running the tests
+To run the tests, just type
 
-# Old
-Before the testing can begin, you will need several files (filled):
+```
+python functional_test.py
+```
 
--   passwords.py: stores the password for your mySQL database. Just insert your password into the passwords_template.py and rename it to passwords.py.
+and / or
 
--   keys.json: Stores your app key and secret ("Consumer key, Consumer Secret", [get your own Twitter app](https://developer.twitter.com/)). Use empty_keys.json as a template.
+```
+python tests/tests.py -s
+```
+The -s parameter is for skipping API call-draining tests. Note that even if -s is set, the tests can take very long to run if only few API tokens are given in the tokens.csv. The whole software relies on a sufficiently high number of tokens. We used 15.
 
--   tokens.csv: Stores the user access tokens who have authorized your app. The more you have, the more requests you'll be able to query to the Twitter API. You can create a tokens csv by executing twauth.py (only works if keys.json exists and contains app key and secret).
-
--   a number of tests/tweet_jsons/user_x.json files for testing. You can create the directory and files by running make_test_tweet_jsons.py.
-
-<span style="color:red">/TODO: MORE DETAILED EXPLANATION OF THE SINGLE FILES</span>
-
-After you created all these files, you should be ready to go for the testing. The unit and functional tests modules are located in `/tests`. Note that you will have to start the tests from the project root (i.e., using `python tests/tests.py` since it appends the PYTHONPATH by the current working directory.
+## Disclaimer
+By submitting a pull request to this repository, you agree to license your contribution under the MIT license (as this project is).

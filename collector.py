@@ -134,7 +134,6 @@ class Connection(object):
     """
 
     def __init__(self, token_file_name="tokens.csv", token_queue=None):
-
         self.credentials = FileImport().read_app_key_file()
 
         self.ctoken = self.credentials[0]
@@ -151,10 +150,8 @@ class Connection(object):
             self.token_queue = token_queue
 
         self.token, self.secret, self.reset_time_dict, self.calls_dict = self.token_queue.get()
-
         self.auth = tweepy.OAuthHandler(self.ctoken, self.csecret)
         self.auth.set_access_token(self.token, self.secret)
-
         self.api = tweepy.API(self.auth, wait_on_rate_limit=False, wait_on_rate_limit_notify=False)
 
     def next_token(self):
@@ -362,9 +359,9 @@ class Collector(object):
                 print(f"{time.strftime('%c')}: new reset of token {self.connection.token[:4]} for \
 {endpoint} in {int(self.connection.reset_time_dict[endpoint] - time.time())} seconds.")
 
-            while (endpoint in self.connection.reset_time_dict
-                   and self.connection.reset_time_dict[endpoint] >= time.time()
-                   and self.connection.calls_dict[endpoint] == 0):
+            while (endpoint in self.connection.reset_time_dict and
+                   self.connection.reset_time_dict[endpoint] >= time.time() and
+                   self.connection.calls_dict[endpoint] == 0):
                 self.connection.next_token()
                 time.sleep(1)
 
@@ -670,7 +667,6 @@ class Coordinator(object):
 
     def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None,
                  following_pages_limit=0):
-
         # Get seeds from seeds.csv
         self.seed_pool = FileImport().read_seed_file()
 
@@ -701,7 +697,6 @@ class Coordinator(object):
 
         # Initialize DataBaseHandler for DB communication
         self.dbh = DataBaseHandler()
-
         self.following_pages_limit = following_pages_limit
 
     # TODO: Can be made more beautiful if one hand over a list to the select argument
@@ -764,7 +759,6 @@ class Coordinator(object):
             connection = Connection(token_queue=self.token_queue)
 
         friends_details = None
-
         if 'restart' in kwargs and kwargs['restart'] is True:
             print("No db lookup after restart allowed, accessing Twitter API.")
         else:
@@ -778,7 +772,6 @@ class Coordinator(object):
                 Accessing Twitter API.""")
 
         if friends_details is None:
-
             collector = Collector(connection, seed,
                                   following_pages_limit=self.following_pages_limit)
 

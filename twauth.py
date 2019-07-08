@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import csv
+import os
 import webbrowser
 
 import tweepy as tp
@@ -35,6 +36,12 @@ class OAuthorizer():
                                     verifier you've entered is wrong.""")
             else:
                 raise e
+
+        if not os.path.isfile('tokens.csv'):
+            with open('tokens.csv', 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(["token", "secret"])
+            f.close()
 
         with open('tokens.csv', 'a', newline='') as f:
             writer = csv.writer(f)
