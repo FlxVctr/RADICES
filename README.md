@@ -2,9 +2,9 @@
 
 This is the project repository relating to a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and a test study with it in detail is currently under review.
 
-In short: This software creates a sample of a language-based Twittersphere as described in \[Link to paper\]. If you have trouble understanding this brief documentation, you might want to refer to the original paper.
+In short: This software creates a sample of a language-based Twittersphere as described there.
 
-If you have still trouble understanding, please feel free to open an issue or comment.
+Please feel free to open an issue or comment if you have any questions.
 
 Moreover, if you find any bugs, you are invited to report them as an [Issue](https://github.com/FlxVctr/SparseTwitter/issues).
 
