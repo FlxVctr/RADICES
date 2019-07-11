@@ -1,6 +1,6 @@
 # RADICES
 
-This is the project repository relating to a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently under review.
+This is the project repository relating to a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review.
 
 In short: This software creates a sample of (mostly) core accounts in a language-based Twittersphere as described there.
 
