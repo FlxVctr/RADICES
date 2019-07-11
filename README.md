@@ -1,4 +1,4 @@
-# SparseTwitter
+# RADICES
 
 This is the project repository relating to a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently under review.
 
