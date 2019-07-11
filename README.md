@@ -1,6 +1,6 @@
 # SparseTwitter
 
-This is the project repository relating to a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and a test study with it in detail is currently under review.
+This is the project repository relating to a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently under review.
 
 In short: This software creates a sample of a language-based Twittersphere as described there.
 
