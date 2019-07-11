@@ -8,6 +8,8 @@ Please feel free to open an issue or comment if you have any questions.
 
 Moreover, if you find any bugs, you are invited to report them as an [Issue](https://github.com/FlxVctr/SparseTwitter/issues).
 
+In case you are wondering: RADICES stands for Rank Degree Influencer CorE Sampler.
+
 ## How it works
 1. [Create a Twitter Developer app](https://developer.twitter.com/en/docs/basics/getting-started)
 2. Set up your virtual environment with [pipenv](https://pipenv.readthedocs.io/en/latest/) [(see here)](#Create-Virtual-Environment-with-Pipenv)
