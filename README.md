@@ -2,7 +2,7 @@
 
 This is the project repository relating to a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently under review.
 
-In short: This software creates a sample of a language-based Twittersphere as described there.
+In short: This software creates a sample of (mostly) core accounts in a language-based Twittersphere as described there.
 
 Please feel free to open an issue or comment if you have any questions.
 
