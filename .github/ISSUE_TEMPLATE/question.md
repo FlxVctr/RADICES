@@ -1,6 +1,6 @@
 ---
 name: Question
-about: Describe this issue template's purpose here.
+about: I have a question that is not answered by the documentation, the readme, or related publications.
 title: ''
 labels: ''
 assignees: ''
