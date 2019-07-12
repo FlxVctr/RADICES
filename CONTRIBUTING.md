@@ -18,3 +18,5 @@ For PRs, please:
 5. compliant with flake8 (http://flake8.pycqa.org/en/latest/index.html#)
 
 By submitting a pull request to this repository, you agree to license your contribution under the MIT license of this project.
+
+All contributors have to adhere to the [Code of Conduct of this project](CODE_OF_CONDUCT.md). The project owner(s) reserve the right to exclude/ban contributors from this project not only, but especially if they violate the CoC.
