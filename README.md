@@ -8,6 +8,8 @@ Please feel free to open an issue or comment if you have any questions.
 
 Moreover, if you find any bugs, you are invited to report them as an [Issue](https://github.com/FlxVctr/SparseTwitter/issues).
 
+Before contributing/raising an issue, please read the [Contributor Guidelines](CONTRIBUTING.md).
+
 In case you are wondering: RADICES stands for Rank Degree Influencer CorE Sampler.
 
 ## How it works
