@@ -121,5 +121,5 @@ The -s parameter is for skipping API call-draining tests. Note that even if -s i
 ## Disclaimer
 By submitting a pull request to this repository, you agree to license your contribution under the MIT license (as this project is).
 
-The Logo above is from https://commons.wikimedia.org/wiki/File:Radishes.svg and licensed as being in the public domain ([CC0](https://creativecommons.org/publicdomain/zero/1.0/deed.en)).
+The "Logo" above is from https://commons.wikimedia.org/wiki/File:Radishes.svg and licensed as being in the public domain ([CC0](https://creativecommons.org/publicdomain/zero/1.0/deed.en)).
 
