@@ -1,0 +1,14 @@
+---
+name: Question
+about: Describe this issue template's purpose here.
+title: ''
+labels: ''
+assignees: ''
+
+---
+
+**I have a question regarding:**
+
+**This is my question:**
+
+**I already have consulted the following resources (e.g. README, documentation, linked talks, linked articles, stackoverflow), from which my understanding is that …:**
