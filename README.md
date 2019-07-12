@@ -1,3 +1,5 @@
+![LOGO](https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Radishes.svg/173px-Radishes.svg.png)
+
 # RADICES
 
 This is the project repository relating to a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777).
