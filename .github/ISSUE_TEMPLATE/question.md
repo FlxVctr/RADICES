@@ -1,6 +1,6 @@
 ---
 name: Question
-about: I have a question that is not answered by the documentation, the readme, or related publications.
+about: Ask a question that is not answered by the documentation, the readme, or related publications.
 title: ''
 labels: ''
 assignees: ''
