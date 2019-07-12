@@ -8,9 +8,9 @@ For Issues, please:
 2. Search for your problem in the issues section first.
 3. If you cannot find a solution/answer yourself with these resources, raise an issue.
 
-For PRs, please:
+For PRs:
 
-1. Every PR must contain a passing unit-test that tests the proposed changes.
+1. Every PR must contain a passing unit-test or an adaption of existing tests that tests the proposed changes. All tests have to pass.
 2. Keep your commits small.
 3. document your code, preferably with Google style docstrings (https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html),
    at least though with intuitive comments
