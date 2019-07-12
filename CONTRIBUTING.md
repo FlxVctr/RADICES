@@ -16,3 +16,5 @@ For PRs, please:
    at least though with intuitive comments
 4. keep your code as readable as possible (https://docs.python-guide.org/writing/style/) and
 5. compliant with flake8 (http://flake8.pycqa.org/en/latest/index.html#)
+
+By submitting a pull request to this repository, you agree to license your contribution under the MIT license of this project.
