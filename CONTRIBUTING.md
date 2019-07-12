@@ -10,7 +10,7 @@ For Issues, please:
 
 For PRs:
 
-1. Every PR must contain a passing unit-test or an adaption of existing tests that tests the proposed changes. All existing tests must pass.
+1. Every PR must contain a passing unit-test or an adaption of existing tests that tests the proposed changes. All existing tests must pass. (If you are unfamiliar with Test Driven Development (TDD) read [this](https://code.tutsplus.com/tutorials/beginning-test-driven-development-in-python--net-30137) and maybe the first chapters of [this](https://www.oreilly.com/library/view/test-driven-development-with/9781449365141/)).
 2. Keep your commits small.
 3. document your code, preferably with Google style docstrings (https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html),
    at least though with intuitive comments
