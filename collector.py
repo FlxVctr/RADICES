@@ -449,7 +449,7 @@ class Collector(object):
 
     @staticmethod
     def make_friend_df(friends_details, select=["id", "followers_count", "lang",
-                                                "created_at", "statuses_count"],
+                                                "created_at", "statuses_count", "status_lang"],
                        provide_jsons: bool = False, replace_nonetype: bool = True,
                        nonetype: dict = {'date': '1970-01-01',
                                          'num': -1,
