@@ -4,9 +4,9 @@
 
 This is the project repository for a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777). A preprint is available here: https://arxiv.org/abs/1908.07788
 
-In short: This software prototype creates a sample of (mostly) core accounts in a language-based Twittersphere as described there.
+(**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet by a user as determined by Twitter instead of the interface language. This might lead to less accurate results.)
 
-**NOTE: The language specification is not working at the moment due to changes in the Twitter API. We are working on a solution. Until then you can only collect global networks around seeds of your choosing.**
+In short: This software prototype creates a sample of (mostly) core accounts in a language-based Twittersphere as described there.
 
 Please feel free to open an issue or comment if you have any questions.
 
@@ -59,13 +59,13 @@ You can also indicate which Twitter user account details you want to collect. Th
 If you have a mailgun account, you can also add your details at the bottom of the `config.yml`. If you do so, you will receive an email when the software encounters an error.
 
 ### Indicate starting seeds for the walkers
-The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter account ID per line. Feel free to use `seeds_template.csv` (and rename it to `seeds.csv`) to replace the existing seeds which are ~200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
+The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter account ID per line. Feel free to use `seeds_template.csv` (and rename it to `seeds.csv`) to replace the existing seeds which are 200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
 
 Note that the `seeds.csv` at least have to contain that many account IDs as walkers should run in parallel. We suggest using at least 100 seeds, the more the better (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds and there will be no need to give a comprehensive seed list
 
 ## Start
 
-NOTE: the language specification is not working at the moment due to changes in the Twitter API. We are working on a solution. Until then you can only collect global networks by removing the `-l de` argument.
+**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet by a user as determined by Twitter instead of the interface language. This might lead to less accurate results.
 
 Run (while you are in the pipenv virtual environment)
 ```
