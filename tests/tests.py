@@ -728,6 +728,7 @@ class CollectorTest(unittest.TestCase):
         self.assertIsInstance(friends_df['id'][0], np.int64)
         self.assertIsInstance(friends_df['lang'][0], str)
         self.assertIsInstance(friends_df['followers_count'][0], np.int64)
+        self.assertIsInstance(friends_df['status_lang'][0], str)
 
         friends_df_selected = Collector.make_friend_df(friends_details,
                                                        select=['id', 'followers_count',
