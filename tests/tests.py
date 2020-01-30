@@ -1150,7 +1150,6 @@ class CoordinatorTest(unittest.TestCase):
             seed, self.dbh.engine)
 
         self.assertGreater(len(friends_details), 0)
-        print(friends_details)
 
     def test_start_collectors(self):
 
