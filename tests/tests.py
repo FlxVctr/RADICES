@@ -1121,7 +1121,7 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertIsInstance(new_seed, np.int64)
     
-    @unittest.skip("Relies on language.")
+    # @unittest.skip("Relies on language.")
     def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
 
         seed = 1621528116
@@ -1138,6 +1138,19 @@ class CoordinatorTest(unittest.TestCase):
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
+
+    def test_work_through_seed_who_should_have_german_friends(self):
+
+        seed = 36476777
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
+
+        self.assertIsInstance(new_seed, np.int64)
+
+        friends_details = self.coordinator.lookup_accounts_friend_details(
+            seed, self.dbh.engine)
+
+        self.assertNotEqual(0, len(friends_details))
 
     def test_start_collectors(self):
 
