@@ -4,9 +4,9 @@
 
 This is the project repository for a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777). A preprint is available here: https://arxiv.org/abs/1908.07788
 
-In short: This software prototype creates a sample of (mostly) core accounts in a language-based Twittersphere as described there.
+(**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet by a user as determined by Twitter instead of the interface language. This might lead to less accurate results.)
 
-**NOTE: The language specification is not working at the moment due to changes in the Twitter API. We are working on a solution. Until then you can only collect global networks around seeds of your choosing.**
+In short: This software prototype creates a sample of (mostly) core accounts in a language-based Twittersphere as described there.
 
 Please feel free to open an issue or comment if you have any questions.
 
