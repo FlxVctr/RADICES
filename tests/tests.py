@@ -298,7 +298,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         no_user_details_cfg["twitter_user_details"] = dict(
             id=None,
             followers_count=None,
-            lang=None,
+            status_lang=None,
             time_zone=None
         )
         with open("config.yml", "w") as f:
@@ -315,7 +315,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         cfg["twitter_user_details"] = dict(
             id=None,
             followers_count=None,
-            lang=None,
+            status_lang=None,
             time_zone=None
         )
         with open("config.yml", "w") as f:
@@ -360,7 +360,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         cfg["twitter_user_details"] = dict(
             id=None,
             followers_count=None,
-            lang=None,
+            status_lang=None,
             time_zone=None
         )
         with open("config.yml", "w") as f:
@@ -380,7 +380,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         cfg["twitter_user_details"] = dict(
             id=None,
             followers_count=None,
-            lang=None,
+            status_lang=None,
             time_zone=None
         )
         with open("config.yml", "w") as f:
@@ -403,7 +403,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         cols = pd.read_sql(sql=s, con=engine).columns
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
-        self.assertIn("lang", cols)
+        self.assertIn("status_lang", cols)
         self.assertIn("timestamp", cols)
         engine.connect().execute("DROP TABLES friends, user_details;")
 
@@ -417,7 +417,7 @@ class DataBaseHandlerTest(unittest.TestCase):
         cols = pd.read_sql(sql=s, con=conn).columns
         self.assertIn("id", cols)
         self.assertIn("followers_count", cols)
-        self.assertIn("lang", cols)
+        self.assertIn("status_lang", cols)
         self.assertIn("timestamp", cols)
         conn.close()
 
@@ -726,7 +726,6 @@ class CollectorTest(unittest.TestCase):
         self.assertEqual(len(friends_df), len(friends_details))
 
         self.assertIsInstance(friends_df['id'][0], np.int64)
-        self.assertIsInstance(friends_df['lang'][0], str)
         self.assertIsInstance(friends_df['followers_count'][0], np.int64)
         self.assertIsInstance(friends_df['status_lang'][0], str)
 
@@ -789,7 +788,7 @@ class CollectorTest(unittest.TestCase):
 
         df = Collector.make_friend_df(friends_details=json_list,
                                       provide_jsons=True)
-        self.assertEqual(["id", "followers_count", "lang", "created_at", "statuses_count"].sort(),
+        self.assertEqual(["id", "followers_count", "status_lang", "created_at", "statuses_count"].sort(),
                          list(df).sort())
 
     def test_retry_if_rate_limited(self):
@@ -1007,7 +1006,7 @@ class CoordinatorTest(unittest.TestCase):
 
         friends_details = c.get_details(friendlist)
 
-        select_list = ['created_at', 'followers_count', 'id', 'lang', 'statuses_count']
+        select_list = ['created_at', 'followers_count', 'id', 'status_lang', 'statuses_count']
         friends_details = Collector.make_friend_df(friends_details, select=select_list)
         friends_details.to_sql('user_details', if_exists='append',
                                index=False, con=self.coordinator.dbh.engine)
@@ -1120,13 +1119,13 @@ class CoordinatorTest(unittest.TestCase):
                                                                     retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
-    
+
     # @unittest.skip("Relies on language.")
     def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
 
         seed = 1621528116
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1135,7 +1134,7 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertEqual(0, len(friends_details))
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1143,14 +1142,15 @@ class CoordinatorTest(unittest.TestCase):
 
         seed = 36476777
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
         friends_details = self.coordinator.lookup_accounts_friend_details(
             seed, self.dbh.engine)
 
-        self.assertNotEqual(0, len(friends_details))
+        self.assertGreater(len(friends_details), 0)
+        print(friends_details)
 
     def test_start_collectors(self):
 
@@ -1216,14 +1216,14 @@ class CoordinatorTest(unittest.TestCase):
             with self.assertRaises(TestException):
                 if worker.err is not None:
                     raise worker.err
-    
-    @unittest.skip("Relies on language.")
+
+    # @unittest.skip("Relies on language.")
     def test_main_loop_resets_db_after_restart(self):
 
         coordinator = Coordinator(seed_list=[36476777],
                                   following_pages_limit=1)
 
-        main_loop(coordinator, lang='de')
+        main_loop(coordinator, status_lang='de')
 
         timestamp_test = pd.read_sql(
             f"SELECT UNIX_TIMESTAMP(timestamp) < {time.time()} \
@@ -1246,7 +1246,7 @@ class CoordinatorTest(unittest.TestCase):
         coordinator = Coordinator(seed_list=latest_seeds,
                                   following_pages_limit=1)
 
-        main_loop(coordinator, lang='de', restart=True)
+        main_loop(coordinator, status_lang='de', restart=True)
 
         result_after_restart = pd.read_sql(sql="SELECT * from result", con=self.dbh.engine)
 

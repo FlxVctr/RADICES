@@ -87,7 +87,7 @@ twitter_user_details:
     status_in_reply_to_user_id:  # BIGINT
     status_in_reply_to_user_id_str:  # VARCHAR(30)
     status_is_quote_status:  # SMALLINT
-    status_lang:  # VARCHAR(10)
+    status_lang:  VARCHAR(10)
     status_place:  # TEXT (contains a dict)
     status_place_bounding_box_coordinates: # TEXT (Rarely available)
     status_place_bounding_box_type:  # TEXT (Rarely available)

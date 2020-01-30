@@ -448,8 +448,8 @@ class Collector(object):
         return user_details
 
     @staticmethod
-    def make_friend_df(friends_details, select=["id", "followers_count", "lang",
-                                                "created_at", "statuses_count", "status_lang"],
+    def make_friend_df(friends_details, select=["id", "followers_count", "status_lang",
+                                                "created_at", "statuses_count"],
                        provide_jsons: bool = False, replace_nonetype: bool = True,
                        nonetype: dict = {'date': '1970-01-01',
                                          'num': -1,
@@ -734,14 +734,14 @@ class Coordinator(object):
             return friend_detail
 
     @retry_x_times(10)
-    def work_through_seed_get_next_seed(self, seed, select=[], lang=None,
+    def work_through_seed_get_next_seed(self, seed, select=[], status_lang=None,
                                         connection=None, fail=False, **kwargs):
         """Takes a seed and determines the next seed and saves all details collected to db.
 
         Args:
             seed (int)
             select (list of str): fields to save to database, defaults to all
-            lang (str): Twitter language code for interface language to filter for,
+            status_lang (str): Twitter language code for language of last status to filter for,
                 defaults to None
             connection (collector.Connection object)
         Returns:
@@ -828,11 +828,11 @@ class Coordinator(object):
 
             friends_details = collector.get_details(friend_list)
             select = list(set(select + ["id", "followers_count",
-                                        "lang", "created_at", "statuses_count"]))
+                                        "status_lang", "created_at", "statuses_count"]))
             friends_details = Collector.make_friend_df(friends_details, select)
 
-            if lang is not None:
-                friends_details = friends_details[friends_details['lang'] == lang]
+            if status_lang is not None:
+                friends_details = friends_details[friends_details['status_lang'] == status_lang]
 
                 if len(friends_details) == 0:
                     new_seed = self.seed_pool.sample(n=1)
@@ -840,7 +840,7 @@ class Coordinator(object):
 
                     stdout.write(
                         "No friends found with language '{}', selecting random seed.\n".format(
-                            lang))
+                            status_lang))
                     stdout.flush()
 
                     self.token_queue.put(
@@ -864,14 +864,14 @@ class Coordinator(object):
                 self.dbh.engine.execute(query)
                 self.dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")
 
-        if lang is not None and len(friends_details) == 0:
+        if status_lang is not None and len(friends_details) == 0:
 
             new_seed = self.seed_pool.sample(n=1)
             new_seed = new_seed[0].values[0]
 
             stdout.write(
                 "No user details for friends with interface language '{}' found in db.\n".format(
-                    lang))
+                    status_lang))
             stdout.flush()
 
             self.token_queue.put(
@@ -1003,7 +1003,7 @@ selecting random seed.")
 
         return new_seed
 
-    def start_collectors(self, number_of_seeds=None, select=[], lang=None, fail=False,
+    def start_collectors(self, number_of_seeds=None, select=[], status_lang=None, fail=False,
                          fail_hidden=False, restart=False, retries=10):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
@@ -1012,7 +1012,7 @@ selecting random seed.")
         Args:
             number_of_seeds (int): Defaults to `self.number_of_seeds`
             select (list of strings): fields to save to user_details table in database
-            lang (str): language code for langage to select
+            status_lang (str): language code for latest tweet langage to select
         Returns:
             list of mp.(dummy.)Process
         """
@@ -1032,7 +1032,7 @@ selecting random seed.")
             processes.append(MyProcess(target=self.work_through_seed_get_next_seed,
                                        kwargs={'seed': seed,
                                                'select': select,
-                                               'lang': lang,
+                                               'status_lang': status_lang,
                                                'fail': fail,
                                                'fail_hidden': fail_hidden,
                                                'restart': restart,

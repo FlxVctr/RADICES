@@ -12,7 +12,7 @@ from collector import Coordinator
 from setup import Config
 
 
-def main_loop(coordinator, select=[], lang=None, test_fail=False, restart=False):
+def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart=False):
 
     if restart is True:
 
@@ -30,7 +30,7 @@ def main_loop(coordinator, select=[], lang=None, test_fail=False, restart=False)
     pd.DataFrame({'latest_start_time': [start_time]}).to_sql('timetable', coordinator.dbh.engine,
                                                              if_exists='replace')
     collectors = coordinator.start_collectors(select=select,
-                                              lang=lang, fail=test_fail, restart=restart,
+                                              status_lang=status_lang, fail=test_fail, restart=restart,
                                               retries=4)
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
     stdout.flush()
@@ -60,7 +60,8 @@ if __name__ == "__main__":
     # Get arguments from commandline
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
-    parser.add_argument('-l', '--language', help="specify language code of users to gather")
+    parser.add_argument('-l', '--language',
+                        help="specify language code of last status by users to gather")
     parser.add_argument('-r', '--restart',
                         help="restart with latest seeds in latest_seeds.csv", action="store_true")
     parser.add_argument('-t', '--test', help="dev only: test for 2 loops only",
@@ -111,12 +112,12 @@ Lower values speed up collection. Default: 0 (unlimited)''', default=0)
             if args.restart is True and restart_counter == 0:
 
                 main_loop(coordinator, select=user_details_list,
-                          lang=args.language, test_fail=args.fail, restart=True)
+                          status_lang=args.language, test_fail=args.fail, restart=True)
                 restart_counter += 1
             else:
 
                 main_loop(coordinator, select=user_details_list,
-                          lang=args.language, test_fail=args.fail)
+                          status_lang=args.language, test_fail=args.fail)
         except Exception:
             stdout.write("Encountered unexpected exception:\n")
             traceback.print_exc()
