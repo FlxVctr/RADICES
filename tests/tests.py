@@ -1017,10 +1017,10 @@ class CoordinatorTest(unittest.TestCase):
         # self.coordinator.seed_queue.close()
         # self.coordinator.seed_queue.join_thread()
 
-        friends_details.reindex_axis(sorted(friends_details.columns), axis=1)
+        friends_details.reindex(sorted(friends_details.columns), axis=1)
         friends_details.sort_values(by=['id'], inplace=True)
         friends_details.reset_index(drop=True, inplace=True)
-        friends_details_lookup.reindex_axis(sorted(friends_details_lookup.columns), axis=1)
+        friends_details_lookup.reindex(sorted(friends_details_lookup.columns), axis=1)
         friends_details_lookup.sort_values('id', inplace=True)
         friends_details_lookup.reset_index(drop=True, inplace=True)
         friends_details_lookup.drop('timestamp', axis='columns', inplace=True)
