@@ -1,7 +1,8 @@
-from shutil import copyfile
+import os
 import subprocess
 import sys
-import os
+from shutil import copyfile
+
 
 # creates a new empty config file and opens it
 def make_config():
