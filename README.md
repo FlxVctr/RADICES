@@ -71,7 +71,7 @@ Run (while you are in the pipenv virtual environment)
 ```
 python start.py -n 2 -l de -p 1
 ```
-where -n takes the number of seeds to be drawn from the seed pool, -l the Twitter user interface language that is of your interest, and -p the number of pages to look at when identifying the next node.
+where -n takes the number of seeds to be drawn from the seed pool, -l the Twitter accounts's last status language that is of your interest, and -p the number of pages to look at when identifying the next node.
 
 Note:
 - If the program freezes after saying "Starting x Collectors", it is likely that either your keys.json or your tokens.csv contains wrong information. We work on a solution that is more user-friendly!

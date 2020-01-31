@@ -870,7 +870,7 @@ class Coordinator(object):
             new_seed = new_seed[0].values[0]
 
             stdout.write(
-                "No user details for friends with interface language '{}' found in db.\n".format(
+                "No user details for friends with last status language '{}' found in db.\n".format(
                     status_lang))
             stdout.flush()
 
