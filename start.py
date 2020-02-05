@@ -30,7 +30,9 @@ def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart
     pd.DataFrame({'latest_start_time': [start_time]}).to_sql('timetable', coordinator.dbh.engine,
                                                              if_exists='replace')
     collectors = coordinator.start_collectors(select=select,
-                                              status_lang=status_lang, fail=test_fail, restart=restart,
+                                              status_lang=status_lang,
+                                              fail=test_fail,
+                                              restart=restart,
                                               retries=4)
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
     stdout.flush()

@@ -232,7 +232,6 @@ class Collector(object):
         connection (Connection object):
             Connection object with actually active credentials
         seed (int): Twitter id of seed user
-
     """
 
     def __init__(self, connection, seed, following_pages_limit=0):

@@ -788,8 +788,8 @@ class CollectorTest(unittest.TestCase):
 
         df = Collector.make_friend_df(friends_details=json_list,
                                       provide_jsons=True)
-        self.assertEqual(["id", "followers_count", "status_lang", "created_at", "statuses_count"].sort(),
-                         list(df).sort())
+        self.assertEqual(["id", "followers_count", "status_lang", "created_at",
+                          "statuses_count"].sort(), list(df).sort())
 
     def test_retry_if_rate_limited(self):
 
@@ -1120,12 +1120,13 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertIsInstance(new_seed, np.int64)
 
-    # @unittest.skip("Relies on language.")
     def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
 
         seed = 1621528116
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang='de',
+                                                                    retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1134,7 +1135,9 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertEqual(0, len(friends_details))
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang='de',
+                                                                    retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1142,7 +1145,9 @@ class CoordinatorTest(unittest.TestCase):
 
         seed = 36476777
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang='de',
+                                                                    retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1216,7 +1221,6 @@ class CoordinatorTest(unittest.TestCase):
                 if worker.err is not None:
                     raise worker.err
 
-    # @unittest.skip("Relies on language.")
     def test_main_loop_resets_db_after_restart(self):
 
         coordinator = Coordinator(seed_list=[36476777],
