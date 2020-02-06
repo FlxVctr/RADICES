@@ -25,15 +25,18 @@ def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart
                         WHERE UNIX_TIMESTAMP(timestamp) > {latest_start_time}
                        """
         coordinator.dbh.engine.execute(update_query)
+
     start_time = time.time()
 
     pd.DataFrame({'latest_start_time': [start_time]}).to_sql('timetable', coordinator.dbh.engine,
                                                              if_exists='replace')
+
     collectors = coordinator.start_collectors(select=select,
                                               status_lang=status_lang,
                                               fail=test_fail,
                                               restart=restart,
                                               retries=4)
+
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
     stdout.flush()
 
@@ -66,15 +69,17 @@ if __name__ == "__main__":
                         help="specify language code of last status by users to gather")
     parser.add_argument('-r', '--restart',
                         help="restart with latest seeds in latest_seeds.csv", action="store_true")
-    parser.add_argument('-t', '--test', help="dev only: test for 2 loops only",
-                        action="store_true")
-    parser.add_argument(
-        '-f', '--fail', help="dev only: test unexpected exception", action="store_true")
     parser.add_argument('-p', '--following_pages_limit', type=int,
                         help='''Define limit for maximum number of recent followings to retrieve per \
 account to determine most followed friend.
 1 page has a maximum of 5000 folllowings.
 Lower values speed up collection. Default: 0 (unlimited)''', default=0)
+    parser.add_argument('-b', '--bootstrap', help="at every step, add seeds' friends to seed pool",
+                        action="store_true")
+    parser.add_argument('-t', '--test', help="dev only: test for 2 loops only",
+                        action="store_true")
+    parser.add_argument('-f', '--fail', help="dev only: test unexpected exception",
+                        action="store_true")
 
     args = parser.parse_args()
 
