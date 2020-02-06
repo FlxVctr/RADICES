@@ -1187,6 +1187,19 @@ class CoordinatorTest(unittest.TestCase):
         self.assertNotEqual(new_seeds, seeds)
         self.assertEqual(new_seeds, expected_new_seeds)
 
+    def test_bootstrap(self):
+
+        coordinator_with_bootstrap_enabled = Coordinator(seed_list=[36476777], bootstrap=True)
+        number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
+
+        processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1)
+
+        processes[0].join(timeout=60)
+
+        new_number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
+
+        self.assertGreater(new_number_of_seeds_in_pool, number_of_seeds_in_pool)
+
     def test_overlapping_friends(self):
 
         coordinator = Coordinator(seed_list=[36476777, 83662933, 2367431])

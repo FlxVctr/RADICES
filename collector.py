@@ -665,7 +665,7 @@ class Coordinator(object):
     """
 
     def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None,
-                 following_pages_limit=0):
+                 following_pages_limit=0, bootstrap=False):
         # Get seeds from seeds.csv
         self.seed_pool = FileImport().read_seed_file()
 
@@ -700,8 +700,8 @@ class Coordinator(object):
 
     # TODO: Can be made more beautiful if one hand over a list to the select argument
     # which in turn will be joined for the query with ", ".join(select)
-    def lookup_accounts_friend_details(self,
-                                       account_id, db_connection=None, select="*"):
+
+    def lookup_accounts_friend_details(self, account_id, db_connection=None, select="*"):
         """Looks up and retrieves details from friends of `account_id` via database.
 
         Args:
