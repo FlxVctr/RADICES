@@ -1189,12 +1189,19 @@ class CoordinatorTest(unittest.TestCase):
 
     def test_bootstrap(self):
 
-        coordinator_with_bootstrap_enabled = Coordinator(seed_list=[36476777], bootstrap=True)
+        coordinator_with_bootstrap_enabled = Coordinator(seed_list=[36476777],
+                                                         following_pages_limit=1)
         number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
 
-        processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1)
+        processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1, bootstrap=True,
+                                                                        status_lang='de')
 
-        processes[0].join(timeout=60)
+        processes[0].join(timeout=1000)
+
+        processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1, bootstrap=True,
+                                                                        status_lang='de')
+
+        processes[0].join(timeout=1000)
 
         new_number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
 
