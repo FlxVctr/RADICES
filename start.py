@@ -15,8 +15,11 @@ from setup import Config
 def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart=False,
               bootstrap=False):
 
-    latest_start_time = pd.read_sql_table('timetable', coordinator.dbh.engine)
-    latest_start_time = latest_start_time['latest_start_time'][0]
+    try:
+        latest_start_time = pd.read_sql_table('timetable', coordinator.dbh.engine)
+        latest_start_time = latest_start_time['latest_start_time'][0]
+    except ValueError:
+        latest_start_time = 0
 
     if restart is True:
 

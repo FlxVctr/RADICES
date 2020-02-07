@@ -667,6 +667,9 @@ class Coordinator(object):
     def __init__(self, seeds=2, token_file_name="tokens.csv", seed_list=None,
                  following_pages_limit=0):
 
+        # Get seeds from seeds.csv
+        self.seed_pool = FileImport().read_seed_file()
+
         # Create seed_list if none is given by sampling from the seed_pool
         if seed_list is None:
 
@@ -695,9 +698,6 @@ class Coordinator(object):
         # Initialize DataBaseHandler for DB communication
         self.dbh = DataBaseHandler()
         self.following_pages_limit = following_pages_limit
-
-        # Get seeds from seeds.csv
-        self.seed_pool = FileImport().read_seed_file()
 
     def bootstrap_seed_pool(self, after_timestamp=0):
         """Adds all collected user details, i.e. friends with the desired properties
