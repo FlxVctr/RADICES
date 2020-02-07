@@ -14,10 +14,10 @@ from setup import Config
 
 def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart=False):
 
-    if restart is True:
+    latest_start_time = pd.read_sql_table('timetable', coordinator.dbh.engine)
+    latest_start_time = latest_start_time['latest_start_time'][0]
 
-        latest_start_time = pd.read_sql_table('timetable', coordinator.dbh.engine)
-        latest_start_time = latest_start_time['latest_start_time'][0]
+    if restart is True:
 
         update_query = f"""
                         UPDATE friends
@@ -35,7 +35,8 @@ def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart
                                               status_lang=status_lang,
                                               fail=test_fail,
                                               restart=restart,
-                                              retries=4)
+                                              retries=4,
+                                              latest_start_time=latest_start_time)
 
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
     stdout.flush()

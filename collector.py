@@ -699,15 +699,30 @@ class Coordinator(object):
         # Get seeds from seeds.csv
         self.seed_pool = FileImport().read_seed_file()
 
-    def bootstrap_seed_pool(self):
+    def bootstrap_seed_pool(self, after_timestamp=0):
         """Adds all collected user details, i.e. friends with the desired properties
         (e.g. language) of previously found seeds to the seed pool.
+
+        Args:
+            after_timestamp (int): filter for friends added after this timestamp. Default: 0
+        Returns:
+            None
         """
 
-        query = "SELECT id FROM user_details"
+        seed_pool_size = len(self.seed_pool)
+        stdout.write("Bootstrapping seeds.\n")
+        stdout.write(f"Old size: {seed_pool_size}. Adding after {after_timestamp} ")
+        stdout.flush()
+
+        query = f"SELECT id FROM user_details WHERE UNIX_TIMESTAMP(timestamp) >= {after_timestamp}"
+
         more_seeds = pd.read_sql(query, self.dbh.engine)
         self.seed_pool = self.seed_pool.append(more_seeds, ignore_index=True)
         self.seed_pool.drop_duplicates(inplace=True)
+
+        seed_pool_size = len(self.seed_pool)
+        stdout.write(f"New size: {seed_pool_size}\n")
+        stdout.flush()
 
     def lookup_accounts_friend_details(self, account_id, db_connection=None, select="*"):
         """Looks up and retrieves details from friends of `account_id` via database.
@@ -1011,7 +1026,8 @@ selecting random seed.")
         return new_seed
 
     def start_collectors(self, number_of_seeds=None, select=[], status_lang=None, fail=False,
-                         fail_hidden=False, restart=False, retries=10, bootstrap=False):
+                         fail_hidden=False, restart=False, retries=10, bootstrap=False,
+                         latest_start_time=0):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -1025,13 +1041,11 @@ selecting random seed.")
         """
 
         if bootstrap is True:
-            seed_pool_size = len(self.seed_pool)
-            stdout.write(f"Bootstrapping seeds.\nOld size: {seed_pool_size} ")
-            stdout.flush()
-            self.bootstrap_seed_pool()
-            seed_pool_size = len(self.seed_pool)
-            stdout.write(f"New size: {seed_pool_size}\n")
-            stdout.flush()
+
+            if restart is True:
+                latest_start_time = 0
+
+            self.bootstrap_seed_pool(after_timestamp=latest_start_time)
 
         if number_of_seeds is None:
             number_of_seeds = self.number_of_seeds
