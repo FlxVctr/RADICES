@@ -1275,6 +1275,28 @@ class CoordinatorTest(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result, result_after_restart)
 
+    def test_main_loop_with_bootstrap(self):
+
+        coordinator = Coordinator(seed_list=[36476777],
+                                  following_pages_limit=1)
+
+        seed_pool_size = len(coordinator.seed_pool)
+
+        for i in range(2):
+            main_loop(coordinator, status_lang='de', bootstrap=True)
+
+        middle_seed_pool_size = len(coordinator.seed_pool)
+        self.assertGreater(middle_seed_pool_size, seed_pool_size)
+
+        latest_seeds_df = pd.read_csv('latest_seeds.csv', header=None)[0]
+        latest_seeds = list(latest_seeds_df.values)
+        new_coordinator = Coordinator(seed_list=latest_seeds, following_pages_limit=1)
+
+        main_loop(new_coordinator, status_lang='de', bootstrap=True, restart=True)
+
+        last_seed_pool_size = len(new_coordinator.seed_pool)
+        self.assertGreater(last_seed_pool_size, middle_seed_pool_size)
+
 
 class GeneralTests(unittest.TestCase):
 
