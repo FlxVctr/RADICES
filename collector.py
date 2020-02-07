@@ -701,7 +701,7 @@ class Coordinator(object):
 
     def bootstrap_seed_pool(self):
         """Adds all collected user details, i.e. friends with the desired properties
-        (e.g. language) of previously found seeds to the seed list.
+        (e.g. language) of previously found seeds to the seed pool.
         """
 
         query = "SELECT id FROM user_details"
