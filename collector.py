@@ -718,8 +718,7 @@ class Coordinator(object):
 
         more_seeds = pd.read_sql(query, self.dbh.engine)
         more_seeds.columns = [0]  # rename from id to 0 for proper append
-        self.seed_pool = self.seed_pool.append(more_seeds, ignore_index=True)
-        self.seed_pool.drop_duplicates(inplace=True)
+        self.seed_pool = self.seed_pool.merge(more_seeds, how='outer', on=[0])
 
         seed_pool_size = len(self.seed_pool)
         stdout.write(f"New size: {seed_pool_size}\n")
