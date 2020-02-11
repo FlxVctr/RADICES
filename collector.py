@@ -717,6 +717,7 @@ class Coordinator(object):
         query = f"SELECT id FROM user_details WHERE UNIX_TIMESTAMP(timestamp) >= {after_timestamp}"
 
         more_seeds = pd.read_sql(query, self.dbh.engine)
+        more_seeds.columns = [0]  # rename from id to 0 for proper append
         self.seed_pool = self.seed_pool.append(more_seeds, ignore_index=True)
         self.seed_pool.drop_duplicates(inplace=True)
 
