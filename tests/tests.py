@@ -788,8 +788,8 @@ class CollectorTest(unittest.TestCase):
 
         df = Collector.make_friend_df(friends_details=json_list,
                                       provide_jsons=True)
-        self.assertEqual(["id", "followers_count", "status_lang", "created_at", "statuses_count"].sort(),
-                         list(df).sort())
+        self.assertEqual(["id", "followers_count", "status_lang", "created_at",
+                          "statuses_count"].sort(), list(df).sort())
 
     def test_retry_if_rate_limited(self):
 
@@ -1120,12 +1120,13 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertIsInstance(new_seed, np.int64)
 
-    # @unittest.skip("Relies on language.")
     def test_work_through_seed_twice_if_account_has_no_friends_speaking_language(self):
 
         seed = 1621528116
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang='de',
+                                                                    retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1134,7 +1135,9 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertEqual(0, len(friends_details))
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang='de',
+                                                                    retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1142,7 +1145,9 @@ class CoordinatorTest(unittest.TestCase):
 
         seed = 36476777
 
-        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, status_lang='de', retries=1)
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang='de',
+                                                                    retries=1)
 
         self.assertIsInstance(new_seed, np.int64)
 
@@ -1182,6 +1187,26 @@ class CoordinatorTest(unittest.TestCase):
         self.assertNotEqual(new_seeds, seeds)
         self.assertEqual(new_seeds, expected_new_seeds)
 
+    def test_bootstrap(self):
+
+        coordinator_with_bootstrap_enabled = Coordinator(seed_list=[36476777],
+                                                         following_pages_limit=1)
+        number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
+
+        processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1, bootstrap=True,
+                                                                        status_lang='de')
+
+        processes[0].join(timeout=1000)
+
+        processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1, bootstrap=True,
+                                                                        status_lang='de')
+
+        processes[0].join(timeout=1000)
+
+        new_number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
+
+        self.assertGreater(new_number_of_seeds_in_pool, number_of_seeds_in_pool)
+
     def test_overlapping_friends(self):
 
         coordinator = Coordinator(seed_list=[36476777, 83662933, 2367431])
@@ -1216,7 +1241,6 @@ class CoordinatorTest(unittest.TestCase):
                 if worker.err is not None:
                     raise worker.err
 
-    # @unittest.skip("Relies on language.")
     def test_main_loop_resets_db_after_restart(self):
 
         coordinator = Coordinator(seed_list=[36476777],
@@ -1250,6 +1274,28 @@ class CoordinatorTest(unittest.TestCase):
         result_after_restart = pd.read_sql(sql="SELECT * from result", con=self.dbh.engine)
 
         pd.testing.assert_frame_equal(result, result_after_restart)
+
+    def test_main_loop_with_bootstrap(self):
+
+        coordinator = Coordinator(seed_list=[36476777],
+                                  following_pages_limit=1)
+
+        seed_pool_size = len(coordinator.seed_pool)
+
+        for i in range(2):
+            main_loop(coordinator, status_lang='de', bootstrap=True)
+
+        middle_seed_pool_size = len(coordinator.seed_pool)
+        self.assertGreater(middle_seed_pool_size, seed_pool_size)
+
+        latest_seeds_df = pd.read_csv('latest_seeds.csv', header=None)[0]
+        latest_seeds = list(latest_seeds_df.values)
+        new_coordinator = Coordinator(seed_list=latest_seeds, following_pages_limit=1)
+
+        main_loop(new_coordinator, status_lang='de', bootstrap=True, restart=True)
+
+        last_seed_pool_size = len(new_coordinator.seed_pool)
+        self.assertGreater(last_seed_pool_size, middle_seed_pool_size)
 
 
 class GeneralTests(unittest.TestCase):

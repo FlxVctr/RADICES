@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 pandas = "*"
-pytest = "*"
 tweepy = "*"
 pyyaml = "*"
 sqlalchemy = "*"
@@ -14,9 +13,12 @@ argparse = "*"
 
 [dev-packages]
 "flake8" = "*"
+pytest = "*"
 isort = "*"
 ipython = "*"
 "autopep8" = "*"
+python-language-server = {extras = ["all"],version = "*"}
+pydocstyle = "*"
 
 [requires]
 python_version = "3.6.6"
