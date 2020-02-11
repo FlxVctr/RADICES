@@ -125,12 +125,12 @@ Lower values speed up collection. Default: 0 (unlimited)''', default=0)
             if args.restart is True and restart_counter == 0:
 
                 main_loop(coordinator, select=user_details_list,
-                          status_lang=args.language, test_fail=args.fail, restart=True)
+                          status_lang=args.language, test_fail=args.fail, restart=True,
+                          bootstrap=args.bootstrap)
                 restart_counter += 1
             else:
-
                 main_loop(coordinator, select=user_details_list,
-                          status_lang=args.language, test_fail=args.fail)
+                          status_lang=args.language, test_fail=args.fail, bootstrap=args.bootstrap)
         except Exception:
             stdout.write("Encountered unexpected exception:\n")
             traceback.print_exc()
