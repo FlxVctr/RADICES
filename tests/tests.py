@@ -1206,6 +1206,7 @@ class CoordinatorTest(unittest.TestCase):
         new_number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
 
         self.assertGreater(new_number_of_seeds_in_pool, number_of_seeds_in_pool)
+        self.assertEqual(len(coordinator_with_bootstrap_enabled.seed_pool.columns), 1)
 
     def test_overlapping_friends(self):
 
