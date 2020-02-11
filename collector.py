@@ -952,7 +952,7 @@ class Coordinator(object):
                 try:
                     follows = int(collector.check_follows(source=new_seed, target=seed))
                 except tweepy.TweepError:
-                    print("Follow back undetermined. User {new_seed} not available")
+                    print(f"Follow back undetermined. User {new_seed} not available")
                     follows = 0
 
             if follows == 0:
