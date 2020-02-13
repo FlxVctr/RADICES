@@ -71,8 +71,8 @@ if __name__ == "__main__":
     # Get arguments from commandline
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
-    parser.add_argument('-l', '--language',
-                        help="specify language code of last status by users to gather")
+    parser.add_argument('-l', '--language', nargs="+",
+                        help="specify language codes of last status by users to gather")
     parser.add_argument('-r', '--restart',
                         help="restart with latest seeds in latest_seeds.csv", action="store_true")
     parser.add_argument('-p', '--following_pages_limit', type=int,

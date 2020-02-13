@@ -854,7 +854,10 @@ class Coordinator(object):
             friends_details = Collector.make_friend_df(friends_details, select)
 
             if status_lang is not None:
-                friends_details = friends_details[friends_details['status_lang'] == status_lang]
+
+                if type(status_lang) is str:
+                    status_lang = [status_lang]
+                friends_details = friends_details[friends_details['status_lang'].isin(status_lang)]
 
                 if len(friends_details) == 0:
                     new_seed = self.seed_pool.sample(n=1)

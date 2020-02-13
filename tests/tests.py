@@ -1156,6 +1156,23 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertGreater(len(friends_details), 0)
 
+    def test_work_through_seed_who_should_have_german_and_english_friends(self):
+
+        seed = 36476777
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang=['de', 'en'],
+                                                                    retries=1)
+
+        self.assertIsInstance(new_seed, np.int64)
+
+        friends_details = self.coordinator.lookup_accounts_friend_details(
+            seed, self.dbh.engine)
+
+        self.assertGreater(len(friends_details), 0)
+        self.assertIn('de', friends_details['status_lang'].values)
+        self.assertIn('en', friends_details['status_lang'].values)
+
     def test_start_collectors(self):
 
         seeds = set(self.seed_list)
