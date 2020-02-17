@@ -2,7 +2,7 @@
 
 # RADICES
 
-This software prototype creates a sample of core accounts in a language-based Twitter follow network.
+This software prototype creates an explorative sample of core accounts (optionally language-based) Twitter follow networks.
 
 It was developed first for a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777). A preprint is available here: https://arxiv.org/abs/1908.07788
 
@@ -59,7 +59,7 @@ If you have a mailgun account, you can also add your details at the bottom of th
 ### Indicate starting seeds for the walkers
 The algorithm needs seeds (i.e. Twitter Account IDs) to draw randomly from when initialising the walkers or when it reached an impasse. These seeds have to be specified in `seeds.csv`. One Twitter account ID per line. Feel free to use `seeds_template.csv` (and rename it to `seeds.csv`) to replace the existing seeds which are 200 randomly drawn accounts from the TrISMA dataset (Bruns, Moon, Münch & Sadkowsky, 2017) that use German as interface language.
 
-Note that the `seeds.csv` at least have to contain that many account IDs as walkers should run in parallel. We suggest using at least 100 seeds, the more the better (we used 15.000.000). However, in a later update, the algorithm will subsequently gather its own seeds and there will be no need to give a comprehensive seed list
+Note that the `seeds.csv` at least have to contain that many account IDs as walkers should run in parallel. We suggest using at least 100 seeds, the more the better (we used 15.000.000). However, since a recent update, the algorithm can gather ('bootstrap') its own seeds and there is no need to give a comprehensive seed list. This changes the quality of the sample (for the worse or the better is subject of ongoing research), however, it makes it a very powerful exploratory tool.
 
 ## Start
 
