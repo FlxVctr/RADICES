@@ -2,11 +2,11 @@
 
 # RADICES
 
-This is the project repository for a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777). A preprint is available here: https://arxiv.org/abs/1908.07788
+This software prototype creates a sample of core accounts in a language-based Twitter follow network.
+
+It was developed first for a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777). A preprint is available here: https://arxiv.org/abs/1908.07788
 
 (**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet by a user as determined by Twitter instead of the interface language. This might lead to less accurate results.)
-
-In short: This software prototype creates a sample of (mostly) core accounts in a language-based Twittersphere as described there.
 
 Please feel free to open an issue or comment if you have any questions.
 
@@ -14,9 +14,7 @@ Moreover, if you find any bugs, you are invited to report them as an [Issue](htt
 
 Before contributing/raising an issue, please read the [Contributor Guidelines](CONTRIBUTING.md).
 
-In case you are wondering: RADICES stands for Rank Degree Influencer CorE Sampler.
-
-## How it works
+## Installation & Usage
 1. [Create a Twitter Developer app](https://developer.twitter.com/en/docs/basics/getting-started)
 2. Set up your virtual environment with [pipenv](https://pipenv.readthedocs.io/en/latest/) [(see here)](#Create-Virtual-Environment-with-Pipenv)
 3. Have users authorise your app (the more the better - at least one) [(see here)](#authorise-app--get-tokens)
