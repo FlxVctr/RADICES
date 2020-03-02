@@ -67,9 +67,9 @@ Note that the `seeds.csv` at least have to contain that many account IDs as walk
 
 Run (while you are in the pipenv virtual environment)
 ```
-python start.py -n 2 -l de -p 1
+python start.py -n 2 -l de it -p 1
 ```
-where -n takes the number of seeds to be drawn from the seed pool, -l the Twitter accounts's last status language that is of your interest, and -p the number of pages to look at when identifying the next node. For explanation of advanced usage and more features (like 'bootstrapping', an approach, reminiscent of snowballing, to grow the seed pool) use
+where -n takes the number of seeds to be drawn from the seed pool, -l the Twitter accounts's last [status languages](https://developer.twitter.com/en/docs/developer-utilities/supported-languages/api-reference/get-help-languages) that are of your interest, and -p the number of pages to look at when identifying the next node. For explanation of advanced usage and more features (like 'bootstrapping', an approach, reminiscent of snowballing, to grow the seed pool) use
 
 ```
 python start.py --help
