@@ -30,7 +30,7 @@ sys.path.insert(0, os.getcwd())
 import helpers
 import passwords
 import test_helpers
-from collector import Collector, Connection, Coordinator, retry_x_times
+from collector import Collector, Connection, Coordinator, retry_x_times, get_latest_tweets
 from database_handler import DataBaseHandler
 from exceptions import TestException
 from setup import Config, FileImport
@@ -1317,6 +1317,18 @@ class CoordinatorTest(unittest.TestCase):
 
 
 class GeneralTests(unittest.TestCase):
+
+    def test_can_get_account_tweets(self):
+
+        connection = Connection()
+        user_id = 36476777
+
+        latest_tweets = get_latest_tweets(user_id, connection)
+
+        self.assertIsInstance(latest_tweets, pd.DataFrame)
+        self.assertGreater(len(latest_tweets), 0)
+        self.assertIsInstance(latest_tweets['status_lang'], pd.Series)
+        self.assertIsInstance(latest_tweets['text'], pd.Series)
 
     def test_retry_decorator(self):
 

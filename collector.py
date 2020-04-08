@@ -15,6 +15,8 @@ from setup import FileImport
 
 # mp.set_start_method('spawn')
 
+def get_latest_tweets(user_id, connection):
+    pass
 
 # TODO: there might be a better way to drop columns that we don't want than flatten everything
 # and removing the columns thereafter.
@@ -921,6 +923,12 @@ class Coordinator(object):
 
             new_seed = friends_details[
                 friends_details['followers_count'] == max_follower_count]['id'].values[0]
+
+            # TODO:
+            #     RETRIEVE AND TEST MORE TWEETS FOR LANG SOMEWHERE HERE
+            #     THEN REMOVE FROM friends_details DATAFRAME AND DATABASE IF FALSE POSITIVE
+            #     ACCORDING TO THRESHOLD
+            #     AND REPEAT THE LINE ABOVE
 
             check_exists_query = """
                                     SELECT EXISTS(
