@@ -1326,9 +1326,9 @@ class GeneralTests(unittest.TestCase):
         latest_tweets = get_latest_tweets(user_id, connection)
 
         self.assertIsInstance(latest_tweets, pd.DataFrame)
-        self.assertGreater(len(latest_tweets), 0)
-        self.assertIsInstance(latest_tweets['status_lang'], pd.Series)
-        self.assertIsInstance(latest_tweets['text'], pd.Series)
+        self.assertGreater(len(latest_tweets), 150)
+        self.assertIsInstance(latest_tweets['lang'], pd.Series)
+        self.assertIsInstance(latest_tweets['full_text'], pd.Series)
 
     def test_retry_decorator(self):
 

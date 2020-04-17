@@ -15,8 +15,19 @@ from setup import FileImport
 
 # mp.set_start_method('spawn')
 
-def get_latest_tweets(user_id, connection):
-    pass
+
+def get_latest_tweets(user_id, connection, fields=['lang', 'full_text']):
+
+    statuses = connection.api.user_timeline(user_id=user_id, count=200, tweet_mode='extended')
+
+    result = pd.DataFrame(columns=fields)
+
+    for status in statuses:
+        result = result.append({field: getattr(status, field) for field in fields},
+                               ignore_index=True)
+
+    return result
+
 
 # TODO: there might be a better way to drop columns that we don't want than flatten everything
 # and removing the columns thereafter.
