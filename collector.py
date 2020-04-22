@@ -936,7 +936,13 @@ class Coordinator(object):
             new_seed = friends_details[
                 friends_details['followers_count'] == max_follower_count]['id'].values[0]
 
-            while status_lang is not None and 'language_threshold' in kwargs:
+            language_check_condition = (
+                status_lang is not None and
+                'language_threshold' in kwargs and
+                kwargs['language_threshold'] > 0
+            )
+
+            while language_check_condition:
                 # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE
                 latest_tweets = get_latest_tweets(new_seed, connection, fields=['lang'])
                 language_fractions = get_fraction_of_tweets_in_language(latest_tweets)
@@ -1068,7 +1074,7 @@ class Coordinator(object):
 
     def start_collectors(self, number_of_seeds=None, select=[], status_lang=None, fail=False,
                          fail_hidden=False, restart=False, retries=10, bootstrap=False,
-                         latest_start_time=0):
+                         latest_start_time=0, language_threshold=0):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -1107,7 +1113,8 @@ class Coordinator(object):
                                                'fail': fail,
                                                'fail_hidden': fail_hidden,
                                                'restart': restart,
-                                               'retries': retries},
+                                               'retries': retries,
+                                               'language_threshold': language_threshold},
                                        name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
