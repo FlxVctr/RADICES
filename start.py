@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--seeds', type=int, help="specify number of seeds", default=10)
     parser.add_argument('-l', '--language', nargs="+",
                         help="specify language codes of last status by users to gather")
-    parser.add_argument('-lt', '--lthreshold', type=int,
+    parser.add_argument('-lt', '--lthreshold', type=float,
                         help="fraction threshold (0 to 1) of tweets by an account that must have \
 chosen languages detected (leads to less false positives but likely also more false negatives)",
                         default=0)
