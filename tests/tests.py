@@ -1174,6 +1174,28 @@ class CoordinatorTest(unittest.TestCase):
         self.assertIn('de', friends_details['status_lang'].values)
         self.assertIn('en', friends_details['status_lang'].values)
 
+    def test_work_through_seed_below_language_threshold(self):
+
+        seed = 3196230661
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang=['de', 'en'],
+                                                                    retries=1,
+                                                                    language_threshold=0.9)
+
+        self.assertNotEqual(new_seed, 36476777)
+
+    def test_work_through_seed_meets_language_threshold(self):
+
+        seed = 3196230661
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang=['de', 'en'],
+                                                                    retries=1,
+                                                                    language_threshold=0.5)
+
+        self.assertEqual(new_seed, 36476777)
+
     def test_start_collectors(self):
 
         seeds = set(self.seed_list)
@@ -1346,7 +1368,7 @@ class GeneralTests(unittest.TestCase):
             self.assertIn(language, percentages.keys())
             self.assertGreater(percentages[language], 0)
             self.assertLess(percentages[language], 1)
-            
+
     def test_retry_decorator(self):
 
         self.first_run = 1

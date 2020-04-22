@@ -784,6 +784,22 @@ class Coordinator(object):
 
             return friend_detail
 
+    def choose_random_new_seed(self, msg, connection):
+        new_seed = self.seed_pool.sample(n=1)
+        new_seed = new_seed[0].values[0]
+
+        if msg is not None:
+            stdout.write(msg + "\n")
+            stdout.flush()
+
+        self.token_queue.put(
+            (connection.token, connection.secret,
+             connection.reset_time_dict, connection.calls_dict))
+
+        self.seed_queue.put(new_seed)
+
+        return new_seed
+
     @retry_x_times(10)
     def work_through_seed_get_next_seed(self, seed, select=[], status_lang=None,
                                         connection=None, fail=False, **kwargs):
@@ -831,29 +847,15 @@ class Coordinator(object):
             except tweepy.error.TweepError as e:  # if account is protected
                 if "Not authorized." in e.reason:
 
-                    stdout.write("Account {} protected, selecting random seed.\n".format(seed))
-                    stdout.flush()
-
-                    new_seed = self.seed_pool.sample(n=1)
-                    new_seed = new_seed[0].values[0]
-
-                    self.token_queue.put((connection.token, connection.secret,
-                                          connection.reset_time_dict, connection.calls_dict))
-                    self.seed_queue.put(new_seed)
+                    new_seed = self.choose_random_new_seed(
+                        "Account {} protected, selecting random seed.".format(seed), connection)
 
                     return new_seed
 
                 elif "does not exist" in e.reason:
 
-                    print(f"Account {seed} does not exist. Selecting random seed.")
-
-                    new_seed = self.seed_pool.sample(n=1)
-                    new_seed = new_seed[0].values[0]
-
-                    self.token_queue.put(
-                        (connection.token, connection.secret,
-                         connection.reset_time_dict, connection.calls_dict))
-                    self.seed_queue.put(new_seed)
+                    new_seed = self.choose_random_new_seed(
+                        f"Account {seed} does not exist. Selecting random seed.", connection)
 
                     return new_seed
 
@@ -861,17 +863,9 @@ class Coordinator(object):
                     raise e
 
             if friend_list == []:  # if account follows nobody
-                new_seed = self.seed_pool.sample(n=1)
-                new_seed = new_seed[0].values[0]
 
-                stdout.write("No friends or unburned connections left, selecting random seed.\n")
-                stdout.flush()
-
-                self.token_queue.put(
-                    (connection.token, connection.secret,
-                     connection.reset_time_dict, connection.calls_dict))
-
-                self.seed_queue.put(new_seed)
+                new_seed = self.choose_random_new_seed(
+                    "No friends or unburned connections left, selecting random seed.", connection)
 
                 return new_seed
 
@@ -889,19 +883,10 @@ class Coordinator(object):
                 friends_details = friends_details[friends_details['status_lang'].isin(status_lang)]
 
                 if len(friends_details) == 0:
-                    new_seed = self.seed_pool.sample(n=1)
-                    new_seed = new_seed[0].values[0]
 
-                    stdout.write(
-                        "No friends found with language '{}', selecting random seed.\n".format(
-                            status_lang))
-                    stdout.flush()
-
-                    self.token_queue.put(
-                        (connection.token, connection.secret,
-                         connection.reset_time_dict, connection.calls_dict))
-
-                    self.seed_queue.put(new_seed)
+                    new_seed = self.choose_random_new_seed(
+                        f"No friends found with language '{status_lang}', selecting random seed.",
+                        connection)
 
                     return new_seed
 
@@ -951,11 +936,37 @@ class Coordinator(object):
             new_seed = friends_details[
                 friends_details['followers_count'] == max_follower_count]['id'].values[0]
 
-            # TODO:
-            #     RETRIEVE AND TEST MORE TWEETS FOR LANG SOMEWHERE HERE
-            #     THEN REMOVE FROM friends_details DATAFRAME AND DATABASE IF FALSE POSITIVE
-            #     ACCORDING TO THRESHOLD
-            #     AND REPEAT THE LINE ABOVE
+            while status_lang is not None and 'language_threshold' in kwargs:
+                # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE
+                latest_tweets = get_latest_tweets(new_seed, connection, fields=['lang'])
+                language_fractions = get_fraction_of_tweets_in_language(latest_tweets)
+
+                threshold_met = any(kwargs['language_threshold'] <= fraction
+                                    for fraction in language_fractions.values())
+
+                # THEN REMOVE FROM friends_details DATAFRAME AND DATABASE IF FALSE POSITIVE
+                # ACCORDING TO THRESHOLD
+                if threshold_met:
+                    break
+                else:
+                    friends_details = friends_details[friends_details['id'] != new_seed]
+
+                    query = f"DELETE from user_details WHERE id = {new_seed}"
+                    self.dbh.engine.execute(query)
+
+                    query = f"DELETE from friends WHERE source = {new_seed} OR target = {new_seed}"
+                    self.dbh.engine.execute(query)
+
+                    # AND REPEAT THE CHECK
+                    try:
+                        new_seed = friends_details[friends_details['followers_count'] ==
+                                                   max_follower_count]['id'].values[0]
+                    except IndexError:  # no more friends
+                        new_seed = self.choose_random_new_seed(
+                            f'{new_seed}: No friends with language threshold. Selecting random.',
+                            connection)
+
+                        return new_seed
 
             check_exists_query = """
                                     SELECT EXISTS(
@@ -1037,16 +1048,9 @@ class Coordinator(object):
                     seed, self.dbh.engine)
 
                 if friends_details is None or len(friends_details) == 0:
-                    stdout.write(f"No friends or unburned connections left for {seed}, \
-selecting random seed.")
-                    stdout.flush()
-                    new_seed = self.seed_pool.sample(n=1)
-                    new_seed = new_seed[0].values[0]
-                    self.token_queue.put(
-                        (connection.token, connection.secret,
-                         connection.reset_time_dict, connection.calls_dict))
-
-                    self.seed_queue.put(new_seed)
+                    new_seed = self.choose_random_new_seed(
+                        f"No friends or unburned connections left for {seed}, selecting random.",
+                        connection)
 
                     return new_seed
 
