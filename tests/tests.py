@@ -30,7 +30,8 @@ sys.path.insert(0, os.getcwd())
 import helpers
 import passwords
 import test_helpers
-from collector import Collector, Connection, Coordinator, retry_x_times, get_latest_tweets
+from collector import (Collector, Connection, Coordinator, retry_x_times, get_latest_tweets,
+                       get_fraction_of_tweets_in_language)
 from database_handler import DataBaseHandler
 from exceptions import TestException
 from setup import Config, FileImport
@@ -1330,6 +1331,22 @@ class GeneralTests(unittest.TestCase):
         self.assertIsInstance(latest_tweets['lang'], pd.Series)
         self.assertIsInstance(latest_tweets['full_text'], pd.Series)
 
+    def test_can_get_percentage_of_tweets(self):
+
+        connection = Connection()
+        user_id = 36476777
+
+        latest_tweets = get_latest_tweets(user_id, connection)
+        languages = ['de', 'en']
+        percentages = get_fraction_of_tweets_in_language(latest_tweets)
+
+        self.assertIsInstance(percentages, dict)
+
+        for language in languages:
+            self.assertIn(language, percentages.keys())
+            self.assertGreater(percentages[language], 0)
+            self.assertLess(percentages[language], 1)
+            
     def test_retry_decorator(self):
 
         self.first_run = 1

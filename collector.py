@@ -29,6 +29,22 @@ def get_latest_tweets(user_id, connection, fields=['lang', 'full_text']):
     return result
 
 
+def get_fraction_of_tweets_in_language(tweets):
+    """Returns fraction of languages in a tweet dataframe as a dictionary
+
+    Args:
+        tweets (pandas.DataFrame): Tweet DataFrame as returned by `get_latest_tweets`
+    Returns:
+        language_fractions (dict): {languagecode (str): fraction (float)}
+    """
+
+    language_fractions = tweets['lang'].value_counts(normalize=True)
+
+    language_fractions = language_fractions.to_dict()
+
+    return language_fractions
+
+
 # TODO: there might be a better way to drop columns that we don't want than flatten everything
 # and removing the columns thereafter.
 def flatten_json(y: dict, columns: list, sep: str = "_",
