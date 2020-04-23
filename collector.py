@@ -944,7 +944,16 @@ class Coordinator(object):
 
             while language_check_condition:
                 # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE
-                latest_tweets = get_latest_tweets(new_seed, connection, fields=['lang'])
+                try:
+                    latest_tweets = get_latest_tweets(new_seed, connection, fields=['lang'])
+                except tweepy.error.TweepError as e:  # if account is protected
+                    if "Not authorized." in e.reason:
+
+                        new_seed = self.choose_random_new_seed(
+                            f"Account {new_seed} protected, selecting random seed.", connection)
+
+                        return new_seed
+
                 language_fractions = get_fraction_of_tweets_in_language(latest_tweets)
 
                 threshold_met = any(kwargs['language_threshold'] <= fraction
