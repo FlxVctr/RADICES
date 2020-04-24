@@ -6,7 +6,7 @@ This software prototype creates an explorative sample of core accounts in (optio
 
 It was developed first for a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777). A preprint is available here: https://arxiv.org/abs/1908.07788
 
-(**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet by a user as determined by Twitter instead of the interface language. This might lead to less accurate results.)
+(**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet (or optionally the last 200 tweets with a threshold fraction defined by you to avoid false positives) by a user as determined by Twitter instead of the interface language. This might lead to different results.)
 
 Please feel free to open an issue or comment if you have any questions.
 
@@ -25,7 +25,7 @@ Before contributing/raising an issue, please read the [Contributor Guidelines](C
 8. (Develop the app further - [run tests](#Testing))
 
 ### Create Virtual Environment with Pipenv
-We highly recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest) (including the installation of pyenv) to create a virtual environment with all the required packages in the respective versions.
+We recommend installing [pipenv](https://pipenv.readthedocs.io/en/latest) (including the installation of pyenv) to create a virtual environment with all the required packages in the respective versions.
 After installing pipenv, navigate to the project directory and run:
 
 ```
@@ -63,23 +63,28 @@ Note that the `seeds.csv` at least have to contain that many account IDs as walk
 
 ## Start
 
-**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet by a user as determined by Twitter instead of the interface language. This might lead to less accurate results.
+**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet(s) by a user as determined by Twitter instead of the interface language. This might lead to different results from our paper (even though the macrostructures of a certain network should remain very similar).
 
 Run (while you are in the pipenv virtual environment)
 ```
-python start.py -n 2 -l de it -p 1
+python start.py -n 2 -l de it -lt 0.05 -p 1
 ```
-where -n takes the number of seeds to be drawn from the seed pool, -l the Twitter accounts's last [status languages](https://developer.twitter.com/en/docs/developer-utilities/supported-languages/api-reference/get-help-languages) that are of your interest, and -p the number of pages to look at when identifying the next node. For explanation of advanced usage and more features (like 'bootstrapping', an approach, reminiscent of snowballing, to grow the seed pool) use
+where
+
+* -n takes the number of seeds to be drawn from the seed pool,
+* -l can set the Twitter accounts's last [status languages](https://developer.twitter.com/en/docs/developer-utilities/supported-languages/api-reference/get-help-languages) that are of your interest,
+* -lt defines a fraction of tweets within the last 200 tweets that has to be detected to be in the requested languages (might slow down collection)
+* and -p the number of pages to look at when identifying the next node. For explanation of advanced usage and more features (like 'bootstrapping', an approach, reminiscent of snowballing, to grow the seed pool) use
 
 ```
 python start.py --help
 ```
-which will show a help dialogue.
+which will show a help dialogue with explanations and default values. Please raise an issue if those should not be clear enough.
 
 Note:
 - If the program freezes after saying "Starting x Collectors", it is likely that either your keys.json or your tokens.csv contains wrong information. We work on a solution that is more user-friendly!
 - If you get an error saying "lookup_users() got an unexpected keyword argument", you likely have the wrong version of tweepy installed. Either update your tweepy package or use pipenv to create a virtual environment and install all the packages you need.
-- If at some point an error is encountered: There is a -r (restart with latest seeds) option - this will be documented in a later version.
+- If at some point an error is encountered: There is a -r (restart with latest seeds) option to resume collection after interrupting the crawler with `control-c`. This is also handy in case you need to reboot your machine. **Note that you will still have to define the other parameters as you did when you started the collection the first time.**
 
 
 ## Testing
