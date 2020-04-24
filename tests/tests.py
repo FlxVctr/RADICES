@@ -30,7 +30,8 @@ sys.path.insert(0, os.getcwd())
 import helpers
 import passwords
 import test_helpers
-from collector import Collector, Connection, Coordinator, retry_x_times
+from collector import (Collector, Connection, Coordinator, retry_x_times, get_latest_tweets,
+                       get_fraction_of_tweets_in_language)
 from database_handler import DataBaseHandler
 from exceptions import TestException
 from setup import Config, FileImport
@@ -1173,6 +1174,28 @@ class CoordinatorTest(unittest.TestCase):
         self.assertIn('de', friends_details['status_lang'].values)
         self.assertIn('en', friends_details['status_lang'].values)
 
+    def test_work_through_seed_below_language_threshold(self):
+
+        seed = 3196230661
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang=['de', 'en'],
+                                                                    retries=1,
+                                                                    language_threshold=0.9)
+
+        self.assertNotEqual(new_seed, 36476777)
+
+    def test_work_through_seed_meets_language_threshold(self):
+
+        seed = 3196230661
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
+                                                                    status_lang=['de', 'en'],
+                                                                    retries=1,
+                                                                    language_threshold=0.5)
+
+        self.assertEqual(new_seed, 36476777)
+
     def test_start_collectors(self):
 
         seeds = set(self.seed_list)
@@ -1317,6 +1340,34 @@ class CoordinatorTest(unittest.TestCase):
 
 
 class GeneralTests(unittest.TestCase):
+
+    def test_can_get_account_tweets(self):
+
+        connection = Connection()
+        user_id = 36476777
+
+        latest_tweets = get_latest_tweets(user_id, connection)
+
+        self.assertIsInstance(latest_tweets, pd.DataFrame)
+        self.assertGreater(len(latest_tweets), 150)
+        self.assertIsInstance(latest_tweets['lang'], pd.Series)
+        self.assertIsInstance(latest_tweets['full_text'], pd.Series)
+
+    def test_can_get_percentage_of_tweets(self):
+
+        connection = Connection()
+        user_id = 36476777
+
+        latest_tweets = get_latest_tweets(user_id, connection)
+        languages = ['de', 'en']
+        percentages = get_fraction_of_tweets_in_language(latest_tweets)
+
+        self.assertIsInstance(percentages, dict)
+
+        for language in languages:
+            self.assertIn(language, percentages.keys())
+            self.assertGreater(percentages[language], 0)
+            self.assertLess(percentages[language], 1)
 
     def test_retry_decorator(self):
 
