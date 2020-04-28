@@ -741,6 +741,39 @@ class CollectorTest(unittest.TestCase):
         self.assertIsInstance(friends_df['created_at'][0], pd.Timestamp)
         self.assertIsInstance(friends_df['followers_count'][0], np.int64)
 
+    def test_collector_gets_follower_details_and_makes_df(self):
+
+        collector = Collector(self.connection, seed=36476777)
+
+        user_friends = collector.get_friend_list()
+        user_follower = collector.get_friend_list(follower=True)
+
+        self.assertNotEqual(user_friends, user_follower)
+
+        follower_details = collector.get_details(user_follower)
+
+        self.assertGreaterEqual(len(follower_details), 100)
+
+        follower_df = Collector.make_friend_df(follower_details)
+
+        self.assertIsInstance(follower_df, pd.DataFrame)
+        self.assertEqual(len(follower_df), len(follower_details))
+
+        self.assertIsInstance(follower_df['id'][0], np.int64)
+        self.assertIsInstance(follower_df['followers_count'][0], np.int64)
+        self.assertIsInstance(follower_df['status_lang'][0], str)
+
+        follower_df_selected = Collector.make_friend_df(follower_details,
+                                                        select=['id', 'followers_count',
+                                                                'created_at'])
+
+        self.assertEqual(len(follower_df_selected.columns), 3)
+        self.assertIsInstance(follower_df['id'][0], np.int64)
+
+        # Date columns equal pd Timestamps b/c pandas stores all dates as datetime64[ns] format.
+        self.assertIsInstance(follower_df['created_at'][0], pd.Timestamp)
+        self.assertIsInstance(follower_df['followers_count'][0], np.int64)
+
     def test_next_token_works(self):
 
         collector = Collector(self.connection, seed=36476777)

@@ -395,7 +395,7 @@ class Collector(object):
 
             return None
 
-    def get_friend_list(self, twitter_id=None):
+    def get_friend_list(self, twitter_id=None, follower=False):
         """Gets the friend list of an account.
 
         Args:
@@ -416,12 +416,20 @@ class Collector(object):
         while self.following_pages_limit == 0 or following_page < self.following_pages_limit:
             while True:
                 try:
-                    page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
-                    self.connection.calls_dict['/friends/ids'] = 1
+                    if follower is False:
+                        page = self.connection.api.friends_ids(user_id=twitter_id, cursor=cursor)
+                        self.connection.calls_dict['/friends/ids'] = 1
+                    else:
+                        page = self.connection.api.followers_ids(user_id=twitter_id, cursor=cursor)
+                        self.connection.calls_dict['/followers/ids'] = 1
                     break
                 except tweepy.RateLimitError:
-                    self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids',
-                                                                 check_calls=False)
+                    if follower is False:
+                        self.check_API_calls_and_update_if_necessary(endpoint='/friends/ids',
+                                                                     check_calls=False)
+                    else:
+                        self.check_API_calls_and_update_if_necessary(endpoint='/followers/ids',
+                                                                     check_calls=False)
 
             if len(page[0]) > 0:
                 result += page[0]
