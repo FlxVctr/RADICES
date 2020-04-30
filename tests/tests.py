@@ -1267,16 +1267,21 @@ class CoordinatorTest(unittest.TestCase):
         number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
 
         processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1, bootstrap=True,
-                                                                        status_lang='de')
+                                                                        status_lang=['de', 'en'])
 
         processes[0].join(timeout=1000)
 
         processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1, bootstrap=True,
-                                                                        status_lang='de')
+                                                                        status_lang=['de', 'en'])
 
         processes[0].join(timeout=1000)
 
         new_number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
+
+        self.assertIn(939091, coordinator_with_bootstrap_enabled.seed_pool[0].values)
+        # FlxVctr is following Joe Biden but not vice versa so Biden should be in seed pool
+        self.assertIn(3009677047, coordinator_with_bootstrap_enabled.seed_pool[0].values)
+        # FlxVctr is not following this account but vice versa so it should be in seed pool
 
         self.assertGreater(new_number_of_seeds_in_pool, number_of_seeds_in_pool)
         self.assertEqual(len(coordinator_with_bootstrap_enabled.seed_pool.columns), 1)

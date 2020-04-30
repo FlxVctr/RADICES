@@ -808,6 +808,23 @@ class Coordinator(object):
 
         return new_seed
 
+    def write_user_details(self, user_details):
+        """Writes pandas.DataFrame `user_details` to MySQL table 'user_details'
+        """
+
+        try:
+            user_details.to_sql('user_details', if_exists='append',
+                                index=False, con=self.dbh.engine)
+
+        except IntegrityError:  # duplicate id (primary key)
+            temp_tbl_name = self.dbh.make_temp_tbl()
+            user_details.to_sql(temp_tbl_name, if_exists="append", index=False,
+                                con=self.dbh.engine)
+            query = "REPLACE INTO user_details SELECT * FROM {};".format(
+                    temp_tbl_name)
+            self.dbh.engine.execute(query)
+            self.dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")
+
     @retry_x_times(10)
     def work_through_seed_get_next_seed(self, seed, select=[], status_lang=None,
                                         connection=None, fail=False, **kwargs):
@@ -852,6 +869,8 @@ class Coordinator(object):
 
             try:
                 friend_list = collector.get_friend_list()
+                if 'bootstrap' in kwargs and kwargs['bootstrap'] is True:
+                    follower_list = collector.get_friend_list(follower=True)
             except tweepy.error.TweepError as e:  # if account is protected
                 if "Not authorized." in e.reason:
 
@@ -884,11 +903,19 @@ class Coordinator(object):
                                         "status_lang", "created_at", "statuses_count"]))
             friends_details = Collector.make_friend_df(friends_details, select)
 
+            if 'bootstrap' in kwargs and kwargs['bootstrap'] is True:
+                follower_details = collector.get_details(follower_list)
+                follower_details = Collector.make_friend_df(follower_details, select)
+
             if status_lang is not None:
 
                 if type(status_lang) is str:
                     status_lang = [status_lang]
                 friends_details = friends_details[friends_details['status_lang'].isin(status_lang)]
+
+                if 'bootstrap' in kwargs and kwargs['bootstrap'] is True:
+                    follower_details = follower_details[follower_details['status_lang'].isin(
+                        status_lang)]
 
                 if len(friends_details) == 0:
 
@@ -898,18 +925,10 @@ class Coordinator(object):
 
                     return new_seed
 
-            try:
-                friends_details.to_sql('user_details', if_exists='append',
-                                       index=False, con=self.dbh.engine)
+            self.write_user_details(friends_details)
 
-            except IntegrityError:  # duplicate id (primary key)
-                temp_tbl_name = self.dbh.make_temp_tbl()
-                friends_details.to_sql(temp_tbl_name, if_exists="append", index=False,
-                                       con=self.dbh.engine)
-                query = "REPLACE INTO user_details SELECT * FROM {};".format(
-                        temp_tbl_name)
-                self.dbh.engine.execute(query)
-                self.dbh.engine.execute("DROP TABLE " + temp_tbl_name + ";")
+            if 'bootstrap' in kwargs and kwargs['bootstrap'] is True:
+                self.write_user_details(follower_details)
 
         if status_lang is not None and len(friends_details) == 0:
 
@@ -1131,7 +1150,8 @@ class Coordinator(object):
                                                'fail_hidden': fail_hidden,
                                                'restart': restart,
                                                'retries': retries,
-                                               'language_threshold': language_threshold},
+                                               'language_threshold': language_threshold,
+                                               'bootstrap': bootstrap},
                                        name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
