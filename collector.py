@@ -969,10 +969,14 @@ class Coordinator(object):
                 kwargs['language_threshold'] > 0
             )
 
-            while language_check_condition:  # TODO: Check here for keywords if keywords check on
-                # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE
+            keyword_condition = ('keywords' in kwargs and
+                                 len(kwargs['keywords']) > 0)
+
+            while language_check_condition or keyword_condition:
+                # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE OR KEYWORDS
                 try:
-                    latest_tweets = get_latest_tweets(new_seed, connection, fields=['lang'])
+                    latest_tweets = get_latest_tweets(new_seed, connection,
+                                                      fields=['lang', 'full_text'])
                 except tweepy.error.TweepError as e:  # if account is protected
                     if "Not authorized." in e.reason:
 
@@ -981,14 +985,23 @@ class Coordinator(object):
 
                         return new_seed
 
-                language_fractions = get_fraction_of_tweets_in_language(latest_tweets)
+                threshold_met = True  # set true per default and change to False if not met
+                keyword_met = True
 
-                threshold_met = any(kwargs['language_threshold'] <= fraction
-                                    for fraction in language_fractions.values())
+                if language_check_condition:
+                    language_fractions = get_fraction_of_tweets_in_language(latest_tweets)
+
+                    threshold_met = any(kwargs['language_threshold'] <= fraction
+                                        for fraction in language_fractions.values())
+
+                if keyword_condition:
+                    keyword_met = any(latest_tweets['full_text'].str.contains(keyword).any()
+                                      for keyword in kwargs['keywords'])
 
                 # THEN REMOVE FROM friends_details DATAFRAME AND DATABASE IF FALSE POSITIVE
-                # ACCORDING TO THRESHOLD
-                if threshold_met:
+                # ACCORDING TO THRESHOLD OR KEYWORD
+
+                if threshold_met and keyword_met:
                     break
                 else:
                     friends_details = friends_details[friends_details['id'] != new_seed]
@@ -1005,7 +1018,7 @@ class Coordinator(object):
                                                    max_follower_count]['id'].values[0]
                     except IndexError:  # no more friends
                         new_seed = self.choose_random_new_seed(
-                            f'{new_seed}: No friends with language threshold. Selecting random.',
+                            f'{new_seed}: No friends meet set conditions. Selecting random.',
                             connection)
 
                         return new_seed
