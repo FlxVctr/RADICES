@@ -741,6 +741,39 @@ class CollectorTest(unittest.TestCase):
         self.assertIsInstance(friends_df['created_at'][0], pd.Timestamp)
         self.assertIsInstance(friends_df['followers_count'][0], np.int64)
 
+    def test_collector_gets_follower_details_and_makes_df(self):
+
+        collector = Collector(self.connection, seed=36476777)
+
+        user_friends = collector.get_friend_list()
+        user_follower = collector.get_friend_list(follower=True)
+
+        self.assertNotEqual(user_friends, user_follower)
+
+        follower_details = collector.get_details(user_follower)
+
+        self.assertGreaterEqual(len(follower_details), 100)
+
+        follower_df = Collector.make_friend_df(follower_details)
+
+        self.assertIsInstance(follower_df, pd.DataFrame)
+        self.assertEqual(len(follower_df), len(follower_details))
+
+        self.assertIsInstance(follower_df['id'][0], np.int64)
+        self.assertIsInstance(follower_df['followers_count'][0], np.int64)
+        self.assertIsInstance(follower_df['status_lang'][0], str)
+
+        follower_df_selected = Collector.make_friend_df(follower_details,
+                                                        select=['id', 'followers_count',
+                                                                'created_at'])
+
+        self.assertEqual(len(follower_df_selected.columns), 3)
+        self.assertIsInstance(follower_df['id'][0], np.int64)
+
+        # Date columns equal pd Timestamps b/c pandas stores all dates as datetime64[ns] format.
+        self.assertIsInstance(follower_df['created_at'][0], pd.Timestamp)
+        self.assertIsInstance(follower_df['followers_count'][0], np.int64)
+
     def test_next_token_works(self):
 
         collector = Collector(self.connection, seed=36476777)
@@ -1234,16 +1267,21 @@ class CoordinatorTest(unittest.TestCase):
         number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
 
         processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1, bootstrap=True,
-                                                                        status_lang='de')
+                                                                        status_lang=['de', 'en'])
 
         processes[0].join(timeout=1000)
 
         processes = coordinator_with_bootstrap_enabled.start_collectors(retries=1, bootstrap=True,
-                                                                        status_lang='de')
+                                                                        status_lang=['de', 'en'])
 
         processes[0].join(timeout=1000)
 
         new_number_of_seeds_in_pool = len(coordinator_with_bootstrap_enabled.seed_pool)
+
+        self.assertIn(939091, coordinator_with_bootstrap_enabled.seed_pool[0].values)
+        # FlxVctr is following Joe Biden but not vice versa so Biden should be in seed pool
+        self.assertIn(3009677047, coordinator_with_bootstrap_enabled.seed_pool[0].values)
+        # FlxVctr is not following this account but vice versa so it should be in seed pool
 
         self.assertGreater(new_number_of_seeds_in_pool, number_of_seeds_in_pool)
         self.assertEqual(len(coordinator_with_bootstrap_enabled.seed_pool.columns), 1)
