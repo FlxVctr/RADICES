@@ -1229,6 +1229,24 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertEqual(new_seed, 36476777)
 
+    def test_work_through_seed_and_filter_for_keywords(self):
+
+        seed = 3196230661
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1,
+                                                                    keywords=['sdfghasdfh'])
+
+        self.assertNotEqual(new_seed, 36476777)
+
+        tweets = get_latest_tweets(36476777, Connection())
+
+        keywords = tweets['full_text'].str.split()[42][0:3]
+
+        new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1,
+                                                                    keywords=keywords)
+
+        self.assertEqual(new_seed, 36476777)
+
     def test_start_collectors(self):
 
         seeds = set(self.seed_list)

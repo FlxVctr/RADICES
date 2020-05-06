@@ -969,7 +969,7 @@ class Coordinator(object):
                 kwargs['language_threshold'] > 0
             )
 
-            while language_check_condition:
+            while language_check_condition:  # TODO: Check here for keywords if keywords check on
                 # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE
                 try:
                     latest_tweets = get_latest_tweets(new_seed, connection, fields=['lang'])
