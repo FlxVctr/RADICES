@@ -46,6 +46,7 @@ def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart
                                               keywords=keywords)
 
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
+    stdout.write(f"\nKeywords: {keywords}\n")
     stdout.flush()
 
     i = 0
@@ -134,12 +135,13 @@ Lower values speed up collection. Default: 0 (unlimited)''', default=0)
 
                 main_loop(coordinator, select=user_details_list,
                           status_lang=args.language, test_fail=args.fail, restart=True,
-                          bootstrap=args.bootstrap, language_threshold=args.lthreshold)
+                          bootstrap=args.bootstrap, language_threshold=args.lthreshold,
+                          keywords=args.keywords)
                 restart_counter += 1
             else:
                 main_loop(coordinator, select=user_details_list,
                           status_lang=args.language, test_fail=args.fail, bootstrap=args.bootstrap,
-                          language_threshold=args.lthreshold)
+                          language_threshold=args.lthreshold, keywords=args.keywords)
         except Exception:
             stdout.write("Encountered unexpected exception:\n")
             traceback.print_exc()
