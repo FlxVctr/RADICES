@@ -2,7 +2,7 @@ import multiprocessing.dummy as mp
 import time
 from exceptions import TestException
 from functools import wraps
-from sys import stdout
+from sys import stdout, stderr
 
 import numpy as np
 import pandas as pd
@@ -711,7 +711,11 @@ class Coordinator(object):
         if seed_list is None:
 
             self.number_of_seeds = seeds
-            self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+            try:
+                self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+            except ValueError:  # seed pool too small
+                stderr.write("WARNING: Seed pool smaller than number of seeds.\n")
+                self.seeds = self.seed_pool.sample(n=self.number_of_seeds, replace=True)
 
             self.seeds = self.seeds[0].values
         else:
@@ -1123,7 +1127,7 @@ class Coordinator(object):
 
     def start_collectors(self, number_of_seeds=None, select=[], status_lang=None, fail=False,
                          fail_hidden=False, restart=False, retries=10, bootstrap=False,
-                         latest_start_time=0, language_threshold=0):
+                         latest_start_time=0, language_threshold=0, keywords=[]):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -1164,7 +1168,8 @@ class Coordinator(object):
                                                'restart': restart,
                                                'retries': retries,
                                                'language_threshold': language_threshold,
-                                               'bootstrap': bootstrap},
+                                               'bootstrap': bootstrap,
+                                               'keywords': keywords},
                                        name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
