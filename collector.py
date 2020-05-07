@@ -647,7 +647,7 @@ class Collector(object):
             newflat = {key: value for (key, value) in flat.items() if key in select}
             json_list.append(newflat)
 
-        df = pd.io.json.json_normalize(json_list)
+        df = pd.json_normalize(json_list)
 
         for var in select:
             if var not in df.columns:
