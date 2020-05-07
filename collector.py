@@ -999,7 +999,8 @@ class Coordinator(object):
                                         for fraction in language_fractions.values())
 
                 if keyword_condition:
-                    keyword_met = any(latest_tweets['full_text'].str.contains(keyword).any()
+                    keyword_met = any(latest_tweets['full_text'].str.contains(keyword,
+                                      case=False).any()
                                       for keyword in kwargs['keywords'])
 
                 # THEN REMOVE FROM friends_details DATAFRAME AND DATABASE IF FALSE POSITIVE
