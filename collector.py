@@ -892,7 +892,7 @@ class Coordinator(object):
 
                 if seed_depleted == 1:
                     new_seed = self.choose_random_new_seed(
-                        'Seed {new_seed} is depleted. No friends meet conditions. Choosing random new seed.',
+                        f'Seed {seed} is depleted. No friends meet conditions. Random new seed.',
                         connection)
 
                     return new_seed
