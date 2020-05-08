@@ -851,6 +851,15 @@ class Coordinator(object):
         if 'fail_hidden' in kwargs and kwargs['fail_hidden'] is True:
             raise TestException
 
+        language_check_condition = (
+            status_lang is not None and
+            'language_threshold' in kwargs and
+            kwargs['language_threshold'] > 0
+        )
+
+        keyword_condition = ('keywords' in kwargs and
+                             len(kwargs['keywords']) > 0)
+
         if connection is None:
             connection = Connection(token_queue=self.token_queue)
 
@@ -872,6 +881,22 @@ class Coordinator(object):
         # depleted and we doing a lot of work for nothing
 
         if friends_details is None:
+            if language_check_condition or keyword_condition:
+                check_exists_query = f"""
+                                        SELECT EXISTS(
+                                            SELECT source FROM result
+                                            WHERE source={seed}
+                                            )
+                                     """
+                seed_depleted = self.dbh.engine.execute(check_exists_query).scalar()
+
+                if seed_depleted == 1:
+                    new_seed = self.choose_random_new_seed(
+                        'Seed is depleted. No friends meet conditions. Choosing random new seed.',
+                        connection)
+
+                    return new_seed
+
             collector = Collector(connection, seed,
                                   following_pages_limit=self.following_pages_limit)
 
@@ -971,15 +996,6 @@ class Coordinator(object):
             new_seed = friends_details[
                 friends_details['followers_count'] == max_follower_count]['id'].values[0]
 
-            language_check_condition = (
-                status_lang is not None and
-                'language_threshold' in kwargs and
-                kwargs['language_threshold'] > 0
-            )
-
-            keyword_condition = ('keywords' in kwargs and
-                                 len(kwargs['keywords']) > 0)
-
             while language_check_condition or keyword_condition:
                 # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE OR KEYWORDS
                 try:
@@ -1007,7 +1023,8 @@ class Coordinator(object):
                                       case=False).any()
                                       for keyword in kwargs['keywords'])
 
-                # THEN REMOVE FROM friends_details DATAFRAME AND DATABASE IF FALSE POSITIVE
+                # THEN REMOVE FROM friends_details DATAFRAME, SEED POOL, 
+                # AND DATABASE IF FALSE POSITIVE
                 # ACCORDING TO THRESHOLD OR KEYWORD
 
                 if threshold_met and keyword_met:
@@ -1015,10 +1032,16 @@ class Coordinator(object):
                 else:
                     friends_details = friends_details[friends_details['id'] != new_seed]
 
+                    print(
+                        f'seed pool size before removing not matching seed: {len(self.seed_pool)}')
+                    self.seed_pool = self.seed_pool[self.seed_pool[0] != new_seed]
+                    print(
+                        f'seed pool size after removing not matching seed: {len(self.seed_pool)}')
+
                     query = f"DELETE from user_details WHERE id = {new_seed}"
                     self.dbh.engine.execute(query)
 
-                    query = f"DELETE from friends WHERE source = {new_seed} OR target = {new_seed}"
+                    query = f"DELETE from friends WHERE target = {new_seed}"
                     self.dbh.engine.execute(query)
 
                     # AND REPEAT THE CHECK
