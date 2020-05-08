@@ -878,7 +878,7 @@ class Coordinator(object):
 
         # TODO: if keyword or language threshold is set, do not retrieve friends if seed is already
         # in the result database, because then the friends with the correct properties are already
-        # depleted and we doing a lot of work for nothing
+        # depleted and we're doing a lot of work for nothing
 
         if friends_details is None:
             if language_check_condition or keyword_condition:
@@ -892,7 +892,7 @@ class Coordinator(object):
 
                 if seed_depleted == 1:
                     new_seed = self.choose_random_new_seed(
-                        'Seed is depleted. No friends meet conditions. Choosing random new seed.',
+                        'Seed {new_seed} is depleted. No friends meet conditions. Choosing random new seed.',
                         connection)
 
                     return new_seed
@@ -1023,7 +1023,7 @@ class Coordinator(object):
                                       case=False).any()
                                       for keyword in kwargs['keywords'])
 
-                # THEN REMOVE FROM friends_details DATAFRAME, SEED POOL, 
+                # THEN REMOVE FROM friends_details DATAFRAME, SEED POOL,
                 # AND DATABASE IF FALSE POSITIVE
                 # ACCORDING TO THRESHOLD OR KEYWORD
 
@@ -1038,8 +1038,8 @@ class Coordinator(object):
                     print(
                         f'seed pool size after removing not matching seed: {len(self.seed_pool)}')
 
-                    query = f"DELETE from user_details WHERE id = {new_seed}"
-                    self.dbh.engine.execute(query)
+                    # query = f"DELETE from user_details WHERE id = {new_seed}"
+                    # self.dbh.engine.execute(query)
 
                     query = f"DELETE from friends WHERE target = {new_seed}"
                     self.dbh.engine.execute(query)
