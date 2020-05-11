@@ -67,13 +67,14 @@ Note that the `seeds.csv` at least have to contain that many account IDs as walk
 
 Run (while you are in the pipenv virtual environment)
 ```
-python start.py -n 2 -l de it -lt 0.05 -p 1
+python start.py -n 2 -l de it -lt 0.05 -p 1 -k "keyword1" "keyword2" "keyword3"
 ```
 where
 
 * -n takes the number of seeds to be drawn from the seed pool,
 * -l can set the Twitter accounts's last [status languages](https://developer.twitter.com/en/docs/developer-utilities/supported-languages/api-reference/get-help-languages) that are of your interest,
 * -lt defines a fraction of tweets within the last 200 tweets that has to be detected to be in the requested languages (might slow down collection)
+* -k can be used to only follow paths to seeds who used defined keywords in their last 200 tweets (keywords are interpreted as [regexes](https://docs.python.org/3/howto/regex.html), ignoring case)
 * and -p the number of pages to look at when identifying the next node. For explanation of advanced usage and more features (like 'bootstrapping', an approach, reminiscent of snowballing, to grow the seed pool) use
 
 ```
