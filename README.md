@@ -87,6 +87,25 @@ Note:
 - If you get an error saying "lookup_users() got an unexpected keyword argument", you likely have the wrong version of tweepy installed. Either update your tweepy package or use pipenv to create a virtual environment and install all the packages you need.
 - If at some point an error is encountered: There is a -r (restart with latest seeds) option to resume collection after interrupting the crawler with `control-c`. This is also handy in case you need to reboot your machine. **Note that you will still have to define the other parameters as you did when you started the collection the first time.**
 
+## Analysis (with Gephi)
+
+It is possible to import the data into tools like Gephi via a MySQL connector. However, Gephi apparently supports only MySQL 5 at the time of writing.
+
+To do so, it is helpful to use [`create_node_view.sql`](https://github.com/FlxVctr/RADICES/blob/master/create_node_view.sql) and [`create_dense_result.sql`](https://github.com/FlxVctr/RADICES/blob/master/create_dense_result.sql) to create views for Gephi to import.
+
+Then you can import the results, in the case of Gephi via the menu item **File -> Import Database -> Edge List**, using your database credentials and
+
+* `SELECT * FROM nodes` as the "Node Query"
+* `SELECT * FROM result` as the "Edge Query" if you want to analyse the walked edges only (as done in the German Twittersphere paper)
+* `SELECT * FROM dense_result` as the "Edge Query" if you want to analyse all edges between collected accounts (which will be a much denser network)
+
+Other tables created by RADICES in the database that might be interesting for analysis are:
+
+* **result**: edge list (columns: source,target) containing the Twitter IDs of walked accounts
+* **friends**: cache of collected follow connections, up to p * 5000 connections per walked account (might contain connections to accounts which do not fulfill language or keyword criteria)
+* **user_details**: user details cache, as defined in `config.yml` of all accounts in **result** and **friends** (might contain not deleted data from accounts which do not fulfill language or keyword criteria)
+
+Other tables contain only data that is necessary for internal functions.
 
 ## Testing
 
