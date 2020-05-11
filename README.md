@@ -99,6 +99,14 @@ Then you can import the results, in the case of Gephi via the menu item **File -
 * `SELECT * FROM result` as the "Edge Query" if you want to analyse the walked edges only (as done in the German Twittersphere paper)
 * `SELECT * FROM dense_result` as the "Edge Query" if you want to analyse all edges between collected accounts (which will be a much denser network)
 
+Other tables created by RADICES in the database that might be interesting for analysis are:
+
+* **result**: edge list (columns: source,target) containing the Twitter IDs of walked accounts
+* **friends**: cache of collected follow connections, up to p * 5000 connections per walked account (might contain connections to accounts which do not fulfill language or keyword criteria)
+* **user_details**: user details cache, as defined in `config.yml` of all accounts in **result** and **friends** (might contain not deleted data from accounts which do not fulfill language or keyword criteria)
+
+Other tables contain only data that is necessary for internal functions.
+
 ## Testing
 
 For development purposes. Note that you still need a functional (i.e. filled out) `keys.json` and tokens indicated in `tokens.csv` to work with.
