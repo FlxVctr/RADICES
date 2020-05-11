@@ -13,7 +13,7 @@ from setup import Config
 
 
 def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart=False,
-              bootstrap=False, language_threshold=0):
+              bootstrap=False, language_threshold=0, keywords=[]):
 
     try:
         latest_start_time = pd.read_sql_table('timetable', coordinator.dbh.engine)
@@ -42,9 +42,11 @@ def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart
                                               retries=4,
                                               latest_start_time=latest_start_time,
                                               bootstrap=bootstrap,
-                                              language_threshold=language_threshold)
+                                              language_threshold=language_threshold,
+                                              keywords=keywords)
 
     stdout.write("\nstarting {} collectors\n".format(len(collectors)))
+    stdout.write(f"\nKeywords: {keywords}\n")
     stdout.flush()
 
     i = 0
@@ -75,9 +77,11 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--language', nargs="+",
                         help="specify language codes of last status by users to gather")
     parser.add_argument('-lt', '--lthreshold', type=float,
-                        help="fraction threshold (0 to 1) of tweets by an account that must have \
-chosen languages detected (leads to less false positives but likely also more false negatives)",
-                        default=0)
+                        help="fraction threshold (0 to 1) of last 200 tweets by an account that \
+must have chosen languages detected (leads to less false positives but \
+also more false negatives)", default=0)
+    parser.add_argument('-k', '--keywords', nargs="+",
+                        help="specify keywords contained in last 200 tweets by users to gather")
     parser.add_argument('-r', '--restart',
                         help="restart with latest seeds in latest_seeds.csv", action="store_true")
     parser.add_argument('-p', '--following_pages_limit', type=int,
@@ -131,12 +135,13 @@ Lower values speed up collection. Default: 0 (unlimited)''', default=0)
 
                 main_loop(coordinator, select=user_details_list,
                           status_lang=args.language, test_fail=args.fail, restart=True,
-                          bootstrap=args.bootstrap, language_threshold=args.lthreshold)
+                          bootstrap=args.bootstrap, language_threshold=args.lthreshold,
+                          keywords=args.keywords)
                 restart_counter += 1
             else:
                 main_loop(coordinator, select=user_details_list,
                           status_lang=args.language, test_fail=args.fail, bootstrap=args.bootstrap,
-                          language_threshold=args.lthreshold)
+                          language_threshold=args.lthreshold, keywords=args.keywords)
         except Exception:
             stdout.write("Encountered unexpected exception:\n")
             traceback.print_exc()

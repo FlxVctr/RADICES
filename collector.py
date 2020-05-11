@@ -2,7 +2,7 @@ import multiprocessing.dummy as mp
 import time
 from exceptions import TestException
 from functools import wraps
-from sys import stdout
+from sys import stdout, stderr
 
 import numpy as np
 import pandas as pd
@@ -647,7 +647,7 @@ class Collector(object):
             newflat = {key: value for (key, value) in flat.items() if key in select}
             json_list.append(newflat)
 
-        df = pd.io.json.json_normalize(json_list)
+        df = pd.json_normalize(json_list)
 
         for var in select:
             if var not in df.columns:
@@ -711,7 +711,11 @@ class Coordinator(object):
         if seed_list is None:
 
             self.number_of_seeds = seeds
-            self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+            try:
+                self.seeds = self.seed_pool.sample(n=self.number_of_seeds)
+            except ValueError:  # seed pool too small
+                stderr.write("WARNING: Seed pool smaller than number of seeds.\n")
+                self.seeds = self.seed_pool.sample(n=self.number_of_seeds, replace=True)
 
             self.seeds = self.seeds[0].values
         else:
@@ -847,6 +851,15 @@ class Coordinator(object):
         if 'fail_hidden' in kwargs and kwargs['fail_hidden'] is True:
             raise TestException
 
+        language_check_condition = (
+            status_lang is not None and
+            'language_threshold' in kwargs and
+            kwargs['language_threshold'] > 0
+        )
+
+        keyword_condition = ('keywords' in kwargs and
+                             len(kwargs['keywords']) > 0)
+
         if connection is None:
             connection = Connection(token_queue=self.token_queue)
 
@@ -864,6 +877,22 @@ class Coordinator(object):
                 Accessing Twitter API.""")
 
         if friends_details is None:
+            if language_check_condition or keyword_condition:
+                check_exists_query = f"""
+                                        SELECT EXISTS(
+                                            SELECT source FROM result
+                                            WHERE source={seed}
+                                            )
+                                     """
+                seed_depleted = self.dbh.engine.execute(check_exists_query).scalar()
+
+                if seed_depleted == 1:
+                    new_seed = self.choose_random_new_seed(
+                        f'Seed {seed} is depleted. No friends meet conditions. Random new seed.',
+                        connection)
+
+                    return new_seed
+
             collector = Collector(connection, seed,
                                   following_pages_limit=self.following_pages_limit)
 
@@ -963,16 +992,11 @@ class Coordinator(object):
             new_seed = friends_details[
                 friends_details['followers_count'] == max_follower_count]['id'].values[0]
 
-            language_check_condition = (
-                status_lang is not None and
-                'language_threshold' in kwargs and
-                kwargs['language_threshold'] > 0
-            )
-
-            while language_check_condition:
-                # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE
+            while language_check_condition or keyword_condition:
+                # RETRIEVE AND TEST MORE TWEETS FOR LANGUAGE OR KEYWORDS
                 try:
-                    latest_tweets = get_latest_tweets(new_seed, connection, fields=['lang'])
+                    latest_tweets = get_latest_tweets(new_seed, connection,
+                                                      fields=['lang', 'full_text'])
                 except tweepy.error.TweepError as e:  # if account is protected
                     if "Not authorized." in e.reason:
 
@@ -981,22 +1005,39 @@ class Coordinator(object):
 
                         return new_seed
 
-                language_fractions = get_fraction_of_tweets_in_language(latest_tweets)
+                threshold_met = True  # set true per default and change to False if not met
+                keyword_met = True
 
-                threshold_met = any(kwargs['language_threshold'] <= fraction
-                                    for fraction in language_fractions.values())
+                if language_check_condition:
+                    language_fractions = get_fraction_of_tweets_in_language(latest_tweets)
 
-                # THEN REMOVE FROM friends_details DATAFRAME AND DATABASE IF FALSE POSITIVE
-                # ACCORDING TO THRESHOLD
-                if threshold_met:
+                    threshold_met = any(kwargs['language_threshold'] <= fraction
+                                        for fraction in language_fractions.values())
+
+                if keyword_condition:
+                    keyword_met = any(latest_tweets['full_text'].str.contains(keyword,
+                                      case=False).any()
+                                      for keyword in kwargs['keywords'])
+
+                # THEN REMOVE FROM friends_details DATAFRAME, SEED POOL,
+                # AND DATABASE IF FALSE POSITIVE
+                # ACCORDING TO THRESHOLD OR KEYWORD
+
+                if threshold_met and keyword_met:
                     break
                 else:
                     friends_details = friends_details[friends_details['id'] != new_seed]
 
-                    query = f"DELETE from user_details WHERE id = {new_seed}"
-                    self.dbh.engine.execute(query)
+                    print(
+                        f'seed pool size before removing not matching seed: {len(self.seed_pool)}')
+                    self.seed_pool = self.seed_pool[self.seed_pool[0] != new_seed]
+                    print(
+                        f'seed pool size after removing not matching seed: {len(self.seed_pool)}')
 
-                    query = f"DELETE from friends WHERE source = {new_seed} OR target = {new_seed}"
+                    # query = f"DELETE from user_details WHERE id = {new_seed}"
+                    # self.dbh.engine.execute(query)
+
+                    query = f"DELETE from friends WHERE target = {new_seed}"
                     self.dbh.engine.execute(query)
 
                     # AND REPEAT THE CHECK
@@ -1005,7 +1046,7 @@ class Coordinator(object):
                                                    max_follower_count]['id'].values[0]
                     except IndexError:  # no more friends
                         new_seed = self.choose_random_new_seed(
-                            f'{new_seed}: No friends with language threshold. Selecting random.',
+                            f'{new_seed}: No friends meet set conditions. Selecting random.',
                             connection)
 
                         return new_seed
@@ -1110,7 +1151,7 @@ class Coordinator(object):
 
     def start_collectors(self, number_of_seeds=None, select=[], status_lang=None, fail=False,
                          fail_hidden=False, restart=False, retries=10, bootstrap=False,
-                         latest_start_time=0, language_threshold=0):
+                         latest_start_time=0, language_threshold=0, keywords=[]):
         """Starts `number_of_seeds` collector threads
         collecting the next seed for on seed taken from `self.queue`
         and puting it back into `self.seed_queue`.
@@ -1151,7 +1192,8 @@ class Coordinator(object):
                                                'restart': restart,
                                                'retries': retries,
                                                'language_threshold': language_threshold,
-                                               'bootstrap': bootstrap},
+                                               'bootstrap': bootstrap,
+                                               'keywords': keywords},
                                        name=str(seed)))
 
         latest_seeds = pd.DataFrame(seed_list)
