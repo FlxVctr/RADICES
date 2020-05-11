@@ -876,10 +876,6 @@ class Coordinator(object):
                 print("""Accessing db for friends_details failed. Maybe database does not exist yet.
                 Accessing Twitter API.""")
 
-        # TODO: if keyword or language threshold is set, do not retrieve friends if seed is already
-        # in the result database, because then the friends with the correct properties are already
-        # depleted and we're doing a lot of work for nothing
-
         if friends_details is None:
             if language_check_condition or keyword_condition:
                 check_exists_query = f"""
