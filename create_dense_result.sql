@@ -1,3 +1,4 @@
+CREATE VIEW `dense_result` AS
 SELECT DISTINCT source, target FROM friends WHERE source IN
 (SELECT DISTINCT T.id
             FROM
