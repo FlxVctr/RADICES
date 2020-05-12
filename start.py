@@ -89,7 +89,8 @@ also more false negatives)", default=0)
 account to determine most followed friend.
 1 page has a maximum of 5000 folllowings.
 Lower values speed up collection. Default: 0 (unlimited)''', default=0)
-    parser.add_argument('-b', '--bootstrap', help="at every step, add seeds' friends to seed pool",
+    parser.add_argument('-b', '--bootstrap', help="at every step, add a seed's friends and followers \
+to the seed pool from which accounts are chosen randomly if walkers are at an impasse",
                         action="store_true")
     parser.add_argument('-t', '--test', help="dev only: test for 2 loops only",
                         action="store_true")
