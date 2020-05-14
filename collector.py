@@ -858,6 +858,7 @@ class Coordinator(object):
         )
 
         keyword_condition = ('keywords' in kwargs and
+                             kwargs['keywords'] is not None and
                              len(kwargs['keywords']) > 0)
 
         if connection is None:
