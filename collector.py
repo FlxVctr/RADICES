@@ -878,7 +878,9 @@ class Coordinator(object):
                 Accessing Twitter API.""")
 
         if friends_details is None:
-            if language_check_condition or keyword_condition:
+            if 'restart' in kwargs and kwargs['restart'] is True:
+                pass
+            else if language_check_condition or keyword_condition:
                 check_exists_query = f"""
                                         SELECT EXISTS(
                                             SELECT source FROM result
