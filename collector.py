@@ -1049,7 +1049,7 @@ class Coordinator(object):
                                                    max_follower_count]['id'].values[0]
                     except IndexError:  # no more friends
                         new_seed = self.choose_random_new_seed(
-                            f'{new_seed}: No friends meet set conditions. Selecting random.',
+                            f'{seed}: No friends meet set conditions. Selecting random.',
                             connection)
 
                         return new_seed
