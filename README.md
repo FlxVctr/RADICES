@@ -4,9 +4,18 @@
 
 This software prototype creates an explorative sample of core accounts in (optionally language-based) Twitter follow networks.
 
-A short demo that was prepared for the ICA conference in 2020 can be found here: https://vimeo.com/418025499
+A short demo that was prepared for the ICA conference in 2020 can be found here:
 
-It was developed first for a Twitter follow network sampling experiment described in this talk: https://youtu.be/qsnGTl8d3qU?t=21823. A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777). A preprint is available here: https://arxiv.org/abs/1908.07788
+https://vimeo.com/418025499
+
+It was developed first for a Twitter follow network sampling experiment described in this talk:
+
+https://youtu.be/qsnGTl8d3qU?t=21823.
+A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777).
+
+A preprint is available here:
+
+https://arxiv.org/abs/1908.07788
 
 (**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet (or optionally the last 200 tweets with a threshold fraction defined by you to avoid false positives) by a user as determined by Twitter instead of the interface language. This might lead to different results.)
 
