@@ -1002,11 +1002,17 @@ class Coordinator(object):
                                                       fields=['lang', 'full_text'])
                 except tweepy.error.TweepError as e:  # if account is protected
                     if "Not authorized." in e.reason:
-
                         new_seed = self.choose_random_new_seed(
                             f"Account {new_seed} protected, selecting random seed.", connection)
 
                         return new_seed
+                    elif "does not exist" in e.reason:
+                        new_seed = self.choose_random_new_seed(
+                            f"Account {seed} does not exist. Selecting random seed.", connection)
+
+                        return new_seed
+                    else:
+                        raise e
 
                 threshold_met = True  # set true per default and change to False if not met
                 keyword_met = True
