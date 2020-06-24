@@ -50,7 +50,7 @@ def main_loop(coordinator, select=[], status_lang=None, test_fail=False, restart
     stdout.flush()
 
     i = 0
-    timeout = 3600
+    timeout = 7200
 
     for instance in collectors:
         instance.join(timeout=timeout)
