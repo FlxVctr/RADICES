@@ -12,7 +12,7 @@ It was developed first for a Twitter follow network sampling experiment describe
 
 https://youtu.be/qsnGTl8d3qU?t=21823.
 
-A journal article describing the method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777).
+A journal article describing the (old base-version of the) method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777).
 
 A preprint is available here:
 
