@@ -10,8 +10,7 @@ SELECT DISTINCT source, target FROM friends WHERE source IN
                 FROM
                     result) T)
 AND target IN
-(SELECT 
-                T.id
+(SELECT DISTINCT T.id
             FROM
                 (SELECT 
                     result.source AS id
