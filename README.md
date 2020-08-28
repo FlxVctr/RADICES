@@ -18,6 +18,10 @@ A preprint is available here:
 
 https://arxiv.org/abs/1908.07788
 
+A large-scale test of the 'bootstrapping' feature regarding the preservation of k-coreness-ranking of the sampled accounts is presented here:
+
+https://youtu.be/sV8Giaj9UwI
+
 (**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet (or optionally the last 200 tweets with a threshold fraction defined by you to avoid false positives) by a user as determined by Twitter instead of the interface language. This might lead to different results.)
 
 Please feel free to open an issue or comment if you have any questions.
