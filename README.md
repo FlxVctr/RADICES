@@ -4,19 +4,21 @@
 
 This software prototype creates an explorative sample of core accounts in (optionally language-based) Twitter follow networks.
 
-A short demo that was prepared for the ICA conference in 2020 can be found here:
+If you use this for your research please cite [the article](https://journals.sagepub.com/doi/full/10.1177/2056305120984475) and/or [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777).
 
-https://vimeo.com/418025499
+## Why is this useful and how does this work?
 
-It was developed first for a Twitter follow network sampling experiment described in this talk:
+In this journal article we explain the underlying method and draw a map of the German Twittersphere:
+
+https://journals.sagepub.com/doi/full/10.1177/2056305120984475
+
+This talk sums up the article:
 
 https://youtu.be/qsnGTl8d3qU?t=21823.
 
-A journal article describing the (old base-version of the) method and its results in detail is currently undergoing peer review. Until then you can [cite the software itself](https://doi.org/10.6084/m9.figshare.8864777).
+A short usage demo that was prepared for the ICA conference in 2020 can be found here:
 
-A preprint is available here:
-
-https://arxiv.org/abs/1908.07788
+https://www.youtube.com/watch?v=i_p-tjvmrR4
 
 (**PLEASE NOTE:** The language specification is not working as it did for our paper due to changes in the Twitter API. Now it uses the language of the last tweet (or optionally the last 200 tweets with a threshold fraction defined by you to avoid false positives) by a user as determined by Twitter instead of the interface language. This might lead to different results.)
 
