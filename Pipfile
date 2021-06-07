@@ -10,6 +10,7 @@ pyyaml = "*"
 sqlalchemy = "*"
 pymysql = "*"
 argparse = "*"
+urllib3 = ">=1.26.5"
 
 [dev-packages]
 "flake8" = "*"
