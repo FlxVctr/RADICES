@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 pandas = "*"
 tweepy = "<4"
-pyyaml = "*"
+pyyaml = "<6"
 sqlalchemy = "*"
 pymysql = "*"
 argparse = "*"
