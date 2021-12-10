@@ -1225,7 +1225,7 @@ class CoordinatorTest(unittest.TestCase):
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed,
                                                                     status_lang=['de', 'en'],
                                                                     retries=1,
-                                                                    language_threshold=0.5)
+                                                                    language_threshold=0.4)
 
         self.assertEqual(new_seed, 36476777)
 
