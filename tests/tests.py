@@ -647,13 +647,11 @@ class CollectorTest(unittest.TestCase):
         self.connection = Connection()
 
     def test_collector_raises_exception_if_credentials_are_wrong(self):
-        with self.assertRaises(tweepy.TweepError) as te:
-            connection = Connection(token_file_name="wrong_tokens.csv")
-            connection.api.verify_credentials()
+        
+        connection = Connection(token_file_name="wrong_tokens.csv")
+        result = connection.api.verify_credentials()
 
-        exception = te.exception
-
-        self.assertIn('401', str(exception.response))
+        self.assertFalse(result)
 
     def test_token_queue_has_reset_time(self):
         connection = Connection()
@@ -662,9 +660,10 @@ class CollectorTest(unittest.TestCase):
 
     def test_collector_can_connect_with_correct_credentials(self):
 
-        try:
-            self.connection.api.verify_credentials()
-        except tweepy.TweepError:
+        
+        result = self.connection.api.verify_credentials()
+        
+        if result is False:
             self.fail("Could not verify API credentials.")
 
     def test_collector_gets_remaining_API_calls_for_friendlist(self):
