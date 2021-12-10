@@ -1072,7 +1072,7 @@ class CoordinatorTest(unittest.TestCase):
 
         seed = 36476777
         expected_new_seed = 813286
-        expected_new_seed_2 = 783214  # after first got burned
+        expected_new_seed_2 = 15846407  # after first got burned
         # there's no database, test getting seed via Twitter API
         new_seed = self.coordinator.work_through_seed_get_next_seed(seed, retries=1)
         # Felix's most followed 'friend' is BarackObama
