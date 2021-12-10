@@ -18,7 +18,6 @@ pytest = "*"
 isort = "*"
 ipython = "*"
 "autopep8" = "*"
-python-language-server = {extras = ["all"],version = "*"}
 pydocstyle = "*"
 
 [requires]
