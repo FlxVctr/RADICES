@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 pandas = "*"
-tweepy = "*"
+tweepy = "<4"
 pyyaml = "*"
 sqlalchemy = "*"
 pymysql = "*"
