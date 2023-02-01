@@ -94,7 +94,7 @@ class Config():
             self.config_path = config_file
             try:
                 with open(self.config_path, 'r') as f:
-                    self.config = yaml.load(f)
+                    self.config = yaml.safe_load(f)
             except FileNotFoundError:
                 raise FileNotFoundError('Could not find "' + self.config_path + '''".\n
                 Please run "python3 make_config.py" or provide a config.yml''')
