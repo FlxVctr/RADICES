@@ -16,3 +16,5 @@ user_ids_de.csv
 results/
 Pipfile.lock.bk
 config.yml
+Pipfile.lock
+.vscode/settings.json

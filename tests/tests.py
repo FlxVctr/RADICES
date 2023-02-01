@@ -694,7 +694,7 @@ class CollectorTest(unittest.TestCase):
 
     def test_collector_gets_all_friends_of_power_user_gets_details_and_makes_df(self):
 
-        collector = Collector(self.connection, seed=2343198944)
+        collector = Collector(self.connection, seed=4617361)  # @Jochen
 
         user_friends = collector.get_friend_list()
 
