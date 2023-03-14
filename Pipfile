@@ -16,7 +16,7 @@ urllib3 = ">=1.26.5"
 "flake8" = "*"
 pytest = "*"
 isort = "*"
-ipython = ">=7.16.3"
+ipython = ">=8.10"
 "autopep8" = "*"
 pydocstyle = "*"
 
